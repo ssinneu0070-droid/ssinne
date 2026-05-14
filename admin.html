@@ -438,7 +438,9 @@ async function loadOrders(){
         const res = await fetch(SCRIPT_URL);
         const orders = await res.json();
 
-        allOrders = orders.reverse();
+        allOrders = Array.isArray(orders)
+  ? orders.reverse()
+  : [];
 
         renderOrders(allOrders);
         updateCards(allOrders);
