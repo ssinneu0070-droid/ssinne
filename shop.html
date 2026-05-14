@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>씬느샵 방송상품</title>
+
+<style>
+body{
+    margin:0;
+    font-family:sans-serif;
+    background:#f6f7f9;
+    color:#111827;
+}
+
+.header{
+    background:white;
+    padding:22px 20px;
+    border-bottom:1px solid #eee;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    position:sticky;
+    top:0;
+    z-index:10;
+}
+
+.logo{
+    font-size:26px;
+    font-weight:900;
+}
+
+.menu-icon{
+    font-size:34px;
+    color:#6b7280;
+}
+
+.search-box{
+    background:white;
+    padding:20px;
+    border-bottom:1px solid #eee;
+}
+
+.search-box input{
+    width:100%;
+    padding:20px;
+    border:none;
+    border-radius:18px;
+    background:#f1f2f5;
+    font-size:18px;
+    box-sizing:border-box;
+}
+
+.table{
+    background:white;
+}
+
+.table-header,
+.product-row{
+    display:grid;
+    grid-template-columns:1fr 120px 95px;
+    align-items:center;
+    gap:10px;
+}
+
+.table-header{
+    padding:22px 20px;
+    font-size:18px;
+    font-weight:900;
+    border-bottom:1px solid #eee;
+}
+
+.product-row{
+    padding:22px 20px;
+    border-bottom:1px solid #eee;
+}
+
+.product-name{
+    font-size:21px;
+    font-weight:800;
+    line-height:1.4;
+}
+
+.product-price{
+    font-size:22px;
+    font-weight:900;
+    text-align:right;
+}
+
+.copy-btn{
+    border:1px solid #ddd;
+    background:white;
+    border-radius:14px;
+    padding:12px 10px;
+    font-size:16px;
+    font-weight:800;
+    color:#374151;
+    cursor:pointer;
+}
+
+.loading{
+    padding:40px 20px;
+    text-align:center;
+    color:#777;
+    font-size:18px;
+}
+
+.toast{
+    position:fixed;
+    left:50%;
+    bottom:30px;
+    transform:translateX(-50%);
+    background:#111827;
+    color:white;
+    padding:14px 20px;
+    border-radius:999px;
+    font-weight:800;
+    display:none;
+    z-index:999;
+}
+
+@media(max-width:600px){
+    .logo{
+        font-size:24px;
+    }
+
+    .table-header,
+    .product-row{
+        grid-template-columns:1fr 95px 82px;
+    }
+
+    .product-name{
+        font-size:20px;
+    }
+
+    .product-price{
+        font-size:20px;
+    }
+
+    .copy-btn{
+        font-size:15px;
+        padding:10px 8px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+    <div class="logo">▣ 씬느샵 방송상품</div>
+    <div class="menu-icon">☰</div>
+</div>
+
+<div class="search-box">
+    <input
+        type="text"
+        id="searchInput"
+        placeholder="🔍 상품명 또는 번호 검색..."
+        oninput="searchProducts()"
+    >
+</div>
+
+<div class="table">
+
+    <div class="table-header">
+        <div>상품명</div>
+        <div></div>
+        <div></div>
+    </div>
+
+    <div id="loading" class="loading">
+        상품을 불러오는 중입니다...
+    </div>
+
+    <div id="productList"></div>
+
+</div>
+
+<div id="toast" class="toast">
+    복사되었습니다
+</div>
+
+<script>
+const SCRIPT_URL =
+"https://script.google.com/macros/s/AKfycbxqmg7xImqnrLuiMU_MAEL8bEwgFrZbxTM75kVnuQM-g-ZBljkJ7VBIuDrUScha1c2gXA/exec";
+
+let allProducts = [];
+
+async function loadProducts(){
+
+    try{
+
+        const res =
+            await fetch(SCRIPT_URL + "?type=products");
+
+        const products =
+            await res.json();
+
+        allProducts =
+            Array.isArray(products)
+            ? products.reverse()
+            : [];
+
+        document.getElementById('loading').style.display =
+            'none';
+
+        renderProducts(allProducts);
+
+    }catch(error){
+
+        console.log(error);
+
+        document.getElementById('loading').innerText =
+            '상품을 불러오지 못했습니다.';
+
+    }
+
+}
+
+function renderProducts(products){
+
+    const productList =
+        document.getElementById('productList');
+
+    productList.innerHTML = '';
+
+    if(products.length === 0){
+
+        productList.innerHTML =
+            '<div class="loading">등록된 상품이 없습니다.</div>';
+
+        return;
+
+    }
+
+    products.forEach(product => {
+
+        const productText =
+            `${product.productCode || ''} ${product.productName || ''} ${product.color || ''}`.trim();
+
+        const price =
+            Number(product.salePrice || 0).toLocaleString();
+
+        productList.innerHTML += `
+
+            <div class="product-row">
+
+                <div class="product-name">
+                    ${productText}
+                </div>
+
+                <div class="product-price">
+                    ${price}
+                </div>
+
+                <button
+                    class="copy-btn"
+                    onclick="copyProduct('${escapeText(productText)}', '${price}')"
+                >
+                    ⧉ 복사
+                </button>
+
+            </div>
+
+        `;
+
+    });
+
+}
+
+function searchProducts(){
+
+    const keyword =
+        document.getElementById('searchInput').value.trim();
+
+    const filtered =
+        allProducts.filter(product => {
+
+            const text =
+                `${product.productCode || ''} ${product.productName || ''} ${product.color || ''} ${product.size || ''}`;
+
+            return text.includes(keyword);
+
+        });
+
+    renderProducts(filtered);
+
+}
+
+function escapeText(text){
+
+    return String(text)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'");
+
+}
+
+function copyProduct(productText, price){
+
+    const copyText =
+        `${productText} ${price}원`;
+
+    navigator.clipboard.writeText(copyText)
+    .then(() => {
+        showToast();
+    })
+    .catch(() => {
+        alert(copyText);
+    });
+
+}
+
+function showToast(){
+
+    const toast =
+        document.getElementById('toast');
+
+    toast.style.display = 'block';
+
+    setTimeout(() => {
+        toast.style.display = 'none';
+    }, 1400);
+
+}
+
+loadProducts();
+</script>
+
+</body>
+</html>
