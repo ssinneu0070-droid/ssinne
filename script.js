@@ -19,7 +19,7 @@ function searchAddress(){
 
 }
 
-const SCRIPT_URL ="https://script.google.com/macros/s/AKfycbyDLvhw3uQJ2vQDWW5Pmjsmy4zVyBje8sBfUKwAI6URDtTT1Ugdztyfgy10g61SjW5B/exec";
+const SCRIPT_URL ="https://script.google.com/macros/s/AKfycbwtsIjNpw0ZsUf7X9otuaZ1IvD4Ov2PndvGTnch-axroBUoodT2Xkg11iQX-Pa0gk1p/exec";
 
 
 const phoneInput =
