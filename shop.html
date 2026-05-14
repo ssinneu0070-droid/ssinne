@@ -6,6 +6,11 @@
 <title>씬느샵 방송상품</title>
 
 <style>
+
+*{
+    box-sizing:border-box;
+}
+
 body{
     margin:0;
     font-family:sans-serif;
@@ -26,12 +31,12 @@ body{
 }
 
 .logo{
-    font-size:26px;
+    font-size:24px;
     font-weight:900;
 }
 
 .menu-icon{
-    font-size:34px;
+    font-size:32px;
     color:#6b7280;
 }
 
@@ -43,66 +48,55 @@ body{
 
 .search-box input{
     width:100%;
-    padding:20px;
+    padding:18px;
     border:none;
     border-radius:18px;
     background:#f1f2f5;
-    font-size:18px;
-    box-sizing:border-box;
+    font-size:16px;
+    outline:none;
 }
 
 .table{
     background:white;
 }
 
-.table-header,
 .product-row{
     display:grid;
-    grid-template-columns:1fr 120px 95px;
-    align-items:center;
+    grid-template-columns:1fr 90px 80px;
     gap:10px;
-}
-
-.table-header{
-    padding:22px 20px;
-    font-size:18px;
-    font-weight:900;
-    border-bottom:1px solid #eee;
-}
-
-.product-row{
-    padding:22px 20px;
+    align-items:center;
+    padding:22px 18px;
     border-bottom:1px solid #eee;
 }
 
 .product-name{
-    font-size:21px;
+    font-size:18px;
     font-weight:800;
-    line-height:1.4;
+    line-height:1.5;
+    word-break:break-word;
 }
 
 .product-price{
-    font-size:22px;
-    font-weight:900;
     text-align:right;
+    font-size:20px;
+    font-weight:900;
 }
 
 .copy-btn{
     border:1px solid #ddd;
     background:white;
     border-radius:14px;
-    padding:12px 10px;
-    font-size:16px;
+    padding:10px 8px;
+    font-size:14px;
     font-weight:800;
-    color:#374151;
     cursor:pointer;
 }
 
 .loading{
     padding:40px 20px;
     text-align:center;
-    color:#777;
-    font-size:18px;
+    color:#666;
+    font-size:17px;
 }
 
 .toast{
@@ -120,54 +114,47 @@ body{
 }
 
 @media(max-width:600px){
-    .logo{
-        font-size:24px;
-    }
 
-    .table-header,
     .product-row{
-        grid-template-columns:1fr 95px 82px;
+        grid-template-columns:1fr 85px 70px;
     }
 
     .product-name{
-        font-size:20px;
+        font-size:16px;
     }
 
     .product-price{
-        font-size:20px;
+        font-size:17px;
     }
 
     .copy-btn{
-        font-size:15px;
-        padding:10px 8px;
+        font-size:13px;
     }
+
 }
+
 </style>
 </head>
 
 <body>
 
 <div class="header">
-    <div class="logo">▣ 씬느샵 방송상품</div>
+    <div class="logo">🛍 씬느샵 방송상품</div>
     <div class="menu-icon">☰</div>
 </div>
 
 <div class="search-box">
+
     <input
         type="text"
         id="searchInput"
         placeholder="🔍 상품명 또는 번호 검색..."
         oninput="searchProducts()"
     >
+
 </div>
 
 <div class="table">
-
-    <div class="table-header">
-        <div>상품명</div>
-        <div></div>
-        <div></div>
-    </div>
 
     <div id="loading" class="loading">
         상품을 불러오는 중입니다...
@@ -182,6 +169,7 @@ body{
 </div>
 
 <script>
+
 const SCRIPT_URL =
 "https://script.google.com/macros/s/AKfycbxqmg7xImqnrLuiMU_MAEL8bEwgFrZbxTM75kVnuQM-g-ZBljkJ7VBIuDrUScha1c2gXA/exec";
 
@@ -192,7 +180,9 @@ async function loadProducts(){
     try{
 
         const res =
-            await fetch(SCRIPT_URL + "?type=products");
+            await fetch(
+                SCRIPT_URL + "?type=products"
+            );
 
         const products =
             await res.json();
@@ -212,7 +202,7 @@ async function loadProducts(){
         console.log(error);
 
         document.getElementById('loading').innerText =
-            '상품을 불러오지 못했습니다.';
+            '상품을 불러오지 못했습니다';
 
     }
 
@@ -237,10 +227,11 @@ function renderProducts(products){
     products.forEach(product => {
 
         const productText =
-            `${product.productCode || ''} ${product.productName || ''} ${product.color || ''}`.trim();
+            `${product.productCode || ''}번 ${product.productName || ''} ${product.color || ''} ${product.size || ''}`.trim();
 
         const price =
-            Number(product.salePrice || 0).toLocaleString();
+            Number(product.salePrice || 0)
+            .toLocaleString();
 
         productList.innerHTML += `
 
@@ -256,9 +247,11 @@ function renderProducts(products){
 
                 <button
                     class="copy-btn"
-                    onclick="copyProduct('${escapeText(productText)}', '${price}')"
+                    onclick="copyProduct(this)"
+                    data-name="${productText}"
+                    data-price="${price}"
                 >
-                    ⧉ 복사
+                    복사
                 </button>
 
             </div>
@@ -272,7 +265,9 @@ function renderProducts(products){
 function searchProducts(){
 
     const keyword =
-        document.getElementById('searchInput').value.trim();
+        document.getElementById('searchInput')
+        .value
+        .trim();
 
     const filtered =
         allProducts.filter(product => {
@@ -288,25 +283,28 @@ function searchProducts(){
 
 }
 
-function escapeText(text){
+function copyProduct(button){
 
-    return String(text)
-        .replace(/\\/g, '\\\\')
-        .replace(/'/g, "\\'");
+    const productText =
+        button.dataset.name;
 
-}
-
-function copyProduct(productText, price){
+    const price =
+        button.dataset.price;
 
     const copyText =
         `${productText} ${price}원`;
 
-    navigator.clipboard.writeText(copyText)
+    navigator.clipboard
+    .writeText(copyText)
     .then(() => {
+
         showToast();
+
     })
     .catch(() => {
+
         alert(copyText);
+
     });
 
 }
@@ -316,15 +314,20 @@ function showToast(){
     const toast =
         document.getElementById('toast');
 
-    toast.style.display = 'block';
+    toast.style.display =
+        'block';
 
     setTimeout(() => {
-        toast.style.display = 'none';
-    }, 1400);
+
+        toast.style.display =
+            'none';
+
+    },1400);
 
 }
 
 loadProducts();
+
 </script>
 
 </body>
