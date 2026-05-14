@@ -201,6 +201,44 @@ th{
         font-size:12px;
         padding:10px;
     }
+}@media(max-width:600px){
+
+    table,
+    thead,
+    tbody,
+    th,
+    td,
+    tr{
+        display:block;
+    }
+
+    thead{
+        display:none;
+    }
+
+    tbody tr{
+        background:white;
+        margin-bottom:16px;
+        padding:16px;
+        border-radius:18px;
+        box-shadow:0 4px 14px rgba(0,0,0,0.06);
+    }
+
+    td{
+        border:none;
+        padding:8px 0;
+        font-size:14px;
+        white-space:normal;
+    }
+
+    td::before{
+        content:attr(data-label);
+        display:block;
+        font-weight:700;
+        color:#ff4fa1;
+        margin-bottom:4px;
+    }
+
 }
 </style>
 </head>
