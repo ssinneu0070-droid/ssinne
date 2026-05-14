@@ -6,7 +6,6 @@
 <title>씬느샵 관리자</title>
 
 <style>
-
 body{
     margin:0;
     font-family:sans-serif;
@@ -91,7 +90,6 @@ body{
     padding:14px;
     border:1px solid #ddd;
     border-radius:12px;
-    font-size:14px;
 }
 
 .search-row input{
@@ -152,27 +150,58 @@ th{
 }
 
 @media(max-width:900px){
-
     .admin-wrap{
         flex-direction:column;
     }
 
     .sidebar{
         width:auto;
+        display:flex;
+        gap:10px;
+        overflow-x:auto;
+    }
+
+    .menu{
+        white-space:nowrap;
+        font-size:14px;
+        padding:12px;
+    }
+
+    .main{
+        padding:16px;
+    }
+
+    .top-title{
+        font-size:22px;
     }
 
     .card-row{
         grid-template-columns:1fr;
     }
 
-    table{
-        font-size:12px;
-        display:block;
-        overflow-x:auto;
+    .search-row{
+        flex-direction:column;
     }
 
-}
+    .search-row input,
+    .search-row select,
+    .search-btn,
+    .refresh-btn{
+        width:100%;
+        box-sizing:border-box;
+    }
 
+    table{
+        display:block;
+        overflow-x:auto;
+        white-space:nowrap;
+    }
+
+    th,td{
+        font-size:12px;
+        padding:10px;
+    }
+}
 </style>
 </head>
 
@@ -181,154 +210,78 @@ th{
 <div class="admin-wrap">
 
     <div class="sidebar">
-
-        <div class="logo">
-            🎁 씬느샵 관리자
-        </div>
-
-        <div class="menu active">
-            📦 주문 관리
-        </div>
-
-        <div class="menu">
-            📊 주문 통계
-        </div>
-
-        <div class="menu">
-            ⬇ 엑셀 다운로드
-        </div>
-
-        <div class="menu">
-            ⚙ 설정
-        </div>
-
+        <div class="logo">🎁 씬느샵 관리자</div>
+        <div class="menu active">📦 주문 관리</div>
+        <div class="menu">📊 주문 통계</div>
+        <div class="menu" onclick="downloadExcel()">⬇ 엑셀 다운로드</div>
+        <div class="menu">⚙ 설정</div>
     </div>
 
     <div class="main">
 
-        <div class="top-title">
-            주문 관리
-        </div>
+        <div class="top-title">주문 관리</div>
 
         <div class="card-row">
-
             <div class="card">
-                <div class="card-title">
-                    전체 주문
-                </div>
-
-                <div class="card-number" id="totalCount">
-                    0건
-                </div>
+                <div class="card-title">전체 주문</div>
+                <div class="card-number" id="totalCount">0건</div>
             </div>
 
             <div class="card">
-                <div class="card-title">
-                    오늘 주문
-                </div>
-
-                <div class="card-number" id="todayCount">
-                    0건
-                </div>
+                <div class="card-title">오늘 주문</div>
+                <div class="card-number" id="todayCount">0건</div>
             </div>
 
             <div class="card">
-                <div class="card-title">
-                    배송 완료
-                </div>
-
-                <div class="card-number" id="doneCount">
-                    0건
-                </div>
+                <div class="card-title">배송 완료</div>
+                <div class="card-number" id="doneCount">0건</div>
             </div>
 
             <div class="card">
-                <div class="card-title">
-                    대기 중
-                </div>
-
-                <div class="card-number" id="readyCount">
-                    0건
-                </div>
+                <div class="card-title">대기 중</div>
+                <div class="card-number" id="readyCount">0건</div>
             </div>
-
         </div>
 
         <div class="search-row">
-
             <input
                 type="text"
                 id="searchInput"
                 placeholder="닉네임 / 수령인 / 연락처 검색"
             >
 
-            <button
-                class="search-btn"
-                onclick="searchOrders()"
-            >
+            <button class="search-btn" onclick="searchOrders()">
                 검색
             </button>
 
-            <select
-                id="statusFilter"
-                onchange="searchOrders()"
-            >
-                <option value="">
-                    전체 상태
-                </option>
-
-                <option value="배송 준비중">
-                    배송 준비중
-                </option>
-
-                <option value="배송중">
-                    배송중
-                </option>
-
-                <option value="배송완료">
-                    배송완료
-                </option>
+            <select id="statusFilter" onchange="searchOrders()">
+                <option value="">전체 상태</option>
+                <option value="배송 준비중">배송 준비중</option>
+                <option value="배송중">배송중</option>
+                <option value="배송완료">배송완료</option>
             </select>
 
-            <button
-                class="refresh-btn"
-                onclick="loadOrders()"
-            >
+            <button class="refresh-btn" onclick="loadOrders()">
                 새로고침
             </button>
-
         </div>
 
         <table>
-
             <thead>
-
                 <tr>
-
                     <th>주문번호</th>
-
                     <th>닉네임</th>
-
                     <th>수령인</th>
-
                     <th>연락처</th>
-
                     <th>주소</th>
-
                     <th>주문일</th>
-
                     <th>배송메모</th>
-
                     <th>구매내역</th>
-
                     <th>상태</th>
-
                 </tr>
-
             </thead>
 
             <tbody id="orderList"></tbody>
-
         </table>
 
     </div>
@@ -336,7 +289,6 @@ th{
 </div>
 
 <script>
-
 const SCRIPT_URL =
 "https://script.google.com/macros/s/AKfycbyHvO3uGfP35r_XrEuJYT7MHAEtURTVKIVzgWi3JII8cqUqMftd4Bxk6l08KrnjiK9VZA/exec";
 
@@ -346,25 +298,18 @@ async function loadOrders(){
 
     try{
 
-        const res =
-            await fetch(SCRIPT_URL);
-
-        const orders =
-            await res.json();
+        const res = await fetch(SCRIPT_URL);
+        const orders = await res.json();
 
         allOrders = orders;
 
         renderOrders(allOrders);
-
         updateCards(allOrders);
 
     }catch(error){
 
         console.log(error);
-
-        alert(
-            '주문 데이터를 불러오지 못했습니다'
-        );
+        alert('주문 데이터를 불러오지 못했습니다');
 
     }
 
@@ -372,11 +317,7 @@ async function loadOrders(){
 
 function renderOrders(orders){
 
-    const orderList =
-        document.getElementById(
-            'orderList'
-        );
-
+    const orderList = document.getElementById('orderList');
     orderList.innerHTML = '';
 
     orders.forEach(order => {
@@ -392,40 +333,21 @@ function renderOrders(orders){
         }
 
         orderList.innerHTML += `
-
-        <tr>
-
-            <td>${order.orderNumber || ''}</td>
-
-            <td>${order.nickname || ''}</td>
-
-            <td>${order.name || ''}</td>
-
-            <td>${order.phone || ''}</td>
-
-            <td>
-                ${order.address || ''}
-                ${order.detailAddress || ''}
-            </td>
-
-            <td>${order.date || ''}</td>
-
-            <td>${order.memo || ''}</td>
-
-            <td>${order.orderItems || ''}</td>
-
-            <td>
-
-                <span class="status ${statusClass}">
-
-                    ${order.status || '배송 준비중'}
-
-                </span>
-
-            </td>
-
-        </tr>
-
+            <tr>
+                <td>${order.orderNumber || ''}</td>
+                <td>${order.nickname || ''}</td>
+                <td>${order.name || ''}</td>
+                <td>${order.phone || ''}</td>
+                <td>${order.address || ''} ${order.detailAddress || ''}</td>
+                <td>${order.date || ''}</td>
+                <td>${order.memo || ''}</td>
+                <td>${order.orderItems || ''}</td>
+                <td>
+                    <span class="status ${statusClass}">
+                        ${order.status || '배송 준비중'}
+                    </span>
+                </td>
+            </tr>
         `;
 
     });
@@ -434,34 +356,18 @@ function renderOrders(orders){
 
 function searchOrders(){
 
-    const keyword =
-        document.getElementById(
-            'searchInput'
-        ).value;
+    const keyword = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
 
-    const status =
-        document.getElementById(
-            'statusFilter'
-        ).value;
-
-    const filtered =
-        allOrders.filter(order => {
+    const filtered = allOrders.filter(order => {
 
         const text =
-            `${order.nickname}
-             ${order.name}
-             ${order.phone}
-             ${order.orderNumber}`;
+            `${order.nickname || ''} ${order.name || ''} ${order.phone || ''} ${order.orderNumber || ''}`;
 
-        const keywordMatch =
-            text.includes(keyword);
+        const keywordMatch = text.includes(keyword);
+        const statusMatch = status === '' || order.status === status;
 
-        const statusMatch =
-            status === '' ||
-            order.status === status;
-
-        return keywordMatch &&
-               statusMatch;
+        return keywordMatch && statusMatch;
 
     });
 
@@ -471,34 +377,64 @@ function searchOrders(){
 
 function updateCards(orders){
 
-    document.getElementById(
-        'totalCount'
-    ).innerText =
+    document.getElementById('totalCount').innerText =
         orders.length + '건';
 
-    document.getElementById(
-        'todayCount'
-    ).innerText =
+    document.getElementById('todayCount').innerText =
         orders.length + '건';
 
-    document.getElementById(
-        'doneCount'
-    ).innerText =
-        orders.filter(order =>
-            order.status === '배송완료'
-        ).length + '건';
+    document.getElementById('doneCount').innerText =
+        orders.filter(order => order.status === '배송완료').length + '건';
 
-    document.getElementById(
-        'readyCount'
-    ).innerText =
-        orders.filter(order =>
-            order.status !== '배송완료'
-        ).length + '건';
+    document.getElementById('readyCount').innerText =
+        orders.filter(order => order.status !== '배송완료').length + '건';
+
+}
+
+function downloadExcel(){
+
+    if(allOrders.length === 0){
+
+        alert('다운로드할 주문이 없습니다');
+        return;
+
+    }
+
+    let csv =
+        '주문번호,닉네임,수령인,연락처,주소,주문일,배송메모,구매내역,상태\n';
+
+    allOrders.forEach(order => {
+
+        csv += [
+            order.orderNumber || '',
+            order.nickname || '',
+            order.name || '',
+            order.phone || '',
+            `${order.address || ''} ${order.detailAddress || ''}`,
+            order.date || '',
+            order.memo || '',
+            order.orderItems || '',
+            order.status || '배송 준비중'
+        ].map(value =>
+            `"${String(value).replace(/"/g, '""')}"`
+        ).join(',') + '\n';
+
+    });
+
+    const blob = new Blob(
+        ['\uFEFF' + csv],
+        { type:'text/csv;charset=utf-8;' }
+    );
+
+    const link = document.createElement('a');
+
+    link.href = URL.createObjectURL(blob);
+    link.download = '씬느샵_주문목록.csv';
+    link.click();
 
 }
 
 loadOrders();
-
 </script>
 
 </body>
