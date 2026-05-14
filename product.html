@@ -88,65 +88,37 @@ input{
 
         <div class="form-group">
             <label>상품사진 *</label>
-            <input
-                type="file"
-                id="productImage"
-                accept="image/*"
-            >
+            <input type="file" id="productImage" accept="image/*">
         </div>
 
         <div class="form-group">
             <label>상품번호 *</label>
-            <input
-                type="text"
-                id="productCode"
-                placeholder="예: SS-001"
-            >
+            <input type="text" id="productCode" placeholder="예: SS-001">
         </div>
 
         <div class="form-group">
             <label>상품명 *</label>
-            <input
-                type="text"
-                id="productName"
-                placeholder="예: 리본 블라우스"
-            >
+            <input type="text" id="productName" placeholder="예: 리본 블라우스">
         </div>
 
         <div class="form-group">
             <label>칼라</label>
-            <input
-                type="text"
-                id="color"
-                placeholder="예: 핑크, 블랙"
-            >
+            <input type="text" id="color" placeholder="예: 핑크, 블랙">
         </div>
 
         <div class="form-group">
             <label>사이즈</label>
-            <input
-                type="text"
-                id="size"
-                placeholder="예: Free"
-            >
+            <input type="text" id="size" placeholder="예: Free">
         </div>
 
         <div class="form-group">
             <label>판매가 *</label>
-            <input
-                type="number"
-                id="salePrice"
-                placeholder="예: 29000"
-            >
+            <input type="number" id="salePrice" placeholder="예: 29000">
         </div>
 
         <div class="form-group">
             <label>입금가 *</label>
-            <input
-                type="number"
-                id="costPrice"
-                placeholder="예: 18000"
-            >
+            <input type="number" id="costPrice" placeholder="예: 18000">
         </div>
 
         <button type="submit" class="submit-btn">
@@ -158,8 +130,7 @@ input{
 </div>
 
 <script>
-
-const SCRIPT_URL ="https://script.google.com/macros/s/AKfycbwtsIjNpw0ZsUf7X9otuaZ1IvD4Ov2PndvGTnch-axroBUoodT2Xkg11iQX-Pa0gk1p/exec";
+const SCRIPT_URL ="https://script.google.com/macros/s/AKfycbyHvO3uGfP35r_XrEuJYT7MHAEtURTVKIVzgWi3JII8cqUqMftd4Bxk6l08KrnjiK9VZA/exec";
 
 document.getElementById('productForm')
 .addEventListener('submit', async function(e){
@@ -196,63 +167,49 @@ document.getElementById('productForm')
         return;
     }
 
+    if(!salePrice){
+        alert('판매가를 입력해주세요');
+        return;
+    }
+
+    if(!costPrice){
+        alert('입금가를 입력해주세요');
+        return;
+    }
+
     const imageBase64 =
         await new Promise((resolve) => {
 
-        const reader =
-            new FileReader();
+            const reader =
+                new FileReader();
 
-        reader.onload =
-            function(){
+            reader.onload =
+                function(){
+                    resolve(reader.result.split(',')[1]);
+                };
 
-            resolve(
-                reader.result.split(',')[1]
-            );
+            reader.readAsDataURL(productImage);
 
-        };
-
-        reader.readAsDataURL(productImage);
-
-    });
+        });
 
     const data = {
-
         type:'product',
-
-        imageName:
-            productImage.name,
-
-        imageBase64:
-            imageBase64,
-
-        productCode:
-            productCode,
-
-        productName:
-            productName,
-
-        color:
-            document.getElementById('color').value,
-
-        size:
-            document.getElementById('size').value,
-
-        salePrice:
-            salePrice,
-
-        costPrice:
-            costPrice
-
+        imageName:productImage.name,
+        imageBase64:imageBase64,
+        productCode,
+        productName,
+        color:document.getElementById('color').value,
+        size:document.getElementById('size').value,
+        salePrice,
+        costPrice
     };
 
     try{
 
         await fetch(SCRIPT_URL,{
-
             method:'POST',
-
+            mode:'no-cors',
             body:JSON.stringify(data)
-
         });
 
         alert('상품이 등록되었습니다 💖');
@@ -261,14 +218,12 @@ document.getElementById('productForm')
 
     }catch(error){
 
-        alert('오류가 발생했습니다');
-
         console.log(error);
+        alert('오류가 발생했습니다');
 
     }
 
 });
-
 </script>
 
 </body>

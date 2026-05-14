@@ -296,17 +296,9 @@ th{
     <div class="sidebar">
         <div class="logo">🎁 씬느샵 관리자</div>
 
-        <div class="menu active" id="orderMenu" onclick="showOrders()">
-            📦 주문 관리
-        </div>
-
-        <div class="menu" id="productMenu" onclick="showProducts()">
-            🛍 상품 관리
-        </div>
-
-        <div class="menu" onclick="downloadExcel()">
-            ⬇ 엑셀 다운로드
-        </div>
+        <div class="menu active" id="orderMenu" onclick="showOrders()">📦 주문 관리</div>
+        <div class="menu" id="productMenu" onclick="showProducts()">🛍 상품 관리</div>
+        <div class="menu" onclick="downloadExcel()">⬇ 엑셀 다운로드</div>
     </div>
 
     <div class="main">
@@ -338,11 +330,7 @@ th{
             </div>
 
             <div class="search-row">
-                <input
-                    type="text"
-                    id="searchInput"
-                    placeholder="주문번호 / 닉네임 / 수령인 / 연락처 검색"
-                >
+                <input type="text" id="searchInput" placeholder="주문번호 / 닉네임 / 수령인 / 연락처 검색">
 
                 <button class="search-btn" onclick="searchOrders()">검색</button>
 
@@ -390,14 +378,8 @@ th{
             <div class="top-title">상품 관리</div>
 
             <div class="search-row">
-                <input
-                    type="text"
-                    id="productSearchInput"
-                    placeholder="상품번호 / 상품명 / 칼라 검색"
-                >
-
+                <input type="text" id="productSearchInput" placeholder="상품번호 / 상품명 / 칼라 검색">
                 <button class="search-btn" onclick="searchProducts()">검색</button>
-
                 <button class="refresh-btn" onclick="loadProducts()">새로고침</button>
             </div>
 
@@ -410,7 +392,7 @@ th{
 </div>
 
 <script>
-const SCRIPT_URL ="https://script.google.com/macros/s/AKfycbwtsIjNpw0ZsUf7X9otuaZ1IvD4Ov2PndvGTnch-axroBUoodT2Xkg11iQX-Pa0gk1p/exec";
+const SCRIPT_URL ="https://script.google.com/macros/s/AKfycbyHvO3uGfP35r_XrEuJYT7MHAEtURTVKIVzgWi3JII8cqUqMftd4Bxk6l08KrnjiK9VZA/exec";
 
 let allOrders = [];
 let allProducts = [];
@@ -418,7 +400,6 @@ let allProducts = [];
 function showOrders(){
     document.getElementById('orderSection').classList.remove('hidden');
     document.getElementById('productSection').classList.add('hidden');
-
     document.getElementById('orderMenu').classList.add('active');
     document.getElementById('productMenu').classList.remove('active');
 }
@@ -426,10 +407,8 @@ function showOrders(){
 function showProducts(){
     document.getElementById('orderSection').classList.add('hidden');
     document.getElementById('productSection').classList.remove('hidden');
-
     document.getElementById('orderMenu').classList.remove('active');
     document.getElementById('productMenu').classList.add('active');
-
     loadProducts();
 }
 
@@ -438,9 +417,8 @@ async function loadOrders(){
         const res = await fetch(SCRIPT_URL);
         const orders = await res.json();
 
-        allOrders = Array.isArray(orders)
-  ? orders.reverse()
-  : [];
+        allOrders =
+            Array.isArray(orders) ? orders.reverse() : [];
 
         renderOrders(allOrders);
         updateCards(allOrders);
@@ -456,7 +434,8 @@ async function loadProducts(){
         const res = await fetch(SCRIPT_URL + "?type=products");
         const products = await res.json();
 
-        allProducts = products.reverse();
+        allProducts =
+            Array.isArray(products) ? products.reverse() : [];
 
         renderProducts(allProducts);
 
@@ -483,10 +462,7 @@ function renderOrders(orders){
                 <td data-label="구매내역">${order.orderItems || ''}</td>
 
                 <td data-label="배송상태">
-                    <select
-                        class="status-select"
-                        onchange="updateOrderStatus('${order.orderNumber}', this.value, '')"
-                    >
+                    <select class="status-select" onchange="updateOrderStatus('${order.orderNumber}', this.value, '')">
                         <option value="배송 준비" ${(order.status || '') === '배송 준비' ? 'selected' : ''}>배송 준비</option>
                         <option value="배송중" ${(order.status || '') === '배송중' ? 'selected' : ''}>배송중</option>
                         <option value="배송완료" ${(order.status || '') === '배송완료' ? 'selected' : ''}>배송완료</option>
@@ -495,10 +471,7 @@ function renderOrders(orders){
                 </td>
 
                 <td data-label="입금상태">
-                    <select
-                        class="status-select"
-                        onchange="updateOrderStatus('${order.orderNumber}', '', this.value)"
-                    >
+                    <select class="status-select" onchange="updateOrderStatus('${order.orderNumber}', '', this.value)">
                         <option value="미입금" ${(order.paymentStatus || '') === '미입금' ? 'selected' : ''}>미입금</option>
                         <option value="입금완료" ${(order.paymentStatus || '') === '입금완료' ? 'selected' : ''}>입금완료</option>
                         <option value="환불" ${(order.paymentStatus || '') === '환불' ? 'selected' : ''}>환불</option>
@@ -516,14 +489,13 @@ async function updateOrderStatus(orderNumber, status, paymentStatus){
             mode:'no-cors',
             body:JSON.stringify({
                 type:'updateStatus',
-                orderNumber:orderNumber,
-                status:status,
-                paymentStatus:paymentStatus
+                orderNumber,
+                status,
+                paymentStatus
             })
         });
 
         alert('상태가 저장되었습니다');
-
         loadOrders();
 
     }catch(error){
@@ -541,11 +513,9 @@ function searchOrders(){
         const text =
             `${order.orderNumber || ''} ${order.nickname || ''} ${order.name || ''} ${order.phone || ''}`;
 
-        const keywordMatch = text.includes(keyword);
-        const statusMatch = status === '' || order.status === status;
-        const paymentMatch = payment === '' || order.paymentStatus === payment;
-
-        return keywordMatch && statusMatch && paymentMatch;
+        return text.includes(keyword) &&
+            (status === '' || order.status === status) &&
+            (payment === '' || order.paymentStatus === payment);
     });
 
     renderOrders(filtered);
@@ -562,7 +532,10 @@ function updateCards(orders){
         orders.filter(order => order.paymentStatus === '미입금').length + '건';
 
     document.getElementById('refundCount').innerText =
-        orders.filter(order => order.paymentStatus === '환불' || order.status === '환불').length + '건';
+        orders.filter(order =>
+            order.paymentStatus === '환불' ||
+            order.status === '환불'
+        ).length + '건';
 }
 
 function renderProducts(products){
@@ -639,7 +612,6 @@ function downloadExcel(){
     );
 
     const link = document.createElement('a');
-
     link.href = URL.createObjectURL(blob);
     link.download = '씬느샵_주문목록.csv';
     link.click();
