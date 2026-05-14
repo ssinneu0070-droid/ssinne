@@ -19,7 +19,7 @@ function searchAddress(){
 
 }
 
-const SCRIPT_URL ="https://script.google.com/macros/s/AKfycbwtsIjNpw0ZsUf7X9otuaZ1IvD4Ov2PndvGTnch-axroBUoodT2Xkg11iQX-Pa0gk1p/exec";
+const SCRIPT_URL ="https://script.google.com/macros/s/AKfycbyHvO3uGfP35r_XrEuJYT7MHAEtURTVKIVzgWi3JII8cqUqMftd4Bxk6l08KrnjiK9VZA/exec";
 
 
 const phoneInput =
@@ -182,12 +182,10 @@ if(!agree.checked){
     try{
 
         await fetch(SCRIPT_URL, {
-
-            method:'POST',
-
-            body: JSON.stringify(data)
-
-        });
+    method:'POST',
+    mode:'no-cors',
+    body: JSON.stringify(data)
+});
 
         alert(
             '씬느샵 주문이 접수되었습니다 💖'
