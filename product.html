@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>씬느샵 상품 등록</title>
+
+<style>
+body{
+    margin:0;
+    font-family:sans-serif;
+    background:#fff5fa;
+}
+
+.header{
+    background:linear-gradient(135deg,#ffb6d9,#ff4fa1);
+    color:white;
+    text-align:center;
+    padding:30px 20px;
+}
+
+.header h1{
+    margin:0;
+    font-size:26px;
+}
+
+.container{
+    max-width:520px;
+    margin:auto;
+    padding:22px;
+}
+
+.notice{
+    background:white;
+    padding:18px;
+    border-radius:18px;
+    margin-bottom:22px;
+    color:#555;
+    line-height:1.6;
+}
+
+.form-group{
+    margin-bottom:20px;
+}
+
+label{
+    display:block;
+    font-weight:700;
+    margin-bottom:8px;
+}
+
+input{
+    width:100%;
+    padding:18px;
+    border:1px solid #ddd;
+    border-radius:18px;
+    box-sizing:border-box;
+    font-size:16px;
+}
+
+.submit-btn{
+    width:100%;
+    padding:20px;
+    border:none;
+    border-radius:22px;
+    background:#ff4fa1;
+    color:white;
+    font-size:18px;
+    font-weight:800;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+    <h1>씬느샵 상품 등록</h1>
+</div>
+
+<div class="container">
+
+    <div class="notice">
+        📦 상품 정보를 입력하면<br>
+        구글시트 products 탭에 자동 저장됩니다.
+    </div>
+
+    <form id="productForm">
+
+        <div class="form-group">
+            <label>상품사진 *</label>
+            <input
+                type="file"
+                id="productImage"
+                accept="image/*"
+            >
+        </div>
+
+        <div class="form-group">
+            <label>상품번호 *</label>
+            <input
+                type="text"
+                id="productCode"
+                placeholder="예: SS-001"
+            >
+        </div>
+
+        <div class="form-group">
+            <label>상품명 *</label>
+            <input
+                type="text"
+                id="productName"
+                placeholder="예: 리본 블라우스"
+            >
+        </div>
+
+        <div class="form-group">
+            <label>칼라</label>
+            <input
+                type="text"
+                id="color"
+                placeholder="예: 핑크, 블랙"
+            >
+        </div>
+
+        <div class="form-group">
+            <label>사이즈</label>
+            <input
+                type="text"
+                id="size"
+                placeholder="예: Free"
+            >
+        </div>
+
+        <div class="form-group">
+            <label>판매가 *</label>
+            <input
+                type="number"
+                id="salePrice"
+                placeholder="예: 29000"
+            >
+        </div>
+
+        <div class="form-group">
+            <label>입금가 *</label>
+            <input
+                type="number"
+                id="costPrice"
+                placeholder="예: 18000"
+            >
+        </div>
+
+        <button type="submit" class="submit-btn">
+            상품 등록하기
+        </button>
+
+    </form>
+
+</div>
+
+<script>
+
+const SCRIPT_URL =
+"https://script.google.com/macros/s/AKfycbx_igOSM28AWrAMWi4dcpSJI9mxkn4xKu3snL7NFeQ9FCgude-B_Kj3H2jFG8jkARo5/exec";
+
+document.getElementById('productForm')
+.addEventListener('submit', async function(e){
+
+    e.preventDefault();
+
+    const productImage =
+        document.getElementById('productImage').files[0];
+
+    const productCode =
+        document.getElementById('productCode').value.trim();
+
+    const productName =
+        document.getElementById('productName').value.trim();
+
+    const salePrice =
+        document.getElementById('salePrice').value.trim();
+
+    const costPrice =
+        document.getElementById('costPrice').value.trim();
+
+    if(!productImage){
+        alert('상품사진을 선택해주세요');
+        return;
+    }
+
+    if(!productCode){
+        alert('상품번호를 입력해주세요');
+        return;
+    }
+
+    if(!productName){
+        alert('상품명을 입력해주세요');
+        return;
+    }
+
+    const imageBase64 =
+        await new Promise((resolve) => {
+
+        const reader =
+            new FileReader();
+
+        reader.onload =
+            function(){
+
+            resolve(
+                reader.result.split(',')[1]
+            );
+
+        };
+
+        reader.readAsDataURL(productImage);
+
+    });
+
+    const data = {
+
+        type:'product',
+
+        imageName:
+            productImage.name,
+
+        imageBase64:
+            imageBase64,
+
+        productCode:
+            productCode,
+
+        productName:
+            productName,
+
+        color:
+            document.getElementById('color').value,
+
+        size:
+            document.getElementById('size').value,
+
+        salePrice:
+            salePrice,
+
+        costPrice:
+            costPrice
+
+    };
+
+    try{
+
+        await fetch(SCRIPT_URL,{
+
+            method:'POST',
+
+            body:JSON.stringify(data)
+
+        });
+
+        alert('상품이 등록되었습니다 💖');
+
+        document.getElementById('productForm').reset();
+
+    }catch(error){
+
+        alert('오류가 발생했습니다');
+
+        console.log(error);
+
+    }
+
+});
+
+</script>
+
+</body>
+</html>
