@@ -10,7 +10,7 @@ body{margin:0;font-family:sans-serif;background:#f5f5f5;color:#111827;}
 .header{background:white;padding:22px 20px;font-size:26px;font-weight:900;border-bottom:1px solid #eee;}
 .search{background:white;padding:20px;border-bottom:1px solid #eee;}
 .search input{width:100%;padding:18px;border:none;border-radius:18px;background:#f1f1f1;font-size:17px;box-sizing:border-box;}
-.product{display:grid;grid-template-columns:1fr 90px 75px;gap:10px;align-items:center;background:white;padding:20px;border-bottom:1px solid #eee;}
+.product{display:grid;grid-template-columns:1fr 95px 75px;gap:10px;align-items:center;background:white;padding:20px;border-bottom:1px solid #eee;}
 .name{font-size:18px;font-weight:800;line-height:1.5;}
 .price{text-align:right;font-size:18px;font-weight:900;}
 .copy{border:1px solid #ddd;background:white;border-radius:12px;padding:10px;font-weight:800;}
@@ -31,19 +31,36 @@ body{margin:0;font-family:sans-serif;background:#f5f5f5;color:#111827;}
 </div>
 
 <script>
-const SCRIPT_URL =
-"https://script.google.com/macros/s/AKfycbwoBy9ypMPkCjLsB1AOLBi3e-BNphyV6yWTfMf1uFJgMm5Qx0ulGY2rTMGOXpZGBqGgDQ/exec";
+const SHEET_ID =
+"1byBaW63sdxnatyPbgL4LQQOj7fxGsXMATsIPXsI1oeU";
+
+const GID =
+"0";
 
 let allProducts = [];
 
 function loadProducts(){
     const script = document.createElement('script');
-    script.src = SCRIPT_URL + '?callback=showProducts&v=' + Date.now();
+
+    script.src =
+        `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${GID}&tqx=responseHandler:showProducts`;
+
     document.body.appendChild(script);
 }
 
-function showProducts(data){
-    allProducts = Array.isArray(data) ? data.reverse() : [];
+function showProducts(response){
+    const rows = response.table.rows;
+
+    allProducts = rows.map(row => {
+        return {
+            productCode: row.c[0]?.v || '',
+            productName: row.c[1]?.v || '',
+            color: row.c[2]?.v || '',
+            size: row.c[3]?.v || '',
+            salePrice: row.c[4]?.v || ''
+        };
+    }).filter(product => product.productName !== '');
+
     renderProducts(allProducts);
 }
 
@@ -58,7 +75,7 @@ function renderProducts(products){
 
     products.forEach(product => {
         const text =
-            `${product.productCode || ''} ${product.productName || ''} ${product.color || ''} ${product.size || ''}`.trim();
+            `${product.productCode} ${product.productName} ${product.color} ${product.size}`.trim();
 
         const price =
             Number(product.salePrice || 0).toLocaleString();
@@ -78,7 +95,7 @@ function searchProducts(){
 
     const filtered = allProducts.filter(product => {
         const text =
-            `${product.productCode || ''} ${product.productName || ''} ${product.color || ''} ${product.size || ''}`;
+            `${product.productCode} ${product.productName} ${product.color} ${product.size}`;
 
         return text.includes(keyword);
     });
