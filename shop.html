@@ -178,8 +178,27 @@ function copyText(text){
     alert('복사되었습니다');
 
 }
+async function loadProducts(){
 
-loadProducts();
+    try{
+
+        const res = await fetch(SCRIPT_URL);
+        const data = await res.json();
+
+        allProducts = Array.isArray(data) ? data.reverse() : [];
+
+        renderProducts(allProducts);
+
+    }catch(error){
+
+        console.log(error);
+
+        document.getElementById('list').innerHTML =
+            '<div class="loading">상품을 불러오지 못했습니다</div>';
+
+    }
+
+}
 
 </script>
 
