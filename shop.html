@@ -180,25 +180,27 @@ function copyText(text){
 }
 async function loadProducts(){
 
-    try{
+    const script =
+        document.createElement('script');
 
-        const res = await fetch(SCRIPT_URL);
-        const data = await res.json();
+    script.src =
+        SCRIPT_URL + '?callback=showProducts';
 
-        allProducts = Array.isArray(data) ? data.reverse() : [];
-
-        renderProducts(allProducts);
-
-    }catch(error){
-
-        console.log(error);
-
-        document.getElementById('list').innerHTML =
-            '<div class="loading">상품을 불러오지 못했습니다</div>';
-
-    }
+    document.body.appendChild(script);
 
 }
+
+function showProducts(data){
+
+    allProducts =
+        Array.isArray(data)
+        ? data.reverse()
+        : [];
+
+    renderProducts(allProducts);
+
+}
+loadProducts();
 
 </script>
 
