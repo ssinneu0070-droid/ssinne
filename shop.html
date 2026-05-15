@@ -3,112 +3,184 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>씬느샵 방송상품</title>
 
 <style>
-body{margin:0;font-family:sans-serif;background:#f5f5f5;color:#111827;}
-.header{background:white;padding:22px 20px;font-size:26px;font-weight:900;border-bottom:1px solid #eee;}
-.search{background:white;padding:20px;border-bottom:1px solid #eee;}
-.search input{width:100%;padding:18px;border:none;border-radius:18px;background:#f1f1f1;font-size:17px;box-sizing:border-box;}
-.product{display:grid;grid-template-columns:1fr 95px 75px;gap:10px;align-items:center;background:white;padding:20px;border-bottom:1px solid #eee;}
-.name{font-size:18px;font-weight:800;line-height:1.5;}
-.price{text-align:right;font-size:18px;font-weight:900;}
-.copy{border:1px solid #ddd;background:white;border-radius:12px;padding:10px;font-weight:800;}
-.loading{text-align:center;padding:40px;color:#777;}
+
+body{
+    margin:0;
+    font-family:sans-serif;
+    background:#f5f5f5;
+}
+
+.header{
+    background:white;
+    padding:20px;
+    font-size:28px;
+    font-weight:900;
+}
+
+.search{
+    padding:20px;
+    background:white;
+}
+
+.search input{
+    width:100%;
+    padding:18px;
+    border:none;
+    border-radius:18px;
+    background:#f1f1f1;
+    font-size:17px;
+    box-sizing:border-box;
+}
+
+.product{
+    display:grid;
+    grid-template-columns:1fr 90px 80px;
+    gap:10px;
+    align-items:center;
+    background:white;
+    padding:20px;
+    border-top:1px solid #eee;
+}
+
+.name{
+    font-size:20px;
+    font-weight:800;
+}
+
+.price{
+    text-align:right;
+    font-size:20px;
+    font-weight:900;
+}
+
+.copy{
+    border:none;
+    background:#111827;
+    color:white;
+    padding:12px;
+    border-radius:12px;
+    font-weight:800;
+}
+
 </style>
 </head>
 
 <body>
 
-<div class="header">🛍 씬느샵 방송상품</div>
+<div class="header">
+🛍 씬느샵 방송상품
+</div>
 
 <div class="search">
-<input id="search" placeholder="🔍 상품명 또는 번호 검색..." oninput="searchProducts()">
+
+<input
+    id="search"
+    placeholder="상품명 또는 번호 검색..."
+    oninput="searchProducts()"
+>
+
 </div>
 
-<div id="list">
-    <div class="loading">상품을 불러오는 중입니다...</div>
-</div>
+<div id="list"></div>
 
 <script>
-const SHEET_ID =
-"1byBaW63sdxnatyPbgL4LQQOj7fxGsXMATsIPXsI1oeU";
 
-const GID =
-"0";
+const SCRIPT_URL =
+"https://script.google.com/macros/s/AKfycbxGIwTxn-Mcpsyza8SgjXw41Q4VektcQ4qF3qsPvYnSjHbRIXauJJ_1EXMQdwwq3qpiNA/exec";
 
 let allProducts = [];
 
-function loadProducts(){
-    const script = document.createElement('script');
+async function loadProducts(){
 
-    script.src =
-        `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${GID}&tqx=responseHandler:showProducts`;
+    const res =
+        await fetch(SCRIPT_URL);
 
-    document.body.appendChild(script);
-}
+    const data =
+        await res.json();
 
-function showProducts(response){
-    const rows = response.table.rows;
-
-    allProducts = rows.map(row => {
-        return {
-            productCode: row.c[0]?.v || '',
-            productName: row.c[1]?.v || '',
-            color: row.c[2]?.v || '',
-            size: row.c[3]?.v || '',
-            salePrice: row.c[4]?.v || ''
-        };
-    }).filter(product => product.productName !== '');
+    allProducts = data.reverse();
 
     renderProducts(allProducts);
+
 }
 
 function renderProducts(products){
-    const list = document.getElementById('list');
+
+    const list =
+        document.getElementById('list');
+
     list.innerHTML = '';
 
-    if(products.length === 0){
-        list.innerHTML = '<div class="loading">등록된 상품이 없습니다.</div>';
-        return;
-    }
-
     products.forEach(product => {
-        const text =
-            `${product.productCode} ${product.productName} ${product.color} ${product.size}`.trim();
 
-        const price =
-            Number(product.salePrice || 0).toLocaleString();
-
-        list.innerHTML += `
-            <div class="product">
-                <div class="name">${text}</div>
-                <div class="price">${price}</div>
-                <button class="copy" onclick="copyText('${text} ${price}원')">복사</button>
-            </div>
-        `;
-    });
-}
-
-function searchProducts(){
-    const keyword = document.getElementById('search').value.trim();
-
-    const filtered = allProducts.filter(product => {
         const text =
             `${product.productCode} ${product.productName} ${product.color} ${product.size}`;
 
-        return text.includes(keyword);
+        const price =
+            Number(product.salePrice)
+            .toLocaleString();
+
+        list.innerHTML += `
+
+        <div class="product">
+
+            <div class="name">
+                ${text}
+            </div>
+
+            <div class="price">
+                ${price}
+            </div>
+
+            <button
+                class="copy"
+                onclick="copyText('${text} ${price}원')"
+            >
+                복사
+            </button>
+
+        </div>
+
+        `;
+
     });
 
+}
+
+function searchProducts(){
+
+    const keyword =
+        document.getElementById('search')
+        .value;
+
+    const filtered =
+        allProducts.filter(product => {
+
+            const text =
+                `${product.productCode} ${product.productName} ${product.color} ${product.size}`;
+
+            return text.includes(keyword);
+
+        });
+
     renderProducts(filtered);
+
 }
 
 function copyText(text){
+
     navigator.clipboard.writeText(text);
+
     alert('복사되었습니다');
+
 }
 
 loadProducts();
+
 </script>
 
 </body>
