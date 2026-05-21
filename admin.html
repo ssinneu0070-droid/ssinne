@@ -6,40 +6,145 @@
 <title>씬느샵 관리자</title>
 
 <style>
-body{margin:0;font-family:sans-serif;background:#fff5fa;}
-.header{background:#ff4fa1;color:white;padding:24px;text-align:center;font-size:24px;font-weight:900;}
-.container{padding:20px;}
-.search{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
-.search input{padding:14px;border:1px solid #ddd;border-radius:12px;min-width:220px;}
-.search button{padding:14px 20px;border:none;border-radius:12px;background:#ff4fa1;color:white;font-weight:800;cursor:pointer;}
-table{width:100%;border-collapse:collapse;background:white;}
-th,td{border:1px solid #eee;padding:10px;font-size:14px;}
-th{background:#ffe3f1;}
-.loading{text-align:center;padding:30px;color:#777;}
+body{
+    margin:0;
+    font-family:sans-serif;
+    background:#fff5fa;
+}
+
+.header{
+    background:#ff4fa1;
+    color:white;
+    padding:24px;
+    text-align:center;
+    font-size:24px;
+    font-weight:900;
+}
+
+.container{
+    padding:20px;
+}
+
+.search{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+}
+
+.search input{
+    flex:1;
+    min-width:220px;
+    padding:16px;
+    border:1px solid #ddd;
+    border-radius:14px;
+    font-size:16px;
+}
+
+.search button{
+    padding:16px 22px;
+    border:none;
+    border-radius:14px;
+    background:#ff4fa1;
+    color:white;
+    font-weight:800;
+    font-size:15px;
+    cursor:pointer;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+}
+
+th,td{
+    border:1px solid #eee;
+    padding:12px;
+    font-size:14px;
+    text-align:left;
+}
+
+th{
+    background:#ffe3f1;
+}
+
+.loading{
+    text-align:center;
+    padding:40px;
+    color:#777;
+}
+
 @media(max-width:600px){
-.search input,.search button{width:100%;box-sizing:border-box;}
-table,thead,tbody,tr,td,th{display:block;}
-thead{display:none;}
-tr{background:white;margin-bottom:16px;padding:14px;border-radius:16px;}
-td{border:none;}
-td::before{content:attr(data-label);display:block;color:#ff4fa1;font-weight:800;margin-bottom:4px;}
+
+table,
+thead,
+tbody,
+tr,
+td,
+th{
+    display:block;
+}
+
+thead{
+    display:none;
+}
+
+tr{
+    background:white;
+    margin-bottom:16px;
+    padding:14px;
+    border-radius:18px;
+}
+
+td{
+    border:none;
+}
+
+td::before{
+    content:attr(data-label);
+    display:block;
+    font-weight:800;
+    color:#ff4fa1;
+    margin-bottom:4px;
+}
+
+.search input,
+.search button{
+    width:100%;
+}
+
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">씬느샵 관리자 페이지</div>
+<div class="header">
+    씬느샵 관리자 페이지
+</div>
 
 <div class="container">
 
 <div class="search">
-    <input type="text" id="searchInput" placeholder="수령인 성함 검색">
-    <button type="button" onclick="searchOrders()">검색</button>
-    <button type="button" onclick="loadOrders()">새로고침</button>
+
+    <input
+        type="text"
+        id="searchInput"
+        placeholder="수령인 성함 검색"
+    >
+
+    <button
+        type="button"
+        onclick="searchOrders()"
+    >
+        검색
+    </button>
+
 </div>
 
 <table>
+
 <thead>
 <tr>
     <th>주문번호</th>
@@ -52,38 +157,88 @@ td::before{content:attr(data-label);display:block;color:#ff4fa1;font-weight:800;
     <th>입금금액</th>
 </tr>
 </thead>
+
 <tbody id="orderList">
+
 <tr>
-    <td colspan="8" class="loading">주문을 불러오는 중입니다...</td>
+    <td colspan="8" class="loading">
+        수령인 성함을 검색하면 주문이 표시됩니다.
+    </td>
 </tr>
+
 </tbody>
+
 </table>
 
 </div>
 
 <script>
+
 const SCRIPT_URL =
 "https://script.google.com/macros/s/AKfycbzmMzVZjiso965oG3KikDcmCF3783l5pokhnJU4ACzBxhj1oT18659Vj8jCC4orVLJfxQ/exec";
 
 let allOrders = [];
 
-async function loadOrders(){
+async function searchOrders(){
+
+    const keyword =
+        document.getElementById('searchInput')
+        .value
+        .trim();
+
+    if(keyword === ''){
+
+        alert('검색할 이름을 입력해주세요');
+        return;
+
+    }
+
+    document.getElementById('orderList').innerHTML =
+        `
+        <tr>
+            <td colspan="8" class="loading">
+                주문을 검색중입니다...
+            </td>
+        </tr>
+        `;
 
     try{
 
-        const res = await fetch(SCRIPT_URL);
-        const data = await res.json();
+        const res =
+            await fetch(SCRIPT_URL);
 
-        allOrders = Array.isArray(data) ? data.reverse() : [];
+        const data =
+            await res.json();
 
-        renderOrders(allOrders);
+        allOrders =
+            Array.isArray(data)
+            ? data.reverse()
+            : [];
+
+        const filtered =
+            allOrders.filter(order => {
+
+                const name =
+                    order.name || '';
+
+                return name.includes(keyword);
+
+            });
+
+        renderOrders(filtered);
 
     }catch(error){
 
         console.log(error);
 
         document.getElementById('orderList').innerHTML =
-            '<tr><td colspan="8" class="loading">주문 데이터를 불러오지 못했습니다.</td></tr>';
+            `
+            <tr>
+                <td colspan="8" class="loading">
+                    데이터를 불러오지 못했습니다.
+                </td>
+            </tr>
+            `;
 
     }
 
@@ -91,14 +246,21 @@ async function loadOrders(){
 
 function renderOrders(orders){
 
-    const list = document.getElementById('orderList');
+    const list =
+        document.getElementById('orderList');
 
     list.innerHTML = '';
 
     if(orders.length === 0){
 
         list.innerHTML =
-            '<tr><td colspan="8" class="loading">주문 내역이 없습니다.</td></tr>';
+            `
+            <tr>
+                <td colspan="8" class="loading">
+                    검색 결과가 없습니다.
+                </td>
+            </tr>
+            `;
 
         return;
 
@@ -107,49 +269,48 @@ function renderOrders(orders){
     orders.forEach(order => {
 
         list.innerHTML += `
-            <tr>
-                <td data-label="주문번호">${order.orderNumber || ''}</td>
-                <td data-label="닉네임">${order.nickname || ''}</td>
-                <td data-label="수령인">${order.name || ''}</td>
-                <td data-label="연락처">${order.phone || ''}</td>
-                <td data-label="주소">${order.address || ''} ${order.detailAddress || ''}</td>
-                <td data-label="배송메모">${order.memo || ''}</td>
-                <td data-label="구매내역">${order.orderItems || ''}</td>
-                <td data-label="입금금액">${order.payment || ''}</td>
-            </tr>
+        <tr>
+
+            <td data-label="주문번호">
+                ${order.orderNumber || ''}
+            </td>
+
+            <td data-label="닉네임">
+                ${order.nickname || ''}
+            </td>
+
+            <td data-label="수령인">
+                ${order.name || ''}
+            </td>
+
+            <td data-label="연락처">
+                ${order.phone || ''}
+            </td>
+
+            <td data-label="주소">
+                ${order.address || ''}
+                ${order.detailAddress || ''}
+            </td>
+
+            <td data-label="배송메모">
+                ${order.memo || ''}
+            </td>
+
+            <td data-label="구매내역">
+                ${order.orderItems || ''}
+            </td>
+
+            <td data-label="입금금액">
+                ${order.payment || ''}
+            </td>
+
+        </tr>
         `;
 
     });
 
 }
 
-function searchOrders(){
-
-    const keyword =
-        document.getElementById('searchInput').value.trim();
-
-    if(keyword === ''){
-
-        renderOrders(allOrders);
-        return;
-
-    }
-
-    const filtered =
-        allOrders.filter(order => {
-
-            const name =
-                order.name || '';
-
-            return name.includes(keyword);
-
-        });
-
-    renderOrders(filtered);
-
-}
-
-loadOrders();
 </script>
 
 </body>
