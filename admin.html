@@ -6,615 +6,117 @@
 <title>씬느샵 관리자</title>
 
 <style>
-body{
-    margin:0;
-    font-family:sans-serif;
-    background:#fff5fa;
-}
-
-.admin-wrap{
-    display:flex;
-    min-height:100vh;
-}
-
-.sidebar{
-    width:230px;
-    background:#182338;
-    color:white;
-    padding:30px 20px;
-}
-
-.logo{
-    font-size:22px;
-    font-weight:800;
-    margin-bottom:40px;
-}
-
-.menu{
-    padding:16px;
-    border-radius:14px;
-    margin-bottom:12px;
-    font-weight:700;
-    cursor:pointer;
-}
-
-.menu.active{
-    background:#ff4fa1;
-}
-
-.main{
-    flex:1;
-    padding:35px;
-}
-
-.top-title{
-    font-size:28px;
-    font-weight:800;
-    margin-bottom:30px;
-}
-
-.card-row{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:20px;
-    margin-bottom:25px;
-}
-
-.card{
-    background:white;
-    padding:24px;
-    border-radius:18px;
-    box-shadow:0 4px 16px rgba(0,0,0,0.05);
-}
-
-.card-title{
-    color:#ff4fa1;
-    font-weight:700;
-    margin-bottom:12px;
-}
-
-.card-number{
-    font-size:28px;
-    font-weight:900;
-}
-
-.search-row{
-    display:flex;
-    gap:10px;
-    margin-bottom:20px;
-    flex-wrap:wrap;
-}
-
-.search-row input,
-.search-row select,
-.status-select{
-    padding:12px;
-    border:1px solid #ddd;
-    border-radius:12px;
-    font-size:14px;
-}
-
-.search-row input{
-    width:300px;
-}
-
-.search-btn,
-.refresh-btn{
-    border:none;
-    background:#ff4fa1;
-    color:white;
-    padding:14px 20px;
-    border-radius:12px;
-    font-weight:700;
-    cursor:pointer;
-}
-
-table{
-    width:100%;
-    border-collapse:collapse;
-    background:white;
-    border-radius:18px;
-    overflow:hidden;
-    box-shadow:0 4px 16px rgba(0,0,0,0.05);
-}
-
-th,td{
-    padding:12px;
-    border-bottom:1px solid #eee;
-    font-size:14px;
-    text-align:left;
-}
-
-th{
-    background:#fff0f6;
-}
-
-.hidden{
-    display:none;
-}
-
-.product-grid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:18px;
-}
-
-.product-card{
-    background:white;
-    border-radius:20px;
-    overflow:hidden;
-    box-shadow:0 4px 14px rgba(0,0,0,0.06);
-}
-
-.product-card img{
-    width:100%;
-    height:220px;
-    object-fit:cover;
-    background:#eee;
-}
-
-.product-info{
-    padding:16px;
-}
-
-.product-name{
-    font-size:18px;
-    font-weight:800;
-    margin-bottom:8px;
-}
-
-.product-price{
-    color:#ff4fa1;
-    font-size:20px;
-    font-weight:900;
-    margin-bottom:10px;
-}
-
-.product-detail{
-    color:#555;
-    font-size:14px;
-    line-height:1.7;
-}
-
-@media(max-width:900px){
-    .admin-wrap{
-        flex-direction:column;
-    }
-
-    .sidebar{
-        width:auto;
-        display:flex;
-        gap:10px;
-        overflow-x:auto;
-    }
-
-    .logo{
-        min-width:150px;
-        margin-bottom:0;
-        font-size:18px;
-    }
-
-    .menu{
-        white-space:nowrap;
-        font-size:14px;
-        padding:12px;
-        margin-bottom:0;
-    }
-
-    .main{
-        padding:16px;
-    }
-
-    .top-title{
-        font-size:22px;
-    }
-
-    .card-row{
-        grid-template-columns:1fr 1fr;
-        gap:12px;
-    }
-
-    .product-grid{
-        grid-template-columns:1fr 1fr;
-    }
-
-    .search-row{
-        flex-direction:column;
-    }
-
-    .search-row input,
-    .search-row select,
-    .search-btn,
-    .refresh-btn{
-        width:100%;
-        box-sizing:border-box;
-    }
-}
-
+body{margin:0;font-family:sans-serif;background:#fff5fa;}
+.header{background:#ff4fa1;color:white;padding:24px;text-align:center;font-size:24px;font-weight:900;}
+.container{padding:20px;}
+.search{display:flex;gap:10px;margin-bottom:20px;}
+.search input,.search select{padding:14px;border:1px solid #ddd;border-radius:12px;}
+.search button{padding:14px 20px;border:none;border-radius:12px;background:#ff4fa1;color:white;font-weight:800;}
+table{width:100%;border-collapse:collapse;background:white;}
+th,td{border:1px solid #eee;padding:10px;font-size:14px;}
+th{background:#ffe3f1;}
+select{padding:10px;border-radius:10px;}
 @media(max-width:600px){
-    table,
-    thead,
-    tbody,
-    th,
-    td,
-    tr{
-        display:block;
-    }
-
-    table{
-        background:transparent;
-        box-shadow:none;
-    }
-
-    thead{
-        display:none;
-    }
-
-    tbody tr{
-        background:white;
-        margin-bottom:16px;
-        padding:16px;
-        border-radius:18px;
-        box-shadow:0 4px 14px rgba(0,0,0,0.06);
-    }
-
-    td{
-        border:none;
-        padding:8px 0;
-        font-size:14px;
-        word-break:break-word;
-    }
-
-    td::before{
-        content:attr(data-label);
-        display:block;
-        font-weight:700;
-        color:#ff4fa1;
-        margin-bottom:4px;
-    }
-
-    .status-select{
-        width:100%;
-        box-sizing:border-box;
-    }
-
-    .product-grid{
-        grid-template-columns:1fr;
-    }
-
-    .product-card img{
-        height:300px;
-    }
+table,thead,tbody,tr,td,th{display:block;}
+thead{display:none;}
+tr{background:white;margin-bottom:16px;padding:14px;border-radius:16px;}
+td{border:none;}
+td::before{content:attr(data-label);display:block;color:#ff4fa1;font-weight:800;margin-bottom:4px;}
 }
 </style>
 </head>
 
 <body>
 
-<div class="admin-wrap">
+<div class="header">씬느샵 관리자 페이지</div>
 
-    <div class="sidebar">
-        <div class="logo">🎁 씬느샵 관리자</div>
+<div class="container">
 
-        <div class="menu active" id="orderMenu" onclick="showOrders()">📦 주문 관리</div>
-        <div class="menu" id="productMenu" onclick="showProducts()">🛍 상품 관리</div>
-        <div class="menu" onclick="downloadExcel()">⬇ 엑셀 다운로드</div>
-    </div>
+<div class="search">
+  <input type="text" id="searchInput" placeholder="수령인 성함 검색">
+  <button onclick="searchOrders()">검색</button>
+  <button onclick="loadOrders()">새로고침</button>
+</div>
 
-    <div class="main">
-
-        <section id="orderSection">
-
-            <div class="top-title">주문 관리</div>
-
-            <div class="card-row">
-                <div class="card">
-                    <div class="card-title">전체 주문</div>
-                    <div class="card-number" id="totalCount">0건</div>
-                </div>
-
-                <div class="card">
-                    <div class="card-title">입금완료</div>
-                    <div class="card-number" id="paidCount">0건</div>
-                </div>
-
-                <div class="card">
-                    <div class="card-title">미입금</div>
-                    <div class="card-number" id="unpaidCount">0건</div>
-                </div>
-
-                <div class="card">
-                    <div class="card-title">환불</div>
-                    <div class="card-number" id="refundCount">0건</div>
-                </div>
-            </div>
-
-            <div class="search-row">
-                <input type="text" id="searchInput" placeholder="주문번호 / 닉네임 / 수령인 / 연락처 검색">
-
-                <button class="search-btn" onclick="searchOrders()">검색</button>
-
-                <select id="statusFilter" onchange="searchOrders()">
-                    <option value="">전체 배송상태</option>
-                    <option value="배송 준비">배송 준비</option>
-                    <option value="배송중">배송중</option>
-                    <option value="배송완료">배송완료</option>
-                    <option value="환불">환불</option>
-                </select>
-
-                <select id="paymentFilter" onchange="searchOrders()">
-                    <option value="">전체 입금상태</option>
-                    <option value="미입금">미입금</option>
-                    <option value="입금완료">입금완료</option>
-                    <option value="환불">환불</option>
-                </select>
-
-                <button class="refresh-btn" onclick="loadOrders()">새로고침</button>
-            </div>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>주문번호</th>
-                        <th>닉네임</th>
-                        <th>수령인</th>
-                        <th>연락처</th>
-                        <th>주소</th>
-                        <th>주문일</th>
-                        <th>배송메모</th>
-                        <th>구매내역</th>
-                        <th>배송상태</th>
-                        <th>입금상태</th>
-                    </tr>
-                </thead>
-
-                <tbody id="orderList"></tbody>
-            </table>
-
-        </section>
-
-        <section id="productSection" class="hidden">
-
-            <div class="top-title">상품 관리</div>
-
-            <div class="search-row">
-                <input type="text" id="productSearchInput" placeholder="상품번호 / 상품명 / 칼라 검색">
-                <button class="search-btn" onclick="searchProducts()">검색</button>
-                <button class="refresh-btn" onclick="loadProducts()">새로고침</button>
-            </div>
-
-            <div id="productList" class="product-grid"></div>
-
-        </section>
-
-    </div>
+<table>
+<thead>
+<tr>
+  <th>주문번호</th>
+  <th>닉네임</th>
+  <th>수령인</th>
+  <th>연락처</th>
+  <th>주소</th>
+  <th>구매내역</th>
+  <th>입금상태</th>
+</tr>
+</thead>
+<tbody id="orderList"></tbody>
+</table>
 
 </div>
 
 <script>
-const SCRIPT_URL ="https://script.google.com/macros/s/AKfycbxqmg7xImqnrLuiMU_MAEL8bEwgFrZbxTM75kVnuQM-g-ZBljkJ7VBIuDrUScha1c2gXA/exec";
+const SCRIPT_URL =
+"https://script.google.com/macros/s/AKfycbz7tGx6lQ8rqHutyE16cRdbU1VbjfTnzESf7tUDqz-mYyhGYYTnFHsSVf9GaHUSqoGb2w/exec";
 
 let allOrders = [];
-let allProducts = [];
-
-function showOrders(){
-    document.getElementById('orderSection').classList.remove('hidden');
-    document.getElementById('productSection').classList.add('hidden');
-    document.getElementById('orderMenu').classList.add('active');
-    document.getElementById('productMenu').classList.remove('active');
-}
-
-function showProducts(){
-    document.getElementById('orderSection').classList.add('hidden');
-    document.getElementById('productSection').classList.remove('hidden');
-    document.getElementById('orderMenu').classList.remove('active');
-    document.getElementById('productMenu').classList.add('active');
-    loadProducts();
-}
 
 async function loadOrders(){
-    try{
-        const res = await fetch(SCRIPT_URL);
-        const orders = await res.json();
+  const res = await fetch(SCRIPT_URL);
+  const data = await res.json();
 
-        allOrders =
-            Array.isArray(orders) ? orders.reverse() : [];
-
-        renderOrders(allOrders);
-        updateCards(allOrders);
-
-    }catch(error){
-        console.log(error);
-        alert('주문 데이터를 불러오지 못했습니다');
-    }
-}
-
-async function loadProducts(){
-    try{
-        const res = await fetch(SCRIPT_URL + "?type=products");
-        const products = await res.json();
-
-        allProducts =
-            Array.isArray(products) ? products.reverse() : [];
-
-        renderProducts(allProducts);
-
-    }catch(error){
-        console.log(error);
-        alert('상품 데이터를 불러오지 못했습니다');
-    }
+  allOrders = Array.isArray(data) ? data.reverse() : [];
+  renderOrders(allOrders);
 }
 
 function renderOrders(orders){
-    const orderList = document.getElementById('orderList');
-    orderList.innerHTML = '';
+  const list = document.getElementById('orderList');
+  list.innerHTML = '';
 
-    orders.forEach(order => {
-        orderList.innerHTML += `
-            <tr>
-                <td data-label="주문번호">${order.orderNumber || ''}</td>
-                <td data-label="닉네임">${order.nickname || ''}</td>
-                <td data-label="수령인">${order.name || ''}</td>
-                <td data-label="연락처">${order.phone || ''}</td>
-                <td data-label="주소">${order.address || ''} ${order.detailAddress || ''}</td>
-                <td data-label="주문일">${order.date || ''}</td>
-                <td data-label="배송메모">${order.memo || ''}</td>
-                <td data-label="구매내역">${order.orderItems || ''}</td>
-
-                <td data-label="배송상태">
-                    <select class="status-select" onchange="updateOrderStatus('${order.orderNumber}', this.value, '')">
-                        <option value="배송 준비" ${(order.status || '') === '배송 준비' ? 'selected' : ''}>배송 준비</option>
-                        <option value="배송중" ${(order.status || '') === '배송중' ? 'selected' : ''}>배송중</option>
-                        <option value="배송완료" ${(order.status || '') === '배송완료' ? 'selected' : ''}>배송완료</option>
-                        <option value="환불" ${(order.status || '') === '환불' ? 'selected' : ''}>환불</option>
-                    </select>
-                </td>
-
-                <td data-label="입금상태">
-                    <select class="status-select" onchange="updateOrderStatus('${order.orderNumber}', '', this.value)">
-                        <option value="미입금" ${(order.paymentStatus || '') === '미입금' ? 'selected' : ''}>미입금</option>
-                        <option value="입금완료" ${(order.paymentStatus || '') === '입금완료' ? 'selected' : ''}>입금완료</option>
-                        <option value="환불" ${(order.paymentStatus || '') === '환불' ? 'selected' : ''}>환불</option>
-                    </select>
-                </td>
-            </tr>
-        `;
-    });
-}
-
-async function updateOrderStatus(orderNumber, status, paymentStatus){
-    try{
-        await fetch(SCRIPT_URL,{
-            method:'POST',
-            mode:'no-cors',
-            body:JSON.stringify({
-                type:'updateStatus',
-                orderNumber,
-                status,
-                paymentStatus
-            })
-        });
-
-        alert('상태가 저장되었습니다');
-        loadOrders();
-
-    }catch(error){
-        console.log(error);
-        alert('상태 저장 중 오류가 발생했습니다');
-    }
+  orders.forEach(order => {
+    list.innerHTML += `
+      <tr>
+        <td data-label="주문번호">${order.orderNumber || ''}</td>
+        <td data-label="닉네임">${order.nickname || ''}</td>
+        <td data-label="수령인">${order.name || ''}</td>
+        <td data-label="연락처">${order.phone || ''}</td>
+        <td data-label="주소">${order.address || ''} ${order.detailAddress || ''}</td>
+        <td data-label="구매내역">${order.orderItems || ''}</td>
+        <td data-label="입금상태">
+          <select onchange="updatePayment('${order.orderNumber}', this.value)">
+            <option value="미입금" ${(order.paymentStatus || '') === '미입금' ? 'selected' : ''}>미입금</option>
+            <option value="입금완료" ${(order.paymentStatus || '') === '입금완료' ? 'selected' : ''}>입금완료</option>
+            <option value="환불" ${(order.paymentStatus || '') === '환불' ? 'selected' : ''}>환불</option>
+          </select>
+        </td>
+      </tr>
+    `;
+  });
 }
 
 function searchOrders(){
-    const keyword = document.getElementById('searchInput').value;
-    const status = document.getElementById('statusFilter').value;
-    const payment = document.getElementById('paymentFilter').value;
+  const keyword = document.getElementById('searchInput').value.trim();
 
-    const filtered = allOrders.filter(order => {
-        const text =
-            `${order.orderNumber || ''} ${order.nickname || ''} ${order.name || ''} ${order.phone || ''}`;
+  const filtered = allOrders.filter(order => {
+    return (order.name || '').includes(keyword);
+  });
 
-        return text.includes(keyword) &&
-            (status === '' || order.status === status) &&
-            (payment === '' || order.paymentStatus === payment);
-    });
-
-    renderOrders(filtered);
+  renderOrders(filtered);
 }
 
-function updateCards(orders){
-    document.getElementById('totalCount').innerText =
-        orders.length + '건';
+async function updatePayment(orderNumber, paymentStatus){
+  await fetch(SCRIPT_URL,{
+    method:'POST',
+    mode:'no-cors',
+    body:JSON.stringify({
+      type:'updateStatus',
+      orderNumber,
+      paymentStatus
+    })
+  });
 
-    document.getElementById('paidCount').innerText =
-        orders.filter(order => order.paymentStatus === '입금완료').length + '건';
-
-    document.getElementById('unpaidCount').innerText =
-        orders.filter(order => order.paymentStatus === '미입금').length + '건';
-
-    document.getElementById('refundCount').innerText =
-        orders.filter(order =>
-            order.paymentStatus === '환불' ||
-            order.status === '환불'
-        ).length + '건';
-}
-
-function renderProducts(products){
-    const productList = document.getElementById('productList');
-    productList.innerHTML = '';
-
-    products.forEach(product => {
-        productList.innerHTML += `
-            <div class="product-card">
-                <img src="${product.imageUrl || ''}" alt="${product.productName || ''}">
-
-                <div class="product-info">
-                    <div class="product-name">${product.productName || ''}</div>
-
-                    <div class="product-price">
-                        판매가 ${Number(product.salePrice || 0).toLocaleString()}원
-                    </div>
-
-                    <div class="product-detail">
-                        상품번호: ${product.productCode || ''}<br>
-                        칼라: ${product.color || ''}<br>
-                        사이즈: ${product.size || ''}<br>
-                        입금가: ${Number(product.costPrice || 0).toLocaleString()}원<br>
-                        등록일: ${product.date || ''}
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-}
-
-function searchProducts(){
-    const keyword = document.getElementById('productSearchInput').value;
-
-    const filtered = allProducts.filter(product => {
-        const text =
-            `${product.productCode || ''} ${product.productName || ''} ${product.color || ''}`;
-
-        return text.includes(keyword);
-    });
-
-    renderProducts(filtered);
-}
-
-function downloadExcel(){
-    if(allOrders.length === 0){
-        alert('다운로드할 주문이 없습니다');
-        return;
-    }
-
-    let csv =
-        '주문번호,닉네임,수령인,연락처,주소,주문일,배송메모,구매내역,배송상태,입금상태\n';
-
-    allOrders.forEach(order => {
-        csv += [
-            order.orderNumber || '',
-            order.nickname || '',
-            order.name || '',
-            order.phone || '',
-            `${order.address || ''} ${order.detailAddress || ''}`,
-            order.date || '',
-            order.memo || '',
-            order.orderItems || '',
-            order.status || '배송 준비',
-            order.paymentStatus || '미입금'
-        ].map(value =>
-            `"${String(value).replace(/"/g, '""')}"`
-        ).join(',') + '\n';
-    });
-
-    const blob = new Blob(
-        ['\uFEFF' + csv],
-        { type:'text/csv;charset=utf-8;' }
-    );
-
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = '씬느샵_주문목록.csv';
-    link.click();
+  alert('입금상태가 저장되었습니다');
+  loadOrders();
 }
 
 loadOrders();
