@@ -9,14 +9,15 @@
 body{margin:0;font-family:sans-serif;background:#fff5fa;}
 .header{background:#ff4fa1;color:white;padding:24px;text-align:center;font-size:24px;font-weight:900;}
 .container{padding:20px;}
-.search{display:flex;gap:10px;margin-bottom:20px;}
-.search input,.search select{padding:14px;border:1px solid #ddd;border-radius:12px;}
-.search button{padding:14px 20px;border:none;border-radius:12px;background:#ff4fa1;color:white;font-weight:800;}
+.search{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.search input{padding:14px;border:1px solid #ddd;border-radius:12px;min-width:220px;}
+.search button{padding:14px 20px;border:none;border-radius:12px;background:#ff4fa1;color:white;font-weight:800;cursor:pointer;}
 table{width:100%;border-collapse:collapse;background:white;}
 th,td{border:1px solid #eee;padding:10px;font-size:14px;}
 th{background:#ffe3f1;}
-select{padding:10px;border-radius:10px;}
+.loading{text-align:center;padding:30px;color:#777;}
 @media(max-width:600px){
+.search input,.search button{width:100%;box-sizing:border-box;}
 table,thead,tbody,tr,td,th{display:block;}
 thead{display:none;}
 tr{background:white;margin-bottom:16px;padding:14px;border-radius:16px;}
@@ -33,24 +34,29 @@ td::before{content:attr(data-label);display:block;color:#ff4fa1;font-weight:800;
 <div class="container">
 
 <div class="search">
-  <input type="text" id="searchInput" placeholder="수령인 성함 검색">
-  <button onclick="searchOrders()">검색</button>
-  <button onclick="loadOrders()">새로고침</button>
+    <input type="text" id="searchInput" placeholder="수령인 성함 검색">
+    <button type="button" onclick="searchOrders()">검색</button>
+    <button type="button" onclick="loadOrders()">새로고침</button>
 </div>
 
 <table>
 <thead>
 <tr>
-  <th>주문번호</th>
-  <th>닉네임</th>
-  <th>수령인</th>
-  <th>연락처</th>
-  <th>주소</th>
-  <th>구매내역</th>
-  <th>입금상태</th>
+    <th>주문번호</th>
+    <th>닉네임</th>
+    <th>수령인</th>
+    <th>연락처</th>
+    <th>주소</th>
+    <th>배송메모</th>
+    <th>구매내역</th>
+    <th>입금금액</th>
 </tr>
 </thead>
-<tbody id="orderList"></tbody>
+<tbody id="orderList">
+<tr>
+    <td colspan="8" class="loading">주문을 불러오는 중입니다...</td>
+</tr>
+</tbody>
 </table>
 
 </div>
@@ -62,61 +68,85 @@ const SCRIPT_URL =
 let allOrders = [];
 
 async function loadOrders(){
-  const res = await fetch(SCRIPT_URL);
-  const data = await res.json();
 
-  allOrders = Array.isArray(data) ? data.reverse() : [];
-  renderOrders(allOrders);
+    try{
+
+        const res = await fetch(SCRIPT_URL);
+        const data = await res.json();
+
+        allOrders = Array.isArray(data) ? data.reverse() : [];
+
+        renderOrders(allOrders);
+
+    }catch(error){
+
+        console.log(error);
+
+        document.getElementById('orderList').innerHTML =
+            '<tr><td colspan="8" class="loading">주문 데이터를 불러오지 못했습니다.</td></tr>';
+
+    }
+
 }
 
 function renderOrders(orders){
-  const list = document.getElementById('orderList');
-  list.innerHTML = '';
 
-  orders.forEach(order => {
-    list.innerHTML += `
-      <tr>
-        <td data-label="주문번호">${order.orderNumber || ''}</td>
-        <td data-label="닉네임">${order.nickname || ''}</td>
-        <td data-label="수령인">${order.name || ''}</td>
-        <td data-label="연락처">${order.phone || ''}</td>
-        <td data-label="주소">${order.address || ''} ${order.detailAddress || ''}</td>
-        <td data-label="구매내역">${order.orderItems || ''}</td>
-        <td data-label="입금상태">
-          <select onchange="updatePayment('${order.orderNumber}', this.value)">
-            <option value="미입금" ${(order.paymentStatus || '') === '미입금' ? 'selected' : ''}>미입금</option>
-            <option value="입금완료" ${(order.paymentStatus || '') === '입금완료' ? 'selected' : ''}>입금완료</option>
-            <option value="환불" ${(order.paymentStatus || '') === '환불' ? 'selected' : ''}>환불</option>
-          </select>
-        </td>
-      </tr>
-    `;
-  });
+    const list = document.getElementById('orderList');
+
+    list.innerHTML = '';
+
+    if(orders.length === 0){
+
+        list.innerHTML =
+            '<tr><td colspan="8" class="loading">주문 내역이 없습니다.</td></tr>';
+
+        return;
+
+    }
+
+    orders.forEach(order => {
+
+        list.innerHTML += `
+            <tr>
+                <td data-label="주문번호">${order.orderNumber || ''}</td>
+                <td data-label="닉네임">${order.nickname || ''}</td>
+                <td data-label="수령인">${order.name || ''}</td>
+                <td data-label="연락처">${order.phone || ''}</td>
+                <td data-label="주소">${order.address || ''} ${order.detailAddress || ''}</td>
+                <td data-label="배송메모">${order.memo || ''}</td>
+                <td data-label="구매내역">${order.orderItems || ''}</td>
+                <td data-label="입금금액">${order.payment || ''}</td>
+            </tr>
+        `;
+
+    });
+
 }
 
 function searchOrders(){
-  const keyword = document.getElementById('searchInput').value.trim();
 
-  const filtered = allOrders.filter(order => {
-    return (order.name || '').includes(keyword);
-  });
+    const keyword =
+        document.getElementById('searchInput').value.trim();
 
-  renderOrders(filtered);
-}
+    if(keyword === ''){
 
-async function updatePayment(orderNumber, paymentStatus){
-  await fetch(SCRIPT_URL,{
-    method:'POST',
-    mode:'no-cors',
-    body:JSON.stringify({
-      type:'updateStatus',
-      orderNumber,
-      paymentStatus
-    })
-  });
+        renderOrders(allOrders);
+        return;
 
-  alert('입금상태가 저장되었습니다');
-  loadOrders();
+    }
+
+    const filtered =
+        allOrders.filter(order => {
+
+            const name =
+                order.name || '';
+
+            return name.includes(keyword);
+
+        });
+
+    renderOrders(filtered);
+
 }
 
 loadOrders();
