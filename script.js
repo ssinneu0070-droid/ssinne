@@ -1,5 +1,5 @@
 const SCRIPT_URL =
-"https://script.google.com/macros/s/AKfycbz7tGx6lQ8rqHutyE16cRdbU1VbjfTnzESf7tUDqz-mYyhGYYTnFHsSVf9GaHUSqoGb2w/exec";
+"https://script.google.com/macros/s/AKfycbxwPgy-umnolSf99rvGFJxXATI1UM-D4KXp3LWkh3L_-pAiFFdsTFUIGxjr-qrDoETaRA/exec";
 
 function searchAddress(){
   new daum.Postcode({
