@@ -4,24 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>씬느샵 배송지 입력</title>
-
 <link rel="stylesheet" href="style.css">
-
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </head>
 
 <body>
 
 <div class="top-banner">
-
-    <div class="main-title">
-        씬느샵
-    </div>
-
-    <div class="sub-title">
-        배송지 입력 시스템
-    </div>
-
+    <div class="main-title">씬느샵</div>
+    <div class="sub-title">배송지 입력 시스템</div>
 </div>
 
 <div class="container">
@@ -29,192 +20,89 @@
 <form id="shippingForm">
 
 <div class="notice-box">
-
-    <div class="notice-title">
-        💖 씬느샵 주문 전 필독 안내
-    </div>
+    <div class="notice-title">💖 씬느샵 주문 전 필독 안내</div>
 
     <ul>
-    
-        <li class="important-text">
-            단순변심, 사이즈미스, 미세불량 (반품 / 교환) 절대 불가 예민하신 분은 오프라인 구매를 권장합니다.
-        </li>
-
-        <li>
-            상품의 중대한 불량은 채널톡으로 문의해 주세요!!!
-        </li>
-
-        <li>
-            주문하시는 상품은 꼭 캡쳐해주세요!!!
-        </li>
-
-        <li class="important-text">
-            택배비 4000원 제주 및 도서산간 7000원 방송 마다 1회 셀프정산
-        </li>
-
-        <li class="important-text">
-            주문서 작성후 추가 주문시 기존 주문 상품과 같이 적어주세요 주문 누락의 우려가 있습니다.
-        </li>
-
-        <li class="important-text">
-            주문후 채널톡에 유투브 닉네임,이름 남기기 입금확인 캡쳐 또는 금액 입금완료 라고 남겨주세요!!!
-        </li>
-
-        <li>
-            방송중에는 주문/입금 확인만 진행하며, 배송 등 일반 CS업무는 불가한점 양해 부탁드립니다.
-        </li>
-
-        <li class="important-text">
-            주문 누락 방지를 위해 배송정보를 정확히 입력해주세요.
-        </li>
-
-        <li>
-            VIP 고객님들은 추후 특별 이벤트 및 할인 혜택이 제공됩니다 💖
-        </li>
-
+        <li class="important-text">단순변심, 사이즈미스, 미세불량 반품/교환 절대 불가합니다.</li>
+        <li>상품의 중대한 불량은 채널톡으로 문의해주세요.</li>
+        <li>주문하시는 상품은 꼭 캡쳐해주세요.</li>
+        <li class="important-text">택배비 4000원, 제주 및 도서산간 7000원입니다.</li>
+        <li class="important-text">추가 주문시 기존 주문 상품과 함께 적어주세요.</li>
+        <li class="important-text">주문 후 채널톡에 유튜브 닉네임, 이름, 입금완료 내용을 남겨주세요.</li>
+        <li>방송 중에는 주문/입금 확인만 진행합니다.</li>
+        <li class="important-text">주문 누락 방지를 위해 배송정보를 정확히 입력해주세요.</li>
     </ul>
 
     <div class="agree-wrap">
-
-        <input
-            type="checkbox"
-            id="agree"
-        >
-
-        <label for="agree">
-            안내사항을 모두 확인했습니다.
-        </label>
-
+        <input type="checkbox" id="agree">
+        <label for="agree">안내사항을 모두 확인했습니다.</label>
     </div>
-
 </div>
-    <div class="form-group">
-        <label>닉네임 *</label>
-        <input type="text" id="nickname">
-    </div>
 
-    <div class="form-group">
-        <label>수령인 성함 *</label>
-        <input type="text" id="name">
-    </div>
+<div class="form-group">
+    <label>닉네임 *</label>
+    <input type="text" id="nickname">
+</div>
 
-    <div class="form-group">
-        <label>연락처 *</label>
-        <input 
-    type="text" 
-    id="phone"
-    maxlength="13"
-    placeholder="010-1234-5678"
->
-    </div>
+<div class="form-group">
+    <label>수령인 성함 *</label>
+    <input type="text" id="name">
+</div>
+
+<div class="form-group">
+    <label>연락처 *</label>
+    <input type="text" id="phone" maxlength="13" placeholder="010-1234-5678">
+</div>
 
 <div class="form-group">
     <label>배송지 주소 *</label>
 
     <div class="address-row">
-        <input
-            type="text"
-            id="zipcode"
-            placeholder="우편번호"
-            readonly
-        >
-
-        <button
-            type="button"
-            class="search-btn"
-            onclick="searchAddress()"
-        >
-            주소 검색
-        </button>
+        <input type="text" id="zipcode" placeholder="우편번호" readonly>
+        <button type="button" class="search-btn" onclick="searchAddress()">주소 검색</button>
     </div>
 
-    <input
-        type="text"
-        id="address"
-        placeholder="기본 주소"
-        readonly
-    >
-
-    <input
-        type="text"
-        id="detailAddress"
-        placeholder="상세 주소"
-    >
-</div>
-<div class="form-group">
-
-    <label>
-        배송 메모 (선택)
-    </label>
-
-    <textarea
-        id="memo"
-        placeholder="예: 문 앞에 놓아주세요, 벨 누르지 마세요"
-    ></textarea>
-
+    <input type="text" id="address" placeholder="기본 주소" readonly>
+    <input type="text" id="detailAddress" placeholder="상세 주소">
 </div>
 
 <div class="form-group">
-
-    <label>
-        구매내역 셀프입력 (선택)
-    </label>
-
-<textarea
-    id="orderItems"
-    placeholder="예: 상품번호/칼라/사이즈&#10;20번/화이트/55&#10;추가구매시 기존에 구매하신 상품과 함께 적어주세요"
-></textarea>
-
+    <label>배송 메모</label>
+    <textarea id="memo" placeholder="예: 문 앞에 놓아주세요"></textarea>
 </div>
-<button type="submit" class="submit-btn">
-    제출하기
-</button>
+
+<div class="form-group">
+    <label>구매내역 *</label>
+    <textarea id="orderItems" placeholder="예: 20번/화이트/55&#10;추가구매시 기존 구매상품과 함께 적어주세요"></textarea>
+</div>
+
+<div class="form-group">
+    <label>입금금액 *</label>
+    <input type="number" id="payment" placeholder="예: 49000">
+</div>
+
+<button type="submit" class="submit-btn">제출하기</button>
 
 </form>
 
 </div>
-<div
-    id="completePage"
-    class="complete-page"
-    style="display:none;"
->
 
+<div id="completePage" class="complete-page" style="display:none;">
     <div class="complete-card">
+        <div class="complete-icon">💖</div>
+        <h2>주문이 정상 접수되었습니다</h2>
+        <p>씬느샵에서 순차적으로 확인 후<br>배송 도와드릴게요 😊</p>
 
-        <div class="complete-icon">
-            💖
-        </div>
+        <a href="https://band.us/n/adafbc6dFc5ez" target="_blank" class="band-btn">
+            💚 씬느샵 밴드 입장하기
+        </a>
 
-        <h2>
-            주문이 정상 접수되었습니다
-        </h2>
-
-        <p>
-            씬느샵에서 순차적으로 확인 후<br>
-            배송 도와드릴게요 😊
-        </p>
-
-    <a
-    href="https://band.us/n/adafbc6dFc5ez"
-    target="_blank"
-    class="band-btn"
->
-    💚 씬느샵 밴드 입장하기
-</a>
-
-<button
-    type="button"
-    onclick="window.location.reload()"
-    class="restart-btn"
->
-    다시 주문하기
-</button>
-
+        <button type="button" onclick="window.location.reload()" class="restart-btn">
+            다시 주문하기
+        </button>
     </div>
-
 </div>
 
 <script src="script.js"></script>
-
 </body>
 </html>

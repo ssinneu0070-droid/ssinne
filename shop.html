@@ -27,65 +27,65 @@ body{margin:0;font-family:sans-serif;background:#f5f5f5;color:#111827;}
 </div>
 
 <div id="list">
-  <div class="loading">상품을 불러오는 중입니다...</div>
+    <div class="loading">상품을 불러오는 중입니다...</div>
 </div>
 
 <script>
 const SCRIPT_URL =
-"https://script.google.com/macros/s/AKfycbzmMzVZjiso965oG3KikDcmCF3783l5pokhnJU4ACzBxhj1oT18659Vj8jCC4orVLJfxQ/exec";
+"https://script.google.com/macros/s/AKfycby2dZBpBzRZIZT7FVEEpRdWwRGi1EN_YRhDCHyoj5x6G907AiG3-hLOyQRd29iI6m6U/exec";
 
 let allProducts = [];
 
 async function loadProducts(){
-  const res = await fetch(SCRIPT_URL + "?type=products");
-  const data = await res.json();
+    const res = await fetch(SCRIPT_URL + "?type=products");
+    const data = await res.json();
 
-  allProducts = Array.isArray(data) ? data.reverse() : [];
-  renderProducts(allProducts);
+    allProducts = Array.isArray(data) ? data.reverse() : [];
+    renderProducts(allProducts);
 }
 
 function renderProducts(products){
-  const list = document.getElementById('list');
-  list.innerHTML = '';
+    const list = document.getElementById('list');
+    list.innerHTML = '';
 
-  if(products.length === 0){
-    list.innerHTML = '<div class="loading">등록된 상품이 없습니다.</div>';
-    return;
-  }
+    if(products.length === 0){
+        list.innerHTML = '<div class="loading">등록된 상품이 없습니다.</div>';
+        return;
+    }
 
-  products.forEach(product => {
-    const text =
-      `${product.productCode || ''}번 ${product.productName || ''} ${product.color || ''} ${product.size || ''}`.trim();
+    products.forEach(product => {
+        const text =
+            `${product.productCode || ''}번 ${product.productName || ''} ${product.color || ''} ${product.size || ''}`.trim();
 
-    const price =
-      Number(product.salePrice || 0).toLocaleString();
+        const price =
+            Number(product.salePrice || 0).toLocaleString();
 
-    list.innerHTML += `
-      <div class="product">
-        <div class="name">${text}</div>
-        <div class="price">${price}</div>
-        <button class="copy" onclick="copyText('${text} ${price}원')">복사</button>
-      </div>
-    `;
-  });
+        list.innerHTML += `
+            <div class="product">
+                <div class="name">${text}</div>
+                <div class="price">${price}</div>
+                <button class="copy" onclick="copyText('${text} ${price}원')">복사</button>
+            </div>
+        `;
+    });
 }
 
 function searchProducts(){
-  const keyword = document.getElementById('search').value.trim();
+    const keyword = document.getElementById('search').value.trim();
 
-  const filtered = allProducts.filter(product => {
-    const text =
-      `${product.productCode || ''} ${product.productName || ''} ${product.color || ''} ${product.size || ''}`;
+    const filtered = allProducts.filter(product => {
+        const text =
+            `${product.productCode || ''} ${product.productName || ''} ${product.color || ''} ${product.size || ''}`;
 
-    return text.includes(keyword);
-  });
+        return text.includes(keyword);
+    });
 
-  renderProducts(filtered);
+    renderProducts(filtered);
 }
 
 function copyText(text){
-  navigator.clipboard.writeText(text);
-  alert('복사되었습니다');
+    navigator.clipboard.writeText(text);
+    alert('복사되었습니다');
 }
 
 loadProducts();
