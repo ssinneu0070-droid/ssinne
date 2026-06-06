@@ -325,3 +325,31 @@ opacity:0.9;
     background:#03c75a;
     color:white;
 }
+.complete-card a{
+    display:flex !important;
+    justify-content:center !important;
+    align-items:center !important;
+    width:100% !important;
+    padding:16px !important;
+    margin-bottom:14px !important;
+    text-decoration:none !important;
+    border-radius:16px !important;
+    font-size:16px !important;
+    font-weight:800 !important;
+    box-sizing:border-box !important;
+}
+
+.channel-btn{
+    background:#7C4DFF !important;
+    color:white !important;
+}
+
+.chat-btn{
+    background:#FEE500 !important;
+    color:#3C1E1E !important;
+}
+
+.band-btn{
+    background:#03c75a !important;
+    color:white !important;
+}
