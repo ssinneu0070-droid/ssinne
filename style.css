@@ -353,3 +353,37 @@ opacity:0.9;
     background:#03c75a !important;
     color:white !important;
 }
+.order-example{
+    margin-bottom:15px;
+}
+
+.example-title{
+    background:#ff4fa1;
+    color:white;
+    padding:12px;
+    border-radius:12px 12px 0 0;
+    text-align:center;
+    font-weight:900;
+    font-size:16px;
+}
+
+.example-box{
+    background:#fff0f7;
+    border:3px solid #ff4fa1;
+    border-top:none;
+    padding:18px;
+    text-align:center;
+    font-size:22px;
+    font-weight:900;
+    color:#ff006a;
+    line-height:2;
+}
+
+.example-guide{
+    background:#fff8d6;
+    color:#8a5a00;
+    padding:12px;
+    text-align:center;
+    font-weight:700;
+    border-radius:0 0 12px 12px;
+}
