@@ -295,3 +295,33 @@ transition:0.2s;
 .chat-btn:hover{
 opacity:0.9;
 }
+.channel-btn,
+.chat-btn,
+.band-btn{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    width:100%;
+    padding:16px;
+    margin-bottom:14px;
+    text-decoration:none;
+    border-radius:16px;
+    font-size:16px;
+    font-weight:800;
+    box-sizing:border-box;
+}
+
+.channel-btn{
+    background:#7C4DFF;
+    color:white;
+}
+
+.chat-btn{
+    background:#FEE500;
+    color:#3C1E1E;
+}
+
+.band-btn{
+    background:#03c75a;
+    color:white;
+}
