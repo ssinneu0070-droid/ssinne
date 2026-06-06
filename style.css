@@ -353,3 +353,13 @@ opacity:0.9;
     background:#03c75a !important;
     color:white !important;
 }
+.search-btn{
+    width:100px;
+    height:54px;
+    border:none;
+    background:#182338;
+    color:white;
+    border-radius:12px;
+    font-size:13px;
+    font-weight:700;
+}
