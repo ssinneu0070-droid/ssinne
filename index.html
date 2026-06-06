@@ -70,38 +70,97 @@
     <label>배송 메모</label>
     <textarea id="memo" placeholder="예: 문 앞에 놓아주세요"></textarea>
 </div>
+<div style="
+background:#fff5d9;
+padding:15px;
+border-radius:15px;
+margin-bottom:15px;
+font-size:14px;
+line-height:1.6;
+color:#8a5a00;
+font-weight:700;
+">
+📢 추가주문 고객님 안내<br><br>
 
+추가주문 시에는 추가로 구매하신 상품만 입력해주세요.<br>
+
+기존 주문 상품을 다시 입력하시면
+내품수량 및 주문내역이 중복 저장될 수 있습니다.
+</div>
 <div class="form-group">
     <label>구매내역 *</label>
-    <textarea id="orderItems" placeholder="예: 20번/화이트/55&#10;30번/블랙/55"></textarea>
+    <textarea
+    id="orderItems"
+    placeholder="상품 1개당 한 줄씩 적어주세요&#10;예) 20번 / 화이트 / 55&#10;30번 / 블랙 / 66&#10;같은 상품 2개는 같은 내용을 2줄로 적어주세요"
+></textarea>
 </div>
 
 <div class="form-group">
     <label>입금금액 *</label>
-    <input type="number" id="payment" placeholder="예: 49000">
+    <input type="number" id="payment" placeholder="예: 49000 입금 [금액이 맞지 않으면 출고가 안됩니다.]">
 </div>
 
 <button type="submit" class="submit-btn">제출하기</button>
 
 </form>
 
-</div>
-
 <div id="completePage" class="complete-page" style="display:none;">
     <div class="complete-card">
-        <div class="complete-icon">💖</div>
-        <h2>주문이 정상 접수되었습니다</h2>
-        <p>씬느샵에서 순차적으로 확인 후<br>배송 도와드릴게요 😊</p>
 
-        <a href="https://band.us/n/adafbc6dFc5ez" target="_blank" class="band-btn">
-            💚 씬느샵 밴드 입장하기
-        </a>
-
-        <button type="button" onclick="window.location.reload()" class="restart-btn">
-            다시 주문하기
-        </button>
+```
+    <div class="complete-icon">
+        💖
     </div>
+
+    <h2>
+        주문이 정상 접수되었습니다
+    </h2>
+
+    <p>
+        입금 확인 및 주문 누락 방지를 위해<br>
+        아래 채널톡으로 입금내역을 캡쳐해서 보내주세요.<br><br>
+
+        유튜브 닉네임 + 입금자명 + 입금금액을 함께 남겨주시면
+        빠른 확인이 가능합니다 😊
+    </p>
+
+    <a
+        href="http://pf.kakao.com/_YVncn/chat"
+        target="_blank"
+        class="channel-btn"
+    >
+        💜 채널톡 바로가기
+    </a>
+
+    <a
+        href="https://open.kakao.com/o/grVINIri"
+        target="_blank"
+        class="chat-btn"
+    >
+        💬 방송알림방 입장하기
+    </a>
+
+    <a
+        href="https://band.us/n/adafbc6dFc5ez"
+        target="_blank"
+        class="band-btn"
+    >
+        💚 씬느샵 밴드 입장하기
+    </a>
+
+    <button
+        type="button"
+        onclick="window.location.reload()"
+        class="restart-btn"
+    >
+        ➕ 추가 주문하기
+    </button>
+
 </div>
+```
+
+</div>
+
 
 <script src="script.js"></script>
 </body>
