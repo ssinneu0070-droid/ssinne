@@ -28,7 +28,7 @@ body{
 }
 
 .form-group{
-    margin-bottom:25px;
+    margin-bottom:20px;
 }
 
 label{
@@ -246,9 +246,29 @@ textarea{
         padding:16px;
     }
 
-    .address-row{
-        flex-direction:column;
-    }
+.address-row{
+    display:flex;
+    flex-direction:row;
+}
+
+.search-btn{
+    width:100px;
+    height:54px;
+}
+
+}
+
+.search-btn{
+    width:110px;
+    height:56px;
+    border:none;
+    background:#182338;
+    color:white;
+    border-radius:14px;
+    font-size:14px;
+    font-weight:700;
+    flex-shrink:0;
+}
 
     .search-btn{
         width:100%;
