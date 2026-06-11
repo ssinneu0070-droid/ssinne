@@ -3,92 +3,545 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>씬느샵 방송상품</title>
+<title>씬느샵 라이브 상품 모음</title>
 
 <style>
-body{margin:0;font-family:sans-serif;background:#f5f5f5;color:#111827;}
-.header{background:white;padding:22px 20px;font-size:26px;font-weight:900;border-bottom:1px solid #eee;}
-.search{background:white;padding:20px;border-bottom:1px solid #eee;}
-.search input{width:100%;padding:18px;border:none;border-radius:18px;background:#f1f1f1;font-size:17px;box-sizing:border-box;}
-.product{display:grid;grid-template-columns:1fr 90px 75px;gap:10px;align-items:center;background:white;padding:20px;border-bottom:1px solid #eee;}
-.name{font-size:18px;font-weight:800;line-height:1.5;}
-.price{text-align:right;font-size:18px;font-weight:900;}
-.copy{border:1px solid #ddd;background:white;border-radius:12px;padding:10px;font-weight:800;}
-.loading{text-align:center;padding:40px;color:#777;}
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Pretendard", "Noto Sans KR", Arial, sans-serif;
+    background: #fafafa;
+    color: #222;
+}
+
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+}
+
+.header-inner {
+    max-width: 1100px;
+    margin: auto;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px;
+}
+
+.logo {
+    font-size: 25px;
+    font-weight: 900;
+}
+
+.nav {
+    display: flex;
+    gap: 28px;
+    font-size: 15px;
+}
+
+.nav a {
+    text-decoration: none;
+    color: #222;
+}
+
+.cart {
+    font-size: 24px;
+    position: relative;
+}
+
+.cart span {
+    position: absolute;
+    top: -8px;
+    right: -10px;
+    background: #ef4f75;
+    color: #fff;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: linear-gradient(90deg, #fff1f4, #f7efe6);
+    min-height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 35px 45px;
+    overflow: hidden;
+}
+
+.hero-text .badge {
+    display: inline-block;
+    background: #ef4f75;
+    color: white;
+    font-weight: 800;
+    padding: 7px 12px;
+    border-radius: 8px;
+    margin-bottom: 14px;
+}
+
+.hero h1 {
+    font-size: 38px;
+    margin: 0 0 13px;
+    line-height: 1.2;
+}
+
+.hero p {
+    font-size: 17px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.hero-img {
+    width: 330px;
+    height: 170px;
+    border-radius: 18px;
+    background: url("https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=900&auto=format&fit=crop") center/cover;
+}
+
+.tabs {
+    max-width: 1100px;
+    margin: 18px auto;
+    background: #fff;
+    border-radius: 12px;
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid #eee;
+}
+
+.tab {
+    border: 0;
+    background: transparent;
+    padding: 11px 18px;
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.tab.active {
+    background: #222;
+    color: #fff;
+    font-weight: 800;
+}
+
+.product-wrap {
+    max-width: 1100px;
+    margin: 0 auto 30px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.04);
+}
+
+.img-box {
+    position: relative;
+    height: 230px;
+    background: #eee;
+}
+
+.img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.status {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 7px 10px;
+    border-radius: 7px;
+    font-size: 13px;
+    color: #fff;
+    font-weight: 800;
+}
+
+.status.sale { background: #ef4f75; }
+.status.soldout { background: #666; }
+.status.end { background: #999; }
+
+.info {
+    padding: 16px;
+}
+
+.product-no {
+    color: #777;
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.name {
+    font-size: 19px;
+    font-weight: 900;
+    margin-bottom: 10px;
+}
+
+.detail {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #444;
+}
+
+.price {
+    margin-top: 12px;
+    font-size: 20px;
+    font-weight: 900;
+}
+
+.order-btn {
+    width: 100%;
+    margin-top: 14px;
+    border: none;
+    border-radius: 9px;
+    padding: 13px;
+    background: #ef4f75;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.order-btn:disabled {
+    background: #bbb;
+    cursor: not-allowed;
+}
+
+.notice {
+    max-width: 1100px;
+    margin: 0 auto 35px;
+    background: #fff3f5;
+    border: 1px solid #ffd6df;
+    border-radius: 12px;
+    padding: 18px;
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+.bottom-nav {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding-bottom: 72px;
+    }
+
+    .header-inner {
+        height: 58px;
+    }
+
+    .logo {
+        font-size: 22px;
+    }
+
+    .nav {
+        display: none;
+    }
+
+    .hero {
+        margin: 0 12px;
+        min-height: 180px;
+        padding: 26px 20px;
+        border-radius: 18px;
+    }
+
+    .hero h1 {
+        font-size: 27px;
+    }
+
+    .hero p {
+        font-size: 14px;
+    }
+
+    .hero-img {
+        display: none;
+    }
+
+    .tabs {
+        margin: 14px 12px;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .tab {
+        min-width: 86px;
+        font-size: 14px;
+    }
+
+    .product-wrap {
+        margin: 0 12px 20px;
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .card {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        min-height: 150px;
+    }
+
+    .img-box {
+        height: 100%;
+        min-height: 150px;
+    }
+
+    .info {
+        padding: 13px;
+    }
+
+    .name {
+        font-size: 16px;
+        margin-bottom: 5px;
+    }
+
+    .detail {
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .price {
+        font-size: 16px;
+        margin-top: 8px;
+    }
+
+    .order-btn {
+        padding: 10px;
+        font-size: 14px;
+        margin-top: 8px;
+    }
+
+    .notice {
+        margin: 0 12px 20px;
+    }
+
+    .bottom-nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 62px;
+        background: #fff;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 20;
+    }
+
+    .bottom-nav a {
+        text-decoration: none;
+        color: #555;
+        font-size: 12px;
+        text-align: center;
+    }
+
+    .bottom-nav b {
+        display: block;
+        font-size: 20px;
+        margin-bottom: 2px;
+    }
+}
 </style>
 </head>
 
 <body>
 
-<div class="header">🛍 씬느샵 방송상품</div>
+<header class="header">
+    <div class="header-inner">
+        <div class="logo">씬느샵</div>
+        <nav class="nav">
+            <a href="#">라이브상품</a>
+            <a href="#">전체상품</a>
+            <a href="#">공지사항</a>
+            <a href="#">배송안내</a>
+            <a href="#">Q&A</a>
+        </nav>
+        <div class="cart">🛒<span>2</span></div>
+    </div>
+</header>
 
-<div class="search">
-<input id="search" placeholder="🔍 상품명 또는 번호 검색..." oninput="searchProducts()">
+<section class="hero">
+    <div class="hero-text">
+        <span class="badge">LIVE</span>
+        <h1>라이브 방송<br>상품 모음</h1>
+        <p>라이브가 종료되어도<br>상품을 선택하고 주문하실 수 있어요!</p>
+    </div>
+    <div class="hero-img"></div>
+</section>
+
+<div class="tabs">
+    <button class="tab active" onclick="filterProducts('전체')">전체상품</button>
+    <button class="tab" onclick="filterProducts('판매중')">판매중</button>
+    <button class="tab" onclick="filterProducts('품절')">품절</button>
+    <button class="tab" onclick="filterProducts('마감')">마감</button>
 </div>
 
-<div id="list">
-    <div class="loading">상품을 불러오는 중입니다...</div>
+<main class="product-wrap" id="productList"></main>
+
+<div class="notice">
+    <b>안내사항</b><br>
+    · 품절 상품은 주문이 불가능합니다.<br>
+    · 주문 완료 후 개별적으로 문자 안내를 드립니다.<br>
+    · 색상과 사이즈를 꼭 확인 후 주문해주세요.
 </div>
+
+<nav class="bottom-nav">
+    <a href="#"><b>🏠</b>홈</a>
+    <a href="#"><b>🎥</b>라이브상품</a>
+    <a href="#"><b>🛍</b>전체상품</a>
+    <a href="#"><b>👤</b>마이페이지</a>
+</nav>
 
 <script>
-const SCRIPT_URL =
-"https://script.google.com/macros/s/AKfycbycRpihssGhbRJR_1BNdB1fkDgovehoDrE9SPRPiRjmMmhI9Ut3wLA_zllFiymEXpQa/exec";
-
-let allProducts = [];
-
-async function loadProducts(){
-    const res = await fetch(SCRIPT_URL + "?type=products");
-    const data = await res.json();
-
-    allProducts = Array.isArray(data) ? data.reverse() : [];
-    renderProducts(allProducts);
-}
-
-function renderProducts(products){
-    const list = document.getElementById('list');
-    list.innerHTML = '';
-
-    if(products.length === 0){
-        list.innerHTML = '<div class="loading">등록된 상품이 없습니다.</div>';
-        return;
+const products = [
+    {
+        no: "101",
+        name: "린넨 원피스",
+        color: "베이지 / 블랙",
+        size: "FREE",
+        price: 39000,
+        status: "판매중",
+        image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?q=80&w=700&auto=format&fit=crop"
+    },
+    {
+        no: "102",
+        name: "썸머 가디건",
+        color: "아이보리 / 핑크 / 소라",
+        size: "FREE",
+        price: 29000,
+        status: "판매중",
+        image: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=700&auto=format&fit=crop"
+    },
+    {
+        no: "103",
+        name: "와이드 팬츠",
+        color: "블랙 / 차콜",
+        size: "FREE",
+        price: 49000,
+        status: "품절",
+        image: "https://images.unsplash.com/photo-1506629905607-d405d7d3b0d2?q=80&w=700&auto=format&fit=crop"
+    },
+    {
+        no: "104",
+        name: "루즈핏 셔츠",
+        color: "소라 / 화이트",
+        size: "FREE",
+        price: 28000,
+        status: "판매중",
+        image: "https://images.unsplash.com/photo-1564257577-6f3e3c2b9b5a?q=80&w=700&auto=format&fit=crop"
+    },
+    {
+        no: "105",
+        name: "썸머 니트",
+        color: "아이보리 / 네이비 / 핑크",
+        size: "FREE",
+        price: 27000,
+        status: "판매중",
+        image: "https://images.unsplash.com/photo-1485968579580-b6d095142e6e?q=80&w=700&auto=format&fit=crop"
+    },
+    {
+        no: "106",
+        name: "레더 토트백",
+        color: "베이지 / 블랙",
+        size: "ONE",
+        price: 36000,
+        status: "마감",
+        image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=700&auto=format&fit=crop"
     }
+];
 
-    products.forEach(product => {
-        const text =
-            `${product.productCode || ''}번 ${product.productName || ''} ${product.color || ''} ${product.size || ''}`.trim();
+let currentFilter = "전체";
 
-        const price =
-            Number(product.salePrice || 0).toLocaleString();
+function renderProducts() {
+    const list = document.getElementById("productList");
+    list.innerHTML = "";
 
-        list.innerHTML += `
-            <div class="product">
-                <div class="name">${text}</div>
-                <div class="price">${price}</div>
-                <button class="copy" onclick="copyText('${text} ${price}원')">복사</button>
+    const filtered = currentFilter === "전체"
+        ? products
+        : products.filter(p => p.status === currentFilter);
+
+    filtered.forEach(product => {
+        const disabled = product.status !== "판매중";
+        const statusClass = product.status === "판매중" ? "sale" : product.status === "품절" ? "soldout" : "end";
+
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+            <div class="img-box">
+                <img src="${product.image}" alt="${product.name}">
+                <span class="status ${statusClass}">${product.status}</span>
+            </div>
+            <div class="info">
+                <div class="product-no">상품번호 ${product.no}</div>
+                <div class="name">${product.name}</div>
+                <div class="detail">
+                    색상&nbsp;&nbsp; ${product.color}<br>
+                    사이즈&nbsp;&nbsp; ${product.size}
+                </div>
+                <div class="price">${product.price.toLocaleString()}원</div>
+                <button class="order-btn" ${disabled ? "disabled" : ""} onclick="goOrder('${product.no}')">
+                    ${disabled ? product.status : "🛒 주문하기"}
+                </button>
             </div>
         `;
+
+        list.appendChild(card);
     });
 }
 
-function searchProducts(){
-    const keyword = document.getElementById('search').value.trim();
+function filterProducts(status) {
+    currentFilter = status;
 
-    const filtered = allProducts.filter(product => {
-        const text =
-            `${product.productCode || ''} ${product.productName || ''} ${product.color || ''} ${product.size || ''}`;
-
-        return text.includes(keyword);
+    document.querySelectorAll(".tab").forEach(btn => {
+        btn.classList.remove("active");
+        if (btn.textContent.includes(status === "전체" ? "전체" : status)) {
+            btn.classList.add("active");
+        }
     });
 
-    renderProducts(filtered);
+    renderProducts();
 }
 
-function copyText(text){
-    navigator.clipboard.writeText(text);
-    alert('복사되었습니다');
+function goOrder(productNo) {
+    const product = products.find(p => p.no === productNo);
+
+    const orderText =
+`상품번호: ${product.no}
+상품명: ${product.name}
+색상: ${product.color}
+사이즈: ${product.size}
+수량: 1
+판매가: ${product.price.toLocaleString()}원`;
+
+    const url =
+        "index.html?orderItem=" + encodeURIComponent(orderText);
+
+    location.href = url;
 }
 
-loadProducts();
+renderProducts();
 </script>
 
 </body>
