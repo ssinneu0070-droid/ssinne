@@ -1,11 +1,15 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>씬느샵 배송지 입력</title>
+
 <link rel="stylesheet" href="style.css">
+
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+
 </head>
 
 <body>
@@ -20,21 +24,29 @@
 <form id="shippingForm">
 
 <div class="notice-box">
-    <div class="notice-title">💖 씬느샵 주문 전 필독 안내</div>
 
-    <ul>
-        <li class="important-text">단순변심, 사이즈미스, 미세불량 반품/교환 절대 불가합니다.</li>
-        <li class="important-text">택배비 4000원, 제주 및 도서산간 7000원입니다.</li>
-        <li class="important-text">주문서 작성후 유투브 닉네임, 이름, [채널톡] 에 꼭 남겨주세요 </li>
-        <li class="important-text">입금완료 캡쳐사진 [채널톡] 에 남겨주세요.</li>
-        <li class="important-text">계좌번호 토스뱅크 [신성은]</li>
-        <li class="important-text">1002 5790 8378</li>
-    </ul>
+```
+<div class="notice-title">
+    💖 씬느샵 주문 전 필독 안내
+</div>
 
-    <div class="agree-wrap">
-        <input type="checkbox" id="agree">
-        <label for="agree">안내사항을 모두 확인했습니다.</label>
-    </div>
+<ul>
+    <li class="important-text">단순변심, 사이즈미스, 미세불량 반품/교환 절대 불가합니다.</li>
+    <li class="important-text">택배비 4000원, 제주 및 도서산간 7000원입니다.</li>
+    <li class="important-text">주문서 작성 후 유튜브 닉네임, 이름을 채널톡에 남겨주세요.</li>
+    <li class="important-text">입금완료 캡쳐사진을 채널톡에 보내주세요.</li>
+    <li class="important-text">토스뱅크 신성은</li>
+    <li class="important-text">1002-5790-8378</li>
+</ul>
+
+<div class="agree-wrap">
+    <input type="checkbox" id="agree">
+    <label for="agree">
+        안내사항을 모두 확인했습니다.
+    </label>
+</div>
+```
+
 </div>
 
 <div class="form-group">
@@ -49,25 +61,64 @@
 
 <div class="form-group">
     <label>연락처 *</label>
-    <input type="text" id="phone" maxlength="13" placeholder="010-1234-5678">
+    <input
+        type="text"
+        id="phone"
+        maxlength="13"
+        placeholder="010-1234-5678"
+    >
 </div>
 
 <div class="form-group">
-    <label>배송지 주소 *</label>
 
-    <div class="address-row">
-        <input type="text" id="zipcode" placeholder="우편번호" readonly>
-        <button type="button" class="search-btn" onclick="searchAddress()">주소찾기</button>
-    </div>
+```
+<label>배송지 주소 *</label>
 
-    <input type="text" id="address" placeholder="기본 주소" readonly>
-    <input type="text" id="detailAddress" placeholder="상세 주소">
+<div class="address-row">
+    <input
+        type="text"
+        id="zipcode"
+        placeholder="우편번호"
+        readonly
+    >
+
+    <button
+        type="button"
+        class="search-btn"
+        onclick="searchAddress()"
+    >
+        주소찾기
+    </button>
+</div>
+
+<input
+    type="text"
+    id="address"
+    placeholder="기본 주소"
+    readonly
+>
+
+<input
+    type="text"
+    id="detailAddress"
+    placeholder="상세 주소"
+>
+```
+
 </div>
 
 <div class="form-group">
     <label>배송 메모</label>
-    <textarea id="memo" placeholder="예: 문 앞에 놓아주세요"></textarea>
+
+```
+<textarea
+    id="memo"
+    placeholder="예 : 문 앞에 놓아주세요"
+></textarea>
+```
+
 </div>
+
 <div style="
 background:#fff5d9;
 padding:15px;
@@ -78,50 +129,112 @@ line-height:1.6;
 color:#8a5a00;
 font-weight:700;
 ">
+
 📢 추가주문 고객님 안내<br><br>
 
-추가주문 시에는 추가로 구매하는 상품만 입력!!<br>
-아래 예시대로 꼭 입력해주세요<br>
-내품수량 및 주문내역이 중복 저장되면 출고가 늦어집니다<br> 
-아래 예시대로 꼭 입력 해주세요!! 예시 필독!!<br>
-</div>
-<div class="form-group">
-    <label>구매내역 *</label>
+추가주문 시에는 추가 상품만 입력해주세요.<br>
+기존 주문은 이미 저장되어 있습니다.<br>
+상품별로 한 줄씩 입력하지 않아도 됩니다.<br>
 
-    <div class="order-guide">
-        상품번호 / 색상 / 사이즈 / 수량을 각각 입력해주세요.<br>
-        예: 20 / 화이트 / 55 / 1개
-    </div>
-
-    <div id="productList">
-        <div class="product-item">
-            <input type="text" class="product-number" placeholder="상품번호 예: 20">
-            <input type="text" class="product-color" placeholder="색상 예: 화이트">
-            <input type="text" class="product-size" placeholder="사이즈 예: 55 / FREE">
-            <input type="number" class="product-qty" placeholder="수량" value="1" min="1">
-        </div>
-    </div>
-
-    <button type="button" class="add-product-btn" onclick="addProduct()">
-        ➕ 상품 추가
-    </button>
-
-    <input type="hidden" id="orderItems">
 </div>
 
 <div class="form-group">
-    <label>입금금액 *</label>
-    <input type="number" id="payment" placeholder="입금 금액이 맞지 않으면 출고가 안됩니다.">
+
+```
+<label>구매내역 *</label>
+
+<div class="order-guide">
+    상품번호 / 색상 / 사이즈 / 수량을 각각 입력해주세요.<br>
+    예 : 20 / 화이트 / 55 / 1개
 </div>
 
-<button type="submit" class="submit-btn">제출하기</button>
+<div id="productList">
+
+    <div class="product-item">
+
+        <input
+            type="text"
+            class="product-number"
+            placeholder="상품번호 예 : 20"
+        >
+
+        <input
+            type="text"
+            class="product-color"
+            placeholder="색상 예 : 화이트"
+        >
+
+        <input
+            type="text"
+            class="product-size"
+            placeholder="사이즈 예 : 55 / FREE"
+        >
+
+        <input
+            type="number"
+            class="product-qty"
+            placeholder="수량"
+            value="1"
+            min="1"
+        >
+
+    </div>
+
+</div>
+
+<button
+    type="button"
+    class="add-product-btn"
+    onclick="addProduct()"
+>
+    ➕ 상품 추가
+</button>
+
+<input
+    type="hidden"
+    id="orderItems"
+>
+```
+
+</div>
+
+<div class="form-group">
+
+```
+<label>입금금액 *</label>
+
+<input
+    type="number"
+    id="payment"
+    placeholder="입금 금액을 입력해주세요"
+>
+```
+
+</div>
+
+<button
+type="submit"
+class="submit-btn"
+
+>
+
+```
+제출하기
+```
+
+</button>
 
 </form>
 
-<div id="completePage" class="complete-page" style="display:none;">
-    <div class="complete-card">
+<div
+    id="completePage"
+    class="complete-page"
+    style="display:none;"
+>
 
 ```
+<div class="complete-card">
+
     <div class="complete-icon">
         💖
     </div>
@@ -132,35 +245,32 @@ font-weight:700;
 
     <p>
         입금 확인 및 주문 누락 방지를 위해<br>
-        아래 채널톡으로 입금내역을 캡쳐해서 보내주세요.<br><br>
-
-        유튜브 닉네임 + 입금자명 + 입금금액을 함께 남겨주시면
-        빠른 확인이 가능합니다 😊
+        채널톡으로 입금내역을 보내주세요.
     </p>
 
-   <a
-    href="http://pf.kakao.com/_YVncn/chat"
-    target="_blank"
-    class="channel-btn"
->
-    💜 채널톡 바로가기
-</a>
+    <a
+        href="http://pf.kakao.com/_YVncn/chat"
+        target="_blank"
+        class="channel-btn"
+    >
+        💜 채널톡 바로가기
+    </a>
 
-<a
-    href="https://open.kakao.com/o/grVINIri"
-    target="_blank"
-    class="chat-btn"
->
-    💬 오픈채팅방 입장하기
-</a>
+    <a
+        href="https://open.kakao.com/o/grVINIri"
+        target="_blank"
+        class="chat-btn"
+    >
+        💬 오픈채팅방 입장하기
+    </a>
 
-<a
-    href="https://band.us/n/adafbc6dFc5ez"
-    target="_blank"
-    class="band-btn"
->
-    💚 씬느샵 밴드 입장하기
-</a>
+    <a
+        href="https://band.us/n/adafbc6dFc5ez"
+        target="_blank"
+        class="band-btn"
+    >
+        💚 씬느샵 밴드 입장하기
+    </a>
 
     <button
         type="button"
@@ -175,7 +285,7 @@ font-weight:700;
 
 </div>
 
-
 <script src="script.js"></script>
+
 </body>
 </html>
