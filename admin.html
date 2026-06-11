@@ -140,7 +140,12 @@ td::before{content:attr(data-label);display:block;font-weight:900;color:#ff4fa1;
           <option value="마감">마감</option>
         </select>
       </div>
-      <div class="full"><label>상품사진 주소</label><input type="text" id="image" placeholder="https://... 이미지 주소"></div>
+      <div class="full">
+        <label>상품사진</label>
+        <input type="text" id="image" placeholder="사진 업로드 후 자동 입력됩니다">
+        <input type="file" id="imageFile" accept="image/*" style="margin-top:8px">
+        <button type="button" class="gray" style="margin-top:8px" onclick="uploadProductImage()">사진 업로드</button>
+      </div>
       <div class="full"><label>설명</label><textarea id="desc" placeholder="상품 설명을 입력하세요"></textarea></div>
     </div>
 
@@ -419,6 +424,52 @@ async function deleteProduct(no) {
     alert("삭제 중 오류가 발생했습니다.");
   }
 }
+
+async function uploadProductImage() {
+  const fileInput = document.getElementById("imageFile");
+  const file = fileInput.files[0];
+
+  if (!file) {
+    alert("업로드할 사진을 선택해주세요.");
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = async function () {
+    const base64 = reader.result.split(",")[1];
+
+    try {
+      alert("사진 업로드 중입니다. 잠시만 기다려주세요.");
+
+      const res = await fetch(PRODUCT_SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "uploadImage",
+          fileName: file.name,
+          mimeType: file.type,
+          base64: base64
+        })
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        throw new Error(data.message || "업로드 실패");
+      }
+
+      document.getElementById("image").value = data.imageUrl;
+      alert("사진 업로드가 완료되었습니다. 이제 저장하기를 눌러주세요.");
+
+    } catch (error) {
+      console.error(error);
+      alert("사진 업로드 중 오류가 발생했습니다. Apps Script 배포 또는 Drive 폴더 ID를 확인해주세요.");
+    }
+  };
+
+  reader.readAsDataURL(file);
+}
+
 </script>
 
 </body>
