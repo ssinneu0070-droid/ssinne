@@ -383,4 +383,41 @@ textarea:focus {
   font-size: 20px;
   font-weight: 900;
   margin-top: 18px;
+}/* 상품 추가 입력칸 간격 정리 */
+#productList {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.product-item {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px dashed #ffd1e0;
+}
+
+.product-item input {
+  margin-bottom: 0 !important;
+}
+
+/* 삭제 버튼 */
+.product-item button,
+.remove-product-btn {
+  width: 100%;
+  height: 48px;
+  margin-top: 8px;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  background: #f7f7f7;
+  color: #222;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* 상품 추가 버튼 */
+.add-product-btn {
+  margin-top: 24px !important;
 }
