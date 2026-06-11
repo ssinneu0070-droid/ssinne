@@ -100,7 +100,7 @@ form.addEventListener('submit', async function(e){
 
     if(isSubmitting) return;
 
-    if(!document.getElementById('agree').checked){
+    if(!document.getElementById('agreeCheck').checked){
         alert('안내사항 동의 체크 후 진행해주세요 💖');
         return;
     }
