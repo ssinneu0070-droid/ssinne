@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>씬느샵 상품관리</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, "Noto Sans KR", sans-serif;
+  background: #fff4f7;
+  color: #222;
+}
+
+.header {
+  background: linear-gradient(135deg, #ff6f9f, #ffb6ca);
+  color: white;
+  padding: 26px 16px;
+  text-align: center;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 26px;
+}
+
+.header p {
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 22px auto;
+  padding: 0 14px;
+}
+
+.card {
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: 900;
+  margin-bottom: 14px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  font-size: 15px;
+}
+
+textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.full {
+  grid-column: 1 / -1;
+}
+
+.btn-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+button {
+  border: none;
+  border-radius: 12px;
+  padding: 13px 16px;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.primary {
+  background: #ef4f75;
+  color: white;
+  flex: 1;
+}
+
+.gray {
+  background: #eee;
+  color: #333;
+}
+
+.search-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.search-row input {
+  flex: 1;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+th, td {
+  border-bottom: 1px solid #eee;
+  padding: 11px;
+  text-align: left;
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+th {
+  background: #fff7f9;
+  font-weight: 900;
+}
+
+.thumb {
+  width: 58px;
+  height: 58px;
+  border-radius: 10px;
+  background: #f1f1f1;
+  object-fit: cover;
+}
+
+.status {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.sale {
+  background: #e7f8ee;
+  color: #159447;
+}
+
+.soldout {
+  background: #ffe8ec;
+  color: #e6325b;
+}
+
+.end {
+  background: #eee;
+  color: #555;
+}
+
+.small-btn {
+  padding: 8px 10px;
+  font-size: 13px;
+  border-radius: 9px;
+}
+
+.edit {
+  background: #222;
+  color: white;
+}
+
+.delete {
+  background: #ffebef;
+  color: #e6325b;
+}
+
+.notice {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #555;
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-row {
+    flex-direction: column;
+  }
+
+  .search-row {
+    flex-direction: column;
+  }
+
+  table, thead, tbody, th, td, tr {
+    display: block;
+    min-width: 0;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tr {
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 14px;
+    margin-bottom: 12px;
+    padding: 12px;
+  }
+
+  td {
+    border: none;
+    padding: 7px 0;
+  }
+
+  td::before {
+    content: attr(data-label);
+    display: block;
+    font-weight: 900;
+    color: #888;
+    margin-bottom: 3px;
+    font-size: 12px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <h1>씬느샵 상품관리</h1>
+  <p>상품 추가 · 수정 · 품절/마감 관리</p>
+</div>
+
+<div class="container">
+
+  <div class="card notice">
+    <b>사용 방법</b><br>
+    1. 상품을 입력하고 저장하기를 누르세요.<br>
+    2. 상태를 판매중/품절/마감으로 바꾸면 고객 상품페이지에 자동 반영됩니다.<br>
+    3. 상품사진은 이미지 주소를 넣으면 됩니다. 처음에는 비워도 됩니다.
+  </div>
+
+  <div class="card">
+    <div class="card-title" id="formTitle">상품 추가</div>
+
+    <div class="grid">
+      <div>
+        <label>상품번호 *</label>
+        <input type="text" id="no" placeholder="예: 101">
+      </div>
+
+      <div>
+        <label>상품명 *</label>
+        <input type="text" id="name" placeholder="예: 린넨 원피스">
+      </div>
+
+      <div>
+        <label>색상</label>
+        <input type="text" id="color" placeholder="예: 베이지 / 블랙">
+      </div>
+
+      <div>
+        <label>사이즈</label>
+        <input type="text" id="size" placeholder="예: FREE">
+      </div>
+
+      <div>
+        <label>판매가 *</label>
+        <input type="number" id="price" placeholder="예: 39000">
+      </div>
+
+      <div>
+        <label>상태</label>
+        <select id="status">
+          <option value="판매중">판매중</option>
+          <option value="품절">품절</option>
+          <option value="마감">마감</option>
+        </select>
+      </div>
+
+      <div class="full">
+        <label>상품사진 주소</label>
+        <input type="text" id="image" placeholder="https://... 이미지 주소">
+      </div>
+
+      <div class="full">
+        <label>설명</label>
+        <textarea id="desc" placeholder="상품 설명을 입력하세요"></textarea>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button type="button" class="primary" onclick="saveProduct()">저장하기</button>
+      <button type="button" class="gray" onclick="resetForm()">새 상품 입력</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">상품 목록</div>
+
+    <div class="search-row">
+      <input type="text" id="search" placeholder="상품번호 / 상품명 / 색상 검색" oninput="renderProducts()">
+      <button type="button" class="gray" onclick="loadProducts()">새로고침</button>
+      <button type="button" class="gray" onclick="location.href='shop.html'">고객 상품페이지 보기</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>사진</th>
+            <th>상품번호</th>
+            <th>상품명</th>
+            <th>색상</th>
+            <th>사이즈</th>
+            <th>판매가</th>
+            <th>상태</th>
+            <th>관리</th>
+          </tr>
+        </thead>
+        <tbody id="productTable">
+          <tr>
+            <td colspan="8">상품을 불러오는 중입니다...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwHINBFHWD5o-NL-9C3_8I_u3mnkQy2et05fMjuviYH30bT8_YSqY814zHVKSH0oGtZHA/exec";
+let products = [];
+
+async function loadProducts() {
+  const tbody = document.getElementById("productTable");
+  tbody.innerHTML = "<tr><td colspan='8'>상품을 불러오는 중입니다...</td></tr>";
+
+  try {
+    const res = await fetch(WEB_APP_URL + "?action=products");
+    const data = await res.json();
+
+    if (!data.success) {
+      throw new Error(data.message || "상품 불러오기 실패");
+    }
+
+    products = data.products || [];
+    renderProducts();
+
+  } catch (error) {
+    console.error(error);
+    tbody.innerHTML = "<tr><td colspan='8'>상품을 불러오지 못했습니다. Apps Script를 확인해주세요.</td></tr>";
+  }
+}
+
+function renderProducts() {
+  const tbody = document.getElementById("productTable");
+  const keyword = document.getElementById("search").value.trim().toLowerCase();
+
+  const filtered = products.filter(p => {
+    const text = `${p.no} ${p.name} ${p.color} ${p.size} ${p.status}`.toLowerCase();
+    return text.includes(keyword);
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = "<tr><td colspan='8'>표시할 상품이 없습니다.</td></tr>";
+    return;
+  }
+
+  tbody.innerHTML = "";
+
+  filtered.forEach(p => {
+    const tr = document.createElement("tr");
+    const statusClass = p.status === "판매중" ? "sale" : p.status === "품절" ? "soldout" : "end";
+    const img = p.image ? `<img class="thumb" src="${p.image}">` : `<div class="thumb"></div>`;
+
+    tr.innerHTML = `
+      <td data-label="사진">${img}</td>
+      <td data-label="상품번호">${p.no || ""}</td>
+      <td data-label="상품명"><b>${p.name || ""}</b></td>
+      <td data-label="색상">${p.color || ""}</td>
+      <td data-label="사이즈">${p.size || ""}</td>
+      <td data-label="판매가">${Number(p.price || 0).toLocaleString()}원</td>
+      <td data-label="상태"><span class="status ${statusClass}">${p.status || "판매중"}</span></td>
+      <td data-label="관리">
+        <button class="small-btn edit" onclick="editProduct('${p.no}')">수정</button>
+        <button class="small-btn delete" onclick="deleteProduct('${p.no}')">삭제</button>
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+
+function editProduct(no) {
+  const p = products.find(item => String(item.no) === String(no));
+  if (!p) return;
+
+  document.getElementById("formTitle").textContent = "상품 수정";
+  document.getElementById("no").value = p.no || "";
+  document.getElementById("no").readOnly = true;
+  document.getElementById("name").value = p.name || "";
+  document.getElementById("color").value = p.color || "";
+  document.getElementById("size").value = p.size || "";
+  document.getElementById("price").value = p.price || "";
+  document.getElementById("status").value = p.status || "판매중";
+  document.getElementById("image").value = p.image || "";
+  document.getElementById("desc").value = p.desc || "";
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function resetForm() {
+  document.getElementById("formTitle").textContent = "상품 추가";
+  document.getElementById("no").readOnly = false;
+  document.getElementById("no").value = "";
+  document.getElementById("name").value = "";
+  document.getElementById("color").value = "";
+  document.getElementById("size").value = "";
+  document.getElementById("price").value = "";
+  document.getElementById("status").value = "판매중";
+  document.getElementById("image").value = "";
+  document.getElementById("desc").value = "";
+}
+
+async function saveProduct() {
+  const product = {
+    no: document.getElementById("no").value.trim(),
+    image: document.getElementById("image").value.trim(),
+    name: document.getElementById("name").value.trim(),
+    color: document.getElementById("color").value.trim(),
+    size: document.getElementById("size").value.trim(),
+    price: document.getElementById("price").value.trim(),
+    status: document.getElementById("status").value,
+    desc: document.getElementById("desc").value.trim()
+  };
+
+  if (!product.no || !product.name || !product.price) {
+    alert("상품번호, 상품명, 판매가는 꼭 입력해주세요.");
+    return;
+  }
+
+  try {
+    const res = await fetch(WEB_APP_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "saveProduct",
+        product: product
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      throw new Error(data.message || "저장 실패");
+    }
+
+    alert("상품이 저장되었습니다.");
+    resetForm();
+    loadProducts();
+
+  } catch (error) {
+    console.error(error);
+    alert("저장 중 오류가 발생했습니다. Apps Script 코드를 확인해주세요.");
+  }
+}
+
+async function deleteProduct(no) {
+  if (!confirm("정말 삭제하시겠습니까?")) return;
+
+  try {
+    const res = await fetch(WEB_APP_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "deleteProduct",
+        no: no
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      throw new Error(data.message || "삭제 실패");
+    }
+
+    alert("삭제되었습니다.");
+    loadProducts();
+
+  } catch (error) {
+    console.error(error);
+    alert("삭제 중 오류가 발생했습니다. Apps Script 코드를 확인해주세요.");
+  }
+}
+
+loadProducts();
+</script>
+
+</body>
+</html>
