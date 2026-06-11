@@ -3,117 +3,365 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>씬느샵 관리자</title>
+<title>씬느샵 통합 관리자</title>
 
 <style>
-body{margin:0;font-family:sans-serif;background:#fff5fa;}
-.header{background:#ff4fa1;color:white;padding:24px;text-align:center;font-size:24px;font-weight:900;}
-.container{padding:20px;}
-.search{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
-.search input{flex:1;min-width:220px;padding:16px;border:1px solid #ddd;border-radius:14px;font-size:16px;}
-.search button{padding:16px 22px;border:none;border-radius:14px;background:#ff4fa1;color:white;font-weight:800;font-size:15px;cursor:pointer;}
-table{width:100%;border-collapse:collapse;background:white;}
-th,td{border:1px solid #eee;padding:12px;font-size:14px;text-align:left;}
-th{background:#ffe3f1;}
-.loading{text-align:center;padding:40px;color:#777;}
-@media(max-width:600px){
-table,thead,tbody,tr,td,th{display:block;}
-thead{display:none;}
-tr{background:white;margin-bottom:16px;padding:14px;border-radius:18px;}
-td{border:none;}
-td::before{content:attr(data-label);display:block;font-weight:800;color:#ff4fa1;margin-bottom:4px;}
-.search input,.search button{width:100%;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,"Noto Sans KR",sans-serif;background:#fff5fa;color:#222}
+.header{background:linear-gradient(135deg,#ff4fa1,#ff9fc7);color:#fff;padding:24px 16px;text-align:center}
+.header h1{margin:0;font-size:26px}
+.header p{margin:8px 0 0;font-size:14px}
+.container{max-width:1200px;margin:20px auto;padding:0 14px}
+.menu{display:flex;gap:10px;margin-bottom:16px}
+.menu button{flex:1;border:none;border-radius:14px;padding:15px;background:#fff;color:#ff4fa1;font-weight:900;font-size:16px;box-shadow:0 4px 12px rgba(0,0,0,.08);cursor:pointer}
+.menu button.active{background:#ff4fa1;color:#fff}
+.card{background:#fff;border-radius:18px;box-shadow:0 6px 18px rgba(0,0,0,.08);padding:18px;margin-bottom:18px}
+.card-title{font-size:20px;font-weight:900;margin-bottom:14px}
+.search{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.search input,.search select{flex:1;min-width:180px;padding:14px;border:1px solid #ddd;border-radius:13px;font-size:15px}
+button{border:none;border-radius:13px;padding:13px 16px;font-size:15px;font-weight:900;cursor:pointer}
+.pink{background:#ff4fa1;color:#fff}
+.gray{background:#eee;color:#333}
+.black{background:#222;color:#fff}
+.red{background:#ffe7ef;color:#e6325b}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+label{display:block;font-size:13px;font-weight:900;margin-bottom:6px}
+input,select,textarea{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;font-size:15px}
+textarea{min-height:76px;resize:vertical}
+.full{grid-column:1/-1}
+.btn-row{display:flex;gap:10px;margin-top:14px}
+.btn-row button{flex:1}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;background:white;min-width:900px}
+th,td{border-bottom:1px solid #eee;padding:11px;text-align:left;font-size:14px;vertical-align:middle}
+th{background:#ffe3f1;font-weight:900}
+.loading{text-align:center;padding:30px;color:#777}
+.thumb{width:58px;height:58px;border-radius:10px;background:#f1f1f1;object-fit:cover}
+.status{display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:900}
+.sale{background:#e7f8ee;color:#159447}
+.soldout{background:#ffe8ec;color:#e6325b}
+.end{background:#eee;color:#555}
+.small-btn{padding:8px 10px;font-size:13px;border-radius:9px;margin:2px}
+.section{display:none}
+.section.active{display:block}
+.notice{font-size:14px;line-height:1.7;color:#555}
+
+@media(max-width:700px){
+.header h1{font-size:23px}
+.menu{position:sticky;top:0;z-index:9;background:#fff5fa;padding:8px 0}
+.menu button{font-size:14px;padding:12px}
+.grid{grid-template-columns:1fr}
+.btn-row,.search{flex-direction:column}
+.search input,.search select,.search button{width:100%;min-width:0}
+table,thead,tbody,tr,td,th{display:block;min-width:0}
+thead{display:none}
+tr{background:white;border:1px solid #eee;border-radius:16px;margin-bottom:12px;padding:12px}
+td{border:none;padding:7px 0}
+td::before{content:attr(data-label);display:block;font-weight:900;color:#ff4fa1;margin-bottom:3px;font-size:12px}
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">씬느샵 관리자 페이지</div>
+<div class="header">
+  <h1>씬느샵 통합 관리자</h1>
+  <p>주문관리 · 상품관리 · 고객 상품페이지 연결</p>
+</div>
 
 <div class="container">
 
-<div class="search">
-    <input type="text" id="searchInput" placeholder="닉네임 또는 수령인 성함 검색">
-    <button type="button" onclick="searchOrders()">검색</button>
-</div>
+  <div class="menu">
+    <button id="orderTab" class="active" onclick="showSection('orders')">📦 주문관리</button>
+    <button id="productTab" onclick="showSection('products')">🛍 상품관리</button>
+    <button onclick="location.href='shop.html'">🛒 고객페이지</button>
+  </div>
 
-<table>
-<thead>
-<tr>
-    <th>주문일</th>
-    <th>입금금액</th>
-    <th>닉네임</th>
-    <th>수령인</th>
-    <th>연락처</th>
-    <th>주소</th>
-    <th>배송메모</th>
-    <th>구매내역</th>
-    <th>내품수량</th>
-</tr>
-</thead>
+  <section id="orders" class="section active">
+    <div class="card">
+      <div class="card-title">주문 검색</div>
+      <div class="search">
+        <input type="text" id="searchInput" placeholder="닉네임 또는 수령인 성함 검색">
+        <button type="button" class="pink" onclick="searchOrders()">검색</button>
+      </div>
+      <div class="notice">고객 주문은 검색어를 입력해야 표시됩니다.</div>
+    </div>
 
-<tbody id="orderList">
-<tr>
-    <td colspan="9" class="loading">닉네임 또는 수령인 성함을 검색하면 주문이 표시됩니다.</td>
-</tr>
-</tbody>
-</table>
+    <div class="card">
+      <div class="card-title">주문 목록</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>주문일</th><th>입금금액</th><th>닉네임</th><th>수령인</th><th>연락처</th>
+              <th>주소</th><th>배송메모</th><th>구매내역</th><th>내품수량</th>
+            </tr>
+          </thead>
+          <tbody id="orderList">
+            <tr><td colspan="9" class="loading">닉네임 또는 수령인 성함을 검색하면 주문이 표시됩니다.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="products" class="section">
+    <div class="card notice">
+      <b>상품관리 사용법</b><br>
+      상품을 저장하면 products 시트에 자동 저장됩니다.<br>
+      상태를 판매중/품절/마감으로 바꾸면 고객 상품페이지에 자동 반영됩니다.
+    </div>
+
+    <div class="card">
+      <div class="card-title" id="formTitle">상품 추가</div>
+      <div class="grid">
+        <div><label>상품번호 *</label><input type="text" id="no" placeholder="예: 101"></div>
+        <div><label>상품명 *</label><input type="text" id="name" placeholder="예: 린넨 원피스"></div>
+        <div><label>색상</label><input type="text" id="color" placeholder="예: 베이지 / 블랙"></div>
+        <div><label>사이즈</label><input type="text" id="size" placeholder="예: FREE"></div>
+        <div><label>판매가 *</label><input type="number" id="price" placeholder="예: 39000"></div>
+        <div>
+          <label>상태</label>
+          <select id="status">
+            <option value="판매중">판매중</option>
+            <option value="품절">품절</option>
+            <option value="마감">마감</option>
+          </select>
+        </div>
+        <div class="full"><label>상품사진 주소</label><input type="text" id="image" placeholder="https://... 이미지 주소"></div>
+        <div class="full"><label>설명</label><textarea id="desc" placeholder="상품 설명을 입력하세요"></textarea></div>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="pink" onclick="saveProduct()">저장하기</button>
+        <button type="button" class="gray" onclick="resetForm()">새 상품 입력</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">상품 목록</div>
+      <div class="search">
+        <input type="text" id="productSearch" placeholder="상품번호 / 상품명 / 색상 검색" oninput="renderProducts()">
+        <button type="button" class="gray" onclick="loadProducts()">새로고침</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>사진</th><th>상품번호</th><th>상품명</th><th>색상</th><th>사이즈</th><th>판매가</th><th>상태</th><th>관리</th>
+            </tr>
+          </thead>
+          <tbody id="productTable">
+            <tr><td colspan="8" class="loading">상품을 불러오는 중입니다...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
 
 </div>
 
 <script>
-const SCRIPT_URL =
-"https://script.google.com/macros/s/AKfycbycRpihssGhbRJR_1BNdB1fkDgovehoDrE9SPRPiRjmMmhI9Ut3wLA_zllFiymEXpQa/exec";
+const ORDER_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbycRpihssGhbRJR_1BNdB1fkDgovehoDrE9SPRPiRjmMmhI9Ut3wLA_zllFiymEXpQa/exec";
+const PRODUCT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHINBFHWD5o-NL-9C3_8I_u3mnkQy2et05fMjuviYH30bT8_YSqY814zHVKSH0oGtZHA/exec";
 
-async function searchOrders(){
-    const keyword = document.getElementById('searchInput').value.trim();
+function showSection(name) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".menu button").forEach(b => b.classList.remove("active"));
+  document.getElementById(name).classList.add("active");
 
-    if(keyword === ''){
-        alert('검색어를 입력해주세요');
-        return;
-    }
-
-    document.getElementById('orderList').innerHTML =
-        '<tr><td colspan="9" class="loading">주문을 검색중입니다...</td></tr>';
-
-    try{
-        const res = await fetch(SCRIPT_URL + "?search=" + encodeURIComponent(keyword));
-        const data = await res.json();
-
-        renderOrders(Array.isArray(data) ? data.reverse() : []);
-    }catch(error){
-        console.log(error);
-        document.getElementById('orderList').innerHTML =
-            '<tr><td colspan="9" class="loading">데이터를 불러오지 못했습니다.</td></tr>';
-    }
+  if (name === "orders") document.getElementById("orderTab").classList.add("active");
+  if (name === "products") {
+    document.getElementById("productTab").classList.add("active");
+    loadProducts();
+  }
 }
 
-function renderOrders(orders){
-    const list = document.getElementById('orderList');
-    list.innerHTML = '';
+async function searchOrders() {
+  const keyword = document.getElementById("searchInput").value.trim();
+  if (keyword === "") {
+    alert("검색어를 입력해주세요");
+    return;
+  }
 
-    if(orders.length === 0){
-        list.innerHTML =
-            '<tr><td colspan="9" class="loading">검색 결과가 없습니다.</td></tr>';
-        return;
-    }
+  document.getElementById("orderList").innerHTML =
+    '<tr><td colspan="9" class="loading">주문을 검색중입니다...</td></tr>';
 
-    orders.forEach(order => {
-        list.innerHTML += `
-        <tr>
-            <td data-label="주문일">${order.orderDate || ''}</td>
-            <td data-label="입금금액">${Number(order.payment || 0).toLocaleString()}</td>
-            <td data-label="닉네임">${order.nickname || ''}</td>
-            <td data-label="수령인">${order.name || ''}</td>
-            <td data-label="연락처">${order.phone || ''}</td>
-            <td data-label="주소">${order.address || ''}</td>
-            <td data-label="배송메모">${order.memo || ''}</td>
-            <td data-label="구매내역">${order.orderItems || ''}</td>
-            <td data-label="내품수량">${order.quantity || ''}</td>
-        </tr>
-        `;
+  try {
+    const res = await fetch(ORDER_SCRIPT_URL + "?search=" + encodeURIComponent(keyword));
+    const data = await res.json();
+    renderOrders(Array.isArray(data) ? data.reverse() : []);
+  } catch (error) {
+    console.log(error);
+    document.getElementById("orderList").innerHTML =
+      '<tr><td colspan="9" class="loading">데이터를 불러오지 못했습니다.</td></tr>';
+  }
+}
+
+function renderOrders(orders) {
+  const list = document.getElementById("orderList");
+  list.innerHTML = "";
+
+  if (orders.length === 0) {
+    list.innerHTML = '<tr><td colspan="9" class="loading">검색 결과가 없습니다.</td></tr>';
+    return;
+  }
+
+  orders.forEach(order => {
+    list.innerHTML += `
+      <tr>
+        <td data-label="주문일">${order.orderDate || ""}</td>
+        <td data-label="입금금액">${Number(order.payment || 0).toLocaleString()}</td>
+        <td data-label="닉네임">${order.nickname || ""}</td>
+        <td data-label="수령인">${order.name || ""}</td>
+        <td data-label="연락처">${order.phone || ""}</td>
+        <td data-label="주소">${order.address || ""}</td>
+        <td data-label="배송메모">${order.memo || ""}</td>
+        <td data-label="구매내역">${order.orderItems || ""}</td>
+        <td data-label="내품수량">${order.quantity || ""}</td>
+      </tr>
+    `;
+  });
+}
+
+let products = [];
+
+async function loadProducts() {
+  const tbody = document.getElementById("productTable");
+  tbody.innerHTML = "<tr><td colspan='8' class='loading'>상품을 불러오는 중입니다...</td></tr>";
+
+  try {
+    const res = await fetch(PRODUCT_SCRIPT_URL + "?action=products");
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || "상품 불러오기 실패");
+
+    products = data.products || [];
+    renderProducts();
+  } catch (error) {
+    console.error(error);
+    tbody.innerHTML = "<tr><td colspan='8' class='loading'>상품을 불러오지 못했습니다.</td></tr>";
+  }
+}
+
+function renderProducts() {
+  const tbody = document.getElementById("productTable");
+  const keyword = document.getElementById("productSearch").value.trim().toLowerCase();
+
+  const filtered = products.filter(p => {
+    const text = `${p.no} ${p.name} ${p.color} ${p.size} ${p.status}`.toLowerCase();
+    return text.includes(keyword);
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = "<tr><td colspan='8' class='loading'>표시할 상품이 없습니다.</td></tr>";
+    return;
+  }
+
+  tbody.innerHTML = "";
+
+  filtered.forEach(p => {
+    const statusClass = p.status === "판매중" ? "sale" : p.status === "품절" ? "soldout" : "end";
+    const img = p.image ? `<img class="thumb" src="${p.image}">` : `<div class="thumb"></div>`;
+
+    tbody.innerHTML += `
+      <tr>
+        <td data-label="사진">${img}</td>
+        <td data-label="상품번호">${p.no || ""}</td>
+        <td data-label="상품명"><b>${p.name || ""}</b></td>
+        <td data-label="색상">${p.color || ""}</td>
+        <td data-label="사이즈">${p.size || ""}</td>
+        <td data-label="판매가">${Number(p.price || 0).toLocaleString()}원</td>
+        <td data-label="상태"><span class="status ${statusClass}">${p.status || "판매중"}</span></td>
+        <td data-label="관리">
+          <button class="small-btn black" onclick="editProduct('${p.no}')">수정</button>
+          <button class="small-btn red" onclick="deleteProduct('${p.no}')">삭제</button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+function editProduct(no) {
+  const p = products.find(item => String(item.no) === String(no));
+  if (!p) return;
+
+  document.getElementById("formTitle").textContent = "상품 수정";
+  document.getElementById("no").value = p.no || "";
+  document.getElementById("no").readOnly = true;
+  document.getElementById("name").value = p.name || "";
+  document.getElementById("color").value = p.color || "";
+  document.getElementById("size").value = p.size || "";
+  document.getElementById("price").value = p.price || "";
+  document.getElementById("status").value = p.status || "판매중";
+  document.getElementById("image").value = p.image || "";
+  document.getElementById("desc").value = p.desc || "";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function resetForm() {
+  document.getElementById("formTitle").textContent = "상품 추가";
+  document.getElementById("no").readOnly = false;
+  document.getElementById("no").value = "";
+  document.getElementById("name").value = "";
+  document.getElementById("color").value = "";
+  document.getElementById("size").value = "";
+  document.getElementById("price").value = "";
+  document.getElementById("status").value = "판매중";
+  document.getElementById("image").value = "";
+  document.getElementById("desc").value = "";
+}
+
+async function saveProduct() {
+  const product = {
+    no: document.getElementById("no").value.trim(),
+    image: document.getElementById("image").value.trim(),
+    name: document.getElementById("name").value.trim(),
+    color: document.getElementById("color").value.trim(),
+    size: document.getElementById("size").value.trim(),
+    price: document.getElementById("price").value.trim(),
+    status: document.getElementById("status").value,
+    desc: document.getElementById("desc").value.trim()
+  };
+
+  if (!product.no || !product.name || !product.price) {
+    alert("상품번호, 상품명, 판매가는 꼭 입력해주세요.");
+    return;
+  }
+
+  try {
+    const res = await fetch(PRODUCT_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "saveProduct", product: product })
     });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || "저장 실패");
+
+    alert("상품이 저장되었습니다.");
+    resetForm();
+    loadProducts();
+  } catch (error) {
+    console.error(error);
+    alert("저장 중 오류가 발생했습니다.");
+  }
+}
+
+async function deleteProduct(no) {
+  if (!confirm("정말 삭제하시겠습니까?")) return;
+
+  try {
+    const res = await fetch(PRODUCT_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "deleteProduct", no: no })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || "삭제 실패");
+
+    alert("삭제되었습니다.");
+    loadProducts();
+  } catch (error) {
+    console.error(error);
+    alert("삭제 중 오류가 발생했습니다.");
+  }
 }
 </script>
 
