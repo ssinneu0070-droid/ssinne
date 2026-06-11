@@ -143,8 +143,7 @@ td::before{content:attr(data-label);display:block;font-weight:900;color:#ff4fa1;
       <div class="full">
         <label>상품사진</label>
         <input type="text" id="image" placeholder="사진 업로드 후 자동 입력됩니다">
-        <input type="file" id="imageFile" accept="image/*" style="margin-top:8px">
-        <button type="button" class="gray" style="margin-top:8px" onclick="uploadProductImage()">사진 업로드</button>
+        <button type="button" class="gray" style="margin-top:8px" onclick="openImageUpload()">사진 바로 업로드</button>
       </div>
       <div class="full"><label>설명</label><textarea id="desc" placeholder="상품 설명을 입력하세요"></textarea></div>
     </div>
@@ -181,7 +180,7 @@ td::before{content:attr(data-label);display:block;font-weight:900;color:#ff4fa1;
 
 <script>
 const ORDER_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbycRpihssGhbRJR_1BNdB1fkDgovehoDrE9SPRPiRjmMmhI9Ut3wLA_zllFiymEXpQa/exec";
-const PRODUCT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHINBFHWD5o-NL-9C3_8I_u3mnkQy2et05fMjuviYH30bT8_YSqY814zHVKSH0oGtZHA/exec";
+const PRODUCT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfGwvQiv60E9u-F1aKoz3ZHagSgA1ydkrPEQjVgV8YQe_PtfNAmocTe_eEYW3YhrlSpQ/exec";
 
 function showSection(name) {
   document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
@@ -425,67 +424,17 @@ async function deleteProduct(no) {
   }
 }
 
-async function uploadProductImage() {
-  const fileInput = document.getElementById("imageFile");
-  const file = fileInput.files[0];
-
-  if (!file) {
-    alert("업로드할 사진을 선택해주세요.");
-    return;
-  }
-
-  alert("사진을 압축해서 업로드 중입니다. 잠시만 기다려주세요.");
-
-  const img = new Image();
-  const reader = new FileReader();
-
-  reader.onload = function (e) {
-    img.src = e.target.result;
-  };
-
-  img.onload = async function () {
-    const canvas = document.createElement("canvas");
-    const maxWidth = 900;
-    const scale = maxWidth / img.width;
-
-    canvas.width = maxWidth;
-    canvas.height = img.height * scale;
-
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-    const compressedBase64 = canvas
-      .toDataURL("image/jpeg", 0.75)
-      .split(",")[1];
-
-    try {
-      const res = await fetch(PRODUCT_SCRIPT_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "uploadImage",
-          fileName: "product-image.jpg",
-          mimeType: "image/jpeg",
-          base64: compressedBase64
-        })
-      });
-
-      const data = await res.json();
-
-      if (!data.success) {
-        throw new Error(data.message || "업로드 실패");
-      }
-
-      document.getElementById("image").value = data.imageUrl;
-      alert("사진 업로드 완료! 이제 저장하기를 눌러주세요.");
-
-    } catch (error) {
-      console.error(error);
-      alert("사진 업로드 실패: " + error.message);
-    }
-  };
-
-  reader.readAsDataURL(file);
+function openImageUpload() {
+  const url = PRODUCT_SCRIPT_URL + "?action=uploadPage";
+  window.open(url, "ssinneImageUpload", "width=460,height=520");
 }
+
+window.addEventListener("message", function(event) {
+  if (!event.data || event.data.type !== "SSINNE_IMAGE_UPLOADED") return;
+
+  document.getElementById("image").value = event.data.imageUrl;
+  alert("사진 주소가 자동 입력되었습니다. 이제 저장하기를 눌러주세요.");
+});
 
 </script>
 
