@@ -537,7 +537,14 @@ function renderTable(list) {
       <td>${safe(item.customerName)}</td>
       <td>${safe(item.memo)}</td>
       <td>${typeBadge(item.type)}</td>
-      <td>${statusBadge(item.status)}</td>
+      <td>
+  <select onchange="quickStatusUpdate(${item.rowNumber}, this.value)">
+    <option value="접수" ${item.status === "접수" ? "selected" : ""}>접수</option>
+    <option value="진행중" ${item.status === "진행중" ? "selected" : ""}>진행중</option>
+    <option value="완료" ${item.status === "완료" ? "selected" : ""}>완료</option>
+    <option value="보류" ${item.status === "보류" ? "selected" : ""}>보류</option>
+  </select>
+</td>
       <td>
         <button class="action-btn edit-btn" onclick='editItem(${JSON.stringify(item)})'>수정</button>
         <button class="action-btn delete-btn" onclick="deleteItem(${item.rowNumber})">삭제</button>
@@ -558,7 +565,12 @@ function renderMobile(list) {
     <div class="mobile-card">
       <div class="mobile-top">
         <strong>No. ${safe(item.no)}</strong>
-        ${statusBadge(item.status)}
+        <select onchange="quickStatusUpdate(${item.rowNumber}, this.value)">
+  <option value="접수" ${item.status === "접수" ? "selected" : ""}>접수</option>
+  <option value="진행중" ${item.status === "진행중" ? "selected" : ""}>진행중</option>
+  <option value="완료" ${item.status === "완료" ? "selected" : ""}>완료</option>
+  <option value="보류" ${item.status === "보류" ? "selected" : ""}>보류</option>
+</select>
       </div>
 
       <div class="mobile-name">${safe(item.channelId)} / ${safe(item.nickname)}</div>
@@ -649,6 +661,35 @@ function safe(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+function quickStatusUpdate(rowNumber, newStatus) {
+  const item = csData.find(x => Number(x.rowNumber) === Number(rowNumber));
+
+  if (!item) {
+    alert("해당 CS 건을 찾지 못했습니다.");
+    return;
+  }
+
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      mode: "update",
+      rowNumber: rowNumber,
+      memo: item.memo,
+      type: item.type,
+      status: newStatus
+    })
+  })
+  .then(res => res.json())
+  .then(result => {
+    item.status = newStatus;
+    updateCounts();
+    alert("상태가 저장되었습니다.");
+  })
+  .catch(err => {
+    alert("상태 저장 중 오류가 발생했습니다.");
+    console.error(err);
+  });
 }
 </script>
 
