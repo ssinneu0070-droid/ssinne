@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>씬느샵 통합 관리자</title>
+
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,"Noto Sans KR",sans-serif;background:#fff5fa;color:#222}
@@ -17,7 +18,7 @@ body{margin:0;font-family:Arial,"Noto Sans KR",sans-serif;background:#fff5fa;col
 .card{background:#fff;border-radius:18px;box-shadow:0 6px 18px rgba(0,0,0,.08);padding:18px;margin-bottom:18px}
 .card-title{font-size:20px;font-weight:900;margin-bottom:14px}
 .search{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
-.search input,.search select{flex:1;min-width:180px;padding:14px;border:1px solid #ddd;border-radius:13px;font-size:15px}
+.search input{flex:1;min-width:180px;padding:14px;border:1px solid #ddd;border-radius:13px;font-size:15px}
 button{border:none;border-radius:13px;padding:13px 16px;font-size:15px;font-weight:900;cursor:pointer}
 .pink{background:#ff4fa1;color:#fff}
 .gray{background:#eee;color:#333}
@@ -45,13 +46,14 @@ th{background:#ffe3f1;font-weight:900}
 .section{display:none}
 .section.active{display:block}
 .notice{font-size:14px;line-height:1.7;color:#555}
+
 @media(max-width:700px){
 .header h1{font-size:23px}
 .menu{position:sticky;top:0;z-index:9;background:#fff5fa;padding:8px 0}
 .menu button{font-size:14px;padding:12px}
 .grid{grid-template-columns:1fr}
 .btn-row,.search{flex-direction:column}
-.search input,.search select,.search button{width:100%;min-width:0}
+.search input,.search button{width:100%;min-width:0}
 table,thead,tbody,tr,td,th{display:block;min-width:0}
 thead{display:none}
 tr{background:white;border:1px solid #eee;border-radius:16px;margin-bottom:12px;padding:12px}
@@ -60,6 +62,7 @@ td::before{content:attr(data-label);display:block;font-weight:900;color:#ff4fa1;
 }
 </style>
 </head>
+
 <body>
 
 <div class="header">
@@ -82,7 +85,9 @@ td::before{content:attr(data-label);display:block;font-weight:900;color:#ff4fa1;
       <input type="text" id="searchInput" placeholder="닉네임 또는 수령인 성함 검색">
       <button type="button" class="pink" onclick="searchOrders()">검색</button>
     </div>
-    <div class="notice">입금상태를 바꾸면 스프레드시트 C열에 바로 저장됩니다.</div>
+    <div class="notice">
+      검색 후 입금상태를 변경하면 스프레드시트 C열에 바로 저장됩니다.
+    </div>
   </div>
 
   <div class="card">
@@ -120,6 +125,7 @@ td::before{content:attr(data-label);display:block;font-weight:900;color:#ff4fa1;
 
   <div class="card">
     <div class="card-title" id="formTitle">상품 추가</div>
+
     <div class="grid">
       <div><label>상품번호 *</label><input type="text" id="no" placeholder="예: 101"></div>
       <div><label>상품명 *</label><input type="text" id="name" placeholder="예: 린넨 원피스"></div>
@@ -137,6 +143,7 @@ td::before{content:attr(data-label);display:block;font-weight:900;color:#ff4fa1;
       <div class="full"><label>상품사진 주소</label><input type="text" id="image" placeholder="https://... 이미지 주소"></div>
       <div class="full"><label>설명</label><textarea id="desc" placeholder="상품 설명을 입력하세요"></textarea></div>
     </div>
+
     <div class="btn-row">
       <button type="button" class="pink" onclick="saveProduct()">저장하기</button>
       <button type="button" class="gray" onclick="resetForm()">새 상품 입력</button>
@@ -149,6 +156,7 @@ td::before{content:attr(data-label);display:block;font-weight:900;color:#ff4fa1;
       <input type="text" id="productSearch" placeholder="상품번호 / 상품명 / 색상 검색" oninput="renderProducts()">
       <button type="button" class="gray" onclick="loadProducts()">새로고침</button>
     </div>
+
     <div class="table-wrap">
       <table>
         <thead>
@@ -157,7 +165,7 @@ td::before{content:attr(data-label);display:block;font-weight:900;color:#ff4fa1;
           </tr>
         </thead>
         <tbody id="productTable">
-          <tr><td colspan="8" class="loading">상품을 불러오는 중입니다...</td></tr>
+          <tr><td colspan="8" class="loading">상품관리 탭을 누르면 상품이 표시됩니다.</td></tr>
         </tbody>
       </table>
     </div>
@@ -173,8 +181,11 @@ const PRODUCT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHINBFHWD5o
 function showSection(name) {
   document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
   document.querySelectorAll(".menu button").forEach(b => b.classList.remove("active"));
+
   document.getElementById(name).classList.add("active");
+
   if (name === "orders") document.getElementById("orderTab").classList.add("active");
+
   if (name === "products") {
     document.getElementById("productTab").classList.add("active");
     loadProducts();
@@ -183,6 +194,7 @@ function showSection(name) {
 
 async function searchOrders() {
   const keyword = document.getElementById("searchInput").value.trim();
+
   if (keyword === "") {
     alert("검색어를 입력해주세요");
     return;
@@ -216,7 +228,7 @@ function renderOrders(orders) {
       <tr>
         <td data-label="주문일">${order.orderDate || ""}</td>
         <td data-label="입금상태">
-          <select class="pay-select" onchange="changePaymentStatus('${order.rowNumber}', this.value)">
+          <select class="pay-select" onchange="changePaymentStatus('${order.rowNumber || ""}', this.value)">
             <option value="미입금" ${order.paymentStatus === "미입금" ? "selected" : ""}>미입금</option>
             <option value="입금완료" ${order.paymentStatus === "입금완료" ? "selected" : ""}>입금완료</option>
             <option value="환불" ${order.paymentStatus === "환불" ? "selected" : ""}>환불</option>
@@ -236,6 +248,11 @@ function renderOrders(orders) {
 }
 
 async function changePaymentStatus(rowNumber, paymentStatus) {
+  if (!rowNumber) {
+    alert("행 번호가 없습니다. 주문용 Apps Script를 최신 코드로 배포해야 합니다.");
+    return;
+  }
+
   try {
     const res = await fetch(ORDER_SCRIPT_URL, {
       method: "POST",
@@ -248,14 +265,12 @@ async function changePaymentStatus(rowNumber, paymentStatus) {
 
     const data = await res.json();
 
-    if (!data.success) {
-      throw new Error(data.message || "변경 실패");
-    }
+    if (!data.success) throw new Error(data.message || "변경 실패");
 
     alert("입금상태가 변경되었습니다.");
   } catch (error) {
     console.error(error);
-    alert("입금상태 변경 중 오류가 발생했습니다. Apps Script 배포를 확인해주세요.");
+    alert("입금상태 변경 중 오류가 발생했습니다. 주문용 Apps Script 배포를 확인해주세요.");
   }
 }
 
@@ -268,7 +283,9 @@ async function loadProducts() {
   try {
     const res = await fetch(PRODUCT_SCRIPT_URL + "?action=products");
     const data = await res.json();
+
     if (!data.success) throw new Error(data.message || "상품 불러오기 실패");
+
     products = data.products || [];
     renderProducts();
   } catch (error) {
@@ -318,6 +335,7 @@ function renderProducts() {
 function editProduct(no) {
   const p = products.find(item => String(item.no) === String(no));
   if (!p) return;
+
   document.getElementById("formTitle").textContent = "상품 수정";
   document.getElementById("no").value = p.no || "";
   document.getElementById("no").readOnly = true;
@@ -328,6 +346,7 @@ function editProduct(no) {
   document.getElementById("status").value = p.status || "판매중";
   document.getElementById("image").value = p.image || "";
   document.getElementById("desc").value = p.desc || "";
+
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -366,8 +385,11 @@ async function saveProduct() {
       method: "POST",
       body: JSON.stringify({ action: "saveProduct", product: product })
     });
+
     const data = await res.json();
+
     if (!data.success) throw new Error(data.message || "저장 실패");
+
     alert("상품이 저장되었습니다.");
     resetForm();
     loadProducts();
@@ -379,13 +401,17 @@ async function saveProduct() {
 
 async function deleteProduct(no) {
   if (!confirm("정말 삭제하시겠습니까?")) return;
+
   try {
     const res = await fetch(PRODUCT_SCRIPT_URL, {
       method: "POST",
       body: JSON.stringify({ action: "deleteProduct", no: no })
     });
+
     const data = await res.json();
+
     if (!data.success) throw new Error(data.message || "삭제 실패");
+
     alert("삭제되었습니다.");
     loadProducts();
   } catch (error) {
