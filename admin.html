@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>씬느샵 통합 관리자</title>
-
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,"Noto Sans KR",sans-serif;background:#fff5fa;color:#222}
@@ -32,7 +31,7 @@ textarea{min-height:76px;resize:vertical}
 .btn-row{display:flex;gap:10px;margin-top:14px}
 .btn-row button{flex:1}
 .table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;background:white;min-width:900px}
+table{width:100%;border-collapse:collapse;background:white;min-width:980px}
 th,td{border-bottom:1px solid #eee;padding:11px;text-align:left;font-size:14px;vertical-align:middle}
 th{background:#ffe3f1;font-weight:900}
 .loading{text-align:center;padding:30px;color:#777}
@@ -41,11 +40,11 @@ th{background:#ffe3f1;font-weight:900}
 .sale{background:#e7f8ee;color:#159447}
 .soldout{background:#ffe8ec;color:#e6325b}
 .end{background:#eee;color:#555}
+.pay-select{min-width:105px;padding:9px;border-radius:10px;border:1px solid #ddd;font-weight:900}
 .small-btn{padding:8px 10px;font-size:13px;border-radius:9px;margin:2px}
 .section{display:none}
 .section.active{display:block}
 .notice{font-size:14px;line-height:1.7;color:#555}
-
 @media(max-width:700px){
 .header h1{font-size:23px}
 .menu{position:sticky;top:0;z-index:9;background:#fff5fa;padding:8px 0}
@@ -61,103 +60,109 @@ td::before{content:attr(data-label);display:block;font-weight:900;color:#ff4fa1;
 }
 </style>
 </head>
-
 <body>
 
 <div class="header">
   <h1>씬느샵 통합 관리자</h1>
-  <p>주문관리 · 상품관리 · 고객 상품페이지 연결</p>
+  <p>주문관리 · 입금상태 변경 · 상품관리</p>
 </div>
 
 <div class="container">
 
-  <div class="menu">
-    <button id="orderTab" class="active" onclick="showSection('orders')">📦 주문관리</button>
-    <button id="productTab" onclick="showSection('products')">🛍 상품관리</button>
-    <button onclick="location.href='shop.html'">🛒 고객페이지</button>
+<div class="menu">
+  <button id="orderTab" class="active" onclick="showSection('orders')">📦 주문관리</button>
+  <button id="productTab" onclick="showSection('products')">🛍 상품관리</button>
+  <button onclick="location.href='shop.html'">🛒 고객페이지</button>
+</div>
+
+<section id="orders" class="section active">
+  <div class="card">
+    <div class="card-title">주문 검색</div>
+    <div class="search">
+      <input type="text" id="searchInput" placeholder="닉네임 또는 수령인 성함 검색">
+      <button type="button" class="pink" onclick="searchOrders()">검색</button>
+    </div>
+    <div class="notice">입금상태를 바꾸면 스프레드시트 C열에 바로 저장됩니다.</div>
   </div>
 
-  <section id="orders" class="section active">
-    <div class="card">
-      <div class="card-title">주문 검색</div>
-      <div class="search">
-        <input type="text" id="searchInput" placeholder="닉네임 또는 수령인 성함 검색">
-        <button type="button" class="pink" onclick="searchOrders()">검색</button>
-      </div>
-      <div class="notice">고객 주문은 검색어를 입력해야 표시됩니다.</div>
+  <div class="card">
+    <div class="card-title">주문 목록</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>주문일</th>
+            <th>입금상태</th>
+            <th>입금금액</th>
+            <th>닉네임</th>
+            <th>수령인</th>
+            <th>연락처</th>
+            <th>주소</th>
+            <th>배송메모</th>
+            <th>구매내역</th>
+            <th>내품수량</th>
+          </tr>
+        </thead>
+        <tbody id="orderList">
+          <tr><td colspan="10" class="loading">닉네임 또는 수령인 성함을 검색하면 주문이 표시됩니다.</td></tr>
+        </tbody>
+      </table>
     </div>
+  </div>
+</section>
 
-    <div class="card">
-      <div class="card-title">주문 목록</div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>주문일</th><th>입금금액</th><th>닉네임</th><th>수령인</th><th>연락처</th>
-              <th>주소</th><th>배송메모</th><th>구매내역</th><th>내품수량</th>
-            </tr>
-          </thead>
-          <tbody id="orderList">
-            <tr><td colspan="9" class="loading">닉네임 또는 수령인 성함을 검색하면 주문이 표시됩니다.</td></tr>
-          </tbody>
-        </table>
+<section id="products" class="section">
+  <div class="card notice">
+    <b>상품관리 사용법</b><br>
+    상품을 저장하면 products 시트에 자동 저장됩니다.<br>
+    상태를 판매중/품절/마감으로 바꾸면 고객 상품페이지에 자동 반영됩니다.
+  </div>
+
+  <div class="card">
+    <div class="card-title" id="formTitle">상품 추가</div>
+    <div class="grid">
+      <div><label>상품번호 *</label><input type="text" id="no" placeholder="예: 101"></div>
+      <div><label>상품명 *</label><input type="text" id="name" placeholder="예: 린넨 원피스"></div>
+      <div><label>색상</label><input type="text" id="color" placeholder="예: 베이지 / 블랙"></div>
+      <div><label>사이즈</label><input type="text" id="size" placeholder="예: FREE"></div>
+      <div><label>판매가 *</label><input type="number" id="price" placeholder="예: 39000"></div>
+      <div>
+        <label>상태</label>
+        <select id="status">
+          <option value="판매중">판매중</option>
+          <option value="품절">품절</option>
+          <option value="마감">마감</option>
+        </select>
       </div>
+      <div class="full"><label>상품사진 주소</label><input type="text" id="image" placeholder="https://... 이미지 주소"></div>
+      <div class="full"><label>설명</label><textarea id="desc" placeholder="상품 설명을 입력하세요"></textarea></div>
     </div>
-  </section>
-
-  <section id="products" class="section">
-    <div class="card notice">
-      <b>상품관리 사용법</b><br>
-      상품을 저장하면 products 시트에 자동 저장됩니다.<br>
-      상태를 판매중/품절/마감으로 바꾸면 고객 상품페이지에 자동 반영됩니다.
+    <div class="btn-row">
+      <button type="button" class="pink" onclick="saveProduct()">저장하기</button>
+      <button type="button" class="gray" onclick="resetForm()">새 상품 입력</button>
     </div>
+  </div>
 
-    <div class="card">
-      <div class="card-title" id="formTitle">상품 추가</div>
-      <div class="grid">
-        <div><label>상품번호 *</label><input type="text" id="no" placeholder="예: 101"></div>
-        <div><label>상품명 *</label><input type="text" id="name" placeholder="예: 린넨 원피스"></div>
-        <div><label>색상</label><input type="text" id="color" placeholder="예: 베이지 / 블랙"></div>
-        <div><label>사이즈</label><input type="text" id="size" placeholder="예: FREE"></div>
-        <div><label>판매가 *</label><input type="number" id="price" placeholder="예: 39000"></div>
-        <div>
-          <label>상태</label>
-          <select id="status">
-            <option value="판매중">판매중</option>
-            <option value="품절">품절</option>
-            <option value="마감">마감</option>
-          </select>
-        </div>
-        <div class="full"><label>상품사진 주소</label><input type="text" id="image" placeholder="https://... 이미지 주소"></div>
-        <div class="full"><label>설명</label><textarea id="desc" placeholder="상품 설명을 입력하세요"></textarea></div>
-      </div>
-      <div class="btn-row">
-        <button type="button" class="pink" onclick="saveProduct()">저장하기</button>
-        <button type="button" class="gray" onclick="resetForm()">새 상품 입력</button>
-      </div>
+  <div class="card">
+    <div class="card-title">상품 목록</div>
+    <div class="search">
+      <input type="text" id="productSearch" placeholder="상품번호 / 상품명 / 색상 검색" oninput="renderProducts()">
+      <button type="button" class="gray" onclick="loadProducts()">새로고침</button>
     </div>
-
-    <div class="card">
-      <div class="card-title">상품 목록</div>
-      <div class="search">
-        <input type="text" id="productSearch" placeholder="상품번호 / 상품명 / 색상 검색" oninput="renderProducts()">
-        <button type="button" class="gray" onclick="loadProducts()">새로고침</button>
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>사진</th><th>상품번호</th><th>상품명</th><th>색상</th><th>사이즈</th><th>판매가</th><th>상태</th><th>관리</th>
-            </tr>
-          </thead>
-          <tbody id="productTable">
-            <tr><td colspan="8" class="loading">상품을 불러오는 중입니다...</td></tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>사진</th><th>상품번호</th><th>상품명</th><th>색상</th><th>사이즈</th><th>판매가</th><th>상태</th><th>관리</th>
+          </tr>
+        </thead>
+        <tbody id="productTable">
+          <tr><td colspan="8" class="loading">상품을 불러오는 중입니다...</td></tr>
+        </tbody>
+      </table>
     </div>
-  </section>
+  </div>
+</section>
 
 </div>
 
@@ -169,7 +174,6 @@ function showSection(name) {
   document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
   document.querySelectorAll(".menu button").forEach(b => b.classList.remove("active"));
   document.getElementById(name).classList.add("active");
-
   if (name === "orders") document.getElementById("orderTab").classList.add("active");
   if (name === "products") {
     document.getElementById("productTab").classList.add("active");
@@ -185,7 +189,7 @@ async function searchOrders() {
   }
 
   document.getElementById("orderList").innerHTML =
-    '<tr><td colspan="9" class="loading">주문을 검색중입니다...</td></tr>';
+    '<tr><td colspan="10" class="loading">주문을 검색중입니다...</td></tr>';
 
   try {
     const res = await fetch(ORDER_SCRIPT_URL + "?search=" + encodeURIComponent(keyword));
@@ -194,7 +198,7 @@ async function searchOrders() {
   } catch (error) {
     console.log(error);
     document.getElementById("orderList").innerHTML =
-      '<tr><td colspan="9" class="loading">데이터를 불러오지 못했습니다.</td></tr>';
+      '<tr><td colspan="10" class="loading">데이터를 불러오지 못했습니다.</td></tr>';
   }
 }
 
@@ -203,7 +207,7 @@ function renderOrders(orders) {
   list.innerHTML = "";
 
   if (orders.length === 0) {
-    list.innerHTML = '<tr><td colspan="9" class="loading">검색 결과가 없습니다.</td></tr>';
+    list.innerHTML = '<tr><td colspan="10" class="loading">검색 결과가 없습니다.</td></tr>';
     return;
   }
 
@@ -211,6 +215,13 @@ function renderOrders(orders) {
     list.innerHTML += `
       <tr>
         <td data-label="주문일">${order.orderDate || ""}</td>
+        <td data-label="입금상태">
+          <select class="pay-select" onchange="changePaymentStatus('${order.rowNumber}', this.value)">
+            <option value="미입금" ${order.paymentStatus === "미입금" ? "selected" : ""}>미입금</option>
+            <option value="입금완료" ${order.paymentStatus === "입금완료" ? "selected" : ""}>입금완료</option>
+            <option value="환불" ${order.paymentStatus === "환불" ? "selected" : ""}>환불</option>
+          </select>
+        </td>
         <td data-label="입금금액">${Number(order.payment || 0).toLocaleString()}</td>
         <td data-label="닉네임">${order.nickname || ""}</td>
         <td data-label="수령인">${order.name || ""}</td>
@@ -224,6 +235,30 @@ function renderOrders(orders) {
   });
 }
 
+async function changePaymentStatus(rowNumber, paymentStatus) {
+  try {
+    const res = await fetch(ORDER_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "updatePaymentStatus",
+        rowNumber: rowNumber,
+        paymentStatus: paymentStatus
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      throw new Error(data.message || "변경 실패");
+    }
+
+    alert("입금상태가 변경되었습니다.");
+  } catch (error) {
+    console.error(error);
+    alert("입금상태 변경 중 오류가 발생했습니다. Apps Script 배포를 확인해주세요.");
+  }
+}
+
 let products = [];
 
 async function loadProducts() {
@@ -234,7 +269,6 @@ async function loadProducts() {
     const res = await fetch(PRODUCT_SCRIPT_URL + "?action=products");
     const data = await res.json();
     if (!data.success) throw new Error(data.message || "상품 불러오기 실패");
-
     products = data.products || [];
     renderProducts();
   } catch (error) {
@@ -284,7 +318,6 @@ function renderProducts() {
 function editProduct(no) {
   const p = products.find(item => String(item.no) === String(no));
   if (!p) return;
-
   document.getElementById("formTitle").textContent = "상품 수정";
   document.getElementById("no").value = p.no || "";
   document.getElementById("no").readOnly = true;
@@ -335,7 +368,6 @@ async function saveProduct() {
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.message || "저장 실패");
-
     alert("상품이 저장되었습니다.");
     resetForm();
     loadProducts();
@@ -347,7 +379,6 @@ async function saveProduct() {
 
 async function deleteProduct(no) {
   if (!confirm("정말 삭제하시겠습니까?")) return;
-
   try {
     const res = await fetch(PRODUCT_SCRIPT_URL, {
       method: "POST",
@@ -355,7 +386,6 @@ async function deleteProduct(no) {
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.message || "삭제 실패");
-
     alert("삭제되었습니다.");
     loadProducts();
   } catch (error) {
