@@ -497,6 +497,12 @@ function renderList() {
   const typeFilter = document.getElementById("typeFilter").value;
   const statusFilter = document.getElementById("statusFilter").value;
 
+  if (!keyword && !typeFilter && !statusFilter) {
+    renderTable([]);
+    renderMobile([]);
+    return;
+  }
+
   const filtered = csData.filter(item => {
     const text = [
       item.channelId,
