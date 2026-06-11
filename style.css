@@ -270,41 +270,20 @@ select:focus {
         font-size: 27px;
     }
 
-    .notice-box,
-    .form-group {
-        padding: 15px;
-        border-radius: 16px;
-    }
-
-    .address-row {
-        display: grid;
-        grid-template-columns: 1fr 105px;
-    }
-
-    input,
-    textarea,
-    select {
-        font-size: 16px;
-        padding: 14px;
-    }
-
-    .submit-btn {
-        font-size: 18px;
-    }
-}.notice-box{
+ .notice-box{
     background:#fff;
-    border-radius:20px;
-    padding:25px;
-    margin-bottom:25px;
-    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+    border-radius:16px;
+    padding:12px;
+    margin-bottom:15px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06);
 }
 
 .notice-title{
     text-align:center;
-    font-size:24px;
+    font-size:16px;
     font-weight:800;
     color:#ff4f8b;
-    margin-bottom:20px;
+    margin-bottom:12px;
 }
 
 .notice-list{
@@ -316,12 +295,13 @@ select:focus {
 .notice-list li{
     display:flex;
     align-items:center;
-    gap:12px;
-    padding:14px 0;
-    font-size:18px;
-    font-weight:700;
+    gap:8px;
+    padding:8px 0;
+    font-size:13px;
+    font-weight:600;
     color:#444;
     border-bottom:1px dashed #ffd1e0;
+    line-height:1.5;
 }
 
 .notice-list li:last-child{
@@ -329,69 +309,37 @@ select:focus {
 }
 
 .icon{
-    width:38px;
-    height:38px;
+    width:24px;
+    height:24px;
+    min-width:24px;
     display:flex;
     align-items:center;
     justify-content:center;
     background:#ffe8f1;
     border-radius:50%;
-    font-size:20px;
-    flex-shrink:0;
+    font-size:13px;
 }
 
 .agree-container{
-    margin-top:20px;
-    border:2px solid #ffc6d6;
-    border-radius:15px;
-    padding:20px;
+    margin-top:12px;
+    border:1px solid #ffc6d6;
+    border-radius:10px;
+    padding:10px 12px;
     display:flex;
-    justify-content:space-between;
     align-items:center;
+    justify-content:space-between;
     background:#fff8fb;
 }
 
 .agree-text{
-    font-size:22px;
-    font-weight:800;
+    font-size:14px;
+    font-weight:700;
     color:#333;
 }
 
 .agree-checkbox{
-    width:34px;
-    height:34px;
-    cursor:pointer;
+    width:22px;
+    height:22px;
     accent-color:#ff4f8b;
-}@media (min-width: 768px){
-
-  .notice-box{
-    max-width:700px;
-    margin:20px auto;
-    padding:15px;
-  }
-
-  .notice-title{
-    font-size:20px;
-  }
-
-  .notice-list li{
-    font-size:15px;
-    padding:10px 0;
-  }
-
-  .icon{
-    width:30px;
-    height:30px;
-    font-size:16px;
-  }
-
-  .agree-text{
-    font-size:16px;
-  }
-
-  .agree-checkbox{
-    width:24px;
-    height:24px;
-  }
-
+    cursor:pointer;
 }
