@@ -169,7 +169,40 @@
 </div>
 
 </div>
+<script>
+window.addEventListener("DOMContentLoaded", function () {
+  const params = new URLSearchParams(window.location.search);
+  const orderItem = params.get("orderItem");
 
+  if (!orderItem) return;
+
+  const getValue = (label) => {
+    const match = orderItem.match(new RegExp(label + ":\\s*(.*)"));
+    return match ? match[1].trim() : "";
+  };
+
+  const productNo = getValue("상품번호");
+  const color = getValue("색상");
+  const size = getValue("사이즈");
+  const priceText = getValue("판매가");
+
+  const priceNumber = priceText.replace(/[^0-9]/g, "");
+
+  const firstItem = document.querySelector(".product-item");
+
+  if (firstItem) {
+    firstItem.querySelector(".product-number").value = productNo;
+    firstItem.querySelector(".product-color").value = color;
+    firstItem.querySelector(".product-size").value = size;
+    firstItem.querySelector(".product-qty").value = 1;
+  }
+
+  const paymentInput = document.getElementById("payment");
+  if (paymentInput && priceNumber) {
+    paymentInput.value = priceNumber;
+  }
+});
+</script>
 <script src="script.js"></script>
 
 </body>
