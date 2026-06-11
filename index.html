@@ -86,19 +86,28 @@ font-weight:700;
 아래 예시대로 꼭 입력 해주세요!! 예시 필독!!<br>
 </div>
 <div class="form-group">
-    <label>
-        구매 상품번호 *
-    </label>
+    <label>구매내역 *</label>
 
-<textarea
-    id="orderItems"
-    placeholder="상품 1개당 제발 한 줄씩 입력해주세요!! 깔로 주문해도 엔터로 다음줄에 입력!!
-20번 화이트 55 ↵ (엔터) 
-20번 블랙 55 ↵ (엔터)
-100번 화이트 ↵ (엔터)
-50번 핑크 ↵ (엔터)
-추가주문은 제발!! 추가 상품만 입력!! 이전 주문건은 저장 되있습니다!!"
-></textarea>
+    <div class="order-guide">
+        상품번호 / 색상 / 사이즈 / 수량을 각각 입력해주세요.<br>
+        예: 20 / 화이트 / 55 / 1개
+    </div>
+
+    <div id="productList">
+        <div class="product-item">
+            <input type="text" class="product-number" placeholder="상품번호 예: 20">
+            <input type="text" class="product-color" placeholder="색상 예: 화이트">
+            <input type="text" class="product-size" placeholder="사이즈 예: 55 / FREE">
+            <input type="number" class="product-qty" placeholder="수량" value="1" min="1">
+        </div>
+    </div>
+
+    <button type="button" class="add-product-btn" onclick="addProduct()">
+        ➕ 상품 추가
+    </button>
+
+    <input type="hidden" id="orderItems">
+</div>
 
 <div class="form-group">
     <label>입금금액 *</label>
