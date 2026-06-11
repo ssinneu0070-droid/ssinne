@@ -46,9 +46,9 @@ function addProduct() {
     div.className = 'product-item';
 
     div.innerHTML = `
-        <input type="text" class="product-number" placeholder="상품번호 예: 20">
-        <input type="text" class="product-color" placeholder="색상 예: 화이트">
-        <input type="text" class="product-size" placeholder="사이즈 예: 55 / FREE">
+        <input type="text" class="product-number" placeholder="상품번호 예 : 20">
+        <input type="text" class="product-color" placeholder="색상 예 : 화이트">
+        <input type="text" class="product-size" placeholder="사이즈 예 : 55 / FREE">
         <input type="number" class="product-qty" placeholder="수량" value="1" min="1">
 
         <button type="button" class="remove-product-btn" onclick="this.parentElement.remove()">
@@ -100,81 +100,89 @@ form.addEventListener('submit', async function(e){
 
     if(isSubmitting) return;
 
-    if(!document.getElementById('agreeCheck').checked){
-        alert('안내사항 동의 체크 후 진행해주세요 💖');
-        return;
+    try {
+
+        if(!document.getElementById('agreeCheck').checked){
+            alert('안내사항 동의 체크 후 진행해주세요 💖');
+            return;
+        }
+
+        if (!makeOrderItemsText()) return;
+
+        const data = {
+            nickname: document.getElementById('nickname').value.trim(),
+            name: document.getElementById('name').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            zipcode: document.getElementById('zipcode').value.trim(),
+            address: document.getElementById('address').value.trim(),
+            detailAddress: document.getElementById('detailAddress').value.trim(),
+            memo: document.getElementById('memo').value.trim(),
+            orderItems: document.getElementById('orderItems').value.trim(),
+            payment: document.getElementById('payment').value.trim()
+        };
+
+        if(!data.nickname){ alert('닉네임을 입력해주세요'); return; }
+        if(!data.name){ alert('수령인 성함을 입력해주세요'); return; }
+
+        if(!/^010-[0-9]{4}-[0-9]{4}$/.test(data.phone)){
+            alert('연락처를 정확히 입력해주세요');
+            return;
+        }
+
+        if(!data.zipcode || !data.address){
+            alert('주소 검색을 해주세요');
+            return;
+        }
+
+        if(!data.orderItems){
+            alert('구매내역을 입력해주세요');
+            return;
+        }
+
+        if(!data.payment){
+            alert('입금금액을 입력해주세요');
+            return;
+        }
+
+        isSubmitting = true;
+        submitBtn.disabled = true;
+        submitBtn.innerText = '주문 접수중...';
+
+        localStorage.setItem('ssinne_customer', JSON.stringify({
+            nickname:data.nickname,
+            name:data.name,
+            phone:data.phone,
+            zipcode:data.zipcode,
+            address:data.address,
+            detailAddress:data.detailAddress
+        }));
+
+        await fetch(SCRIPT_URL,{
+            method:'POST',
+            mode:'no-cors',
+            headers:{
+                'Content-Type':'text/plain;charset=utf-8'
+            },
+            body:JSON.stringify(data)
+        });
+
+        form.style.display = 'none';
+        document.getElementById('completePage').style.display = 'flex';
+
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+
+    } catch(error) {
+
+        alert('주문 접수 중 오류가 발생했습니다. 다시 시도해주세요.');
+
+    } finally {
+
+        isSubmitting = false;
+        submitBtn.disabled = false;
+        submitBtn.innerText = '제출하기';
+
     }
-
-    if (!makeOrderItemsText()) return;
-
-    const data = {
-        nickname: document.getElementById('nickname').value.trim(),
-        name: document.getElementById('name').value.trim(),
-        phone: document.getElementById('phone').value.trim(),
-        zipcode: document.getElementById('zipcode').value.trim(),
-        address: document.getElementById('address').value.trim(),
-        detailAddress: document.getElementById('detailAddress').value.trim(),
-        memo: document.getElementById('memo').value.trim(),
-        orderItems: document.getElementById('orderItems').value.trim(),
-        payment: document.getElementById('payment').value.trim()
-    };
-
-    if(!data.nickname){ alert('닉네임을 입력해주세요'); return; }
-    if(!data.name){ alert('수령인 성함을 입력해주세요'); return; }
-
-    if(!/^010-[0-9]{4}-[0-9]{4}$/.test(data.phone)){
-        alert('연락처를 정확히 입력해주세요');
-        return;
-    }
-
-    if(!data.zipcode || !data.address){
-        alert('주소 검색을 해주세요');
-        return;
-    }
-
-    if(!data.orderItems){
-        alert('구매내역을 입력해주세요');
-        return;
-    }
-
-    if(!data.payment){
-        alert('입금금액을 입력해주세요');
-        return;
-    }
-
-    isSubmitting = true;
-    submitBtn.disabled = true;
-    submitBtn.innerText = '주문 접수중...';
-
-    localStorage.setItem('ssinne_customer', JSON.stringify({
-        nickname:data.nickname,
-        name:data.name,
-        phone:data.phone,
-        zipcode:data.zipcode,
-        address:data.address,
-        detailAddress:data.detailAddress
-    }));
-
-    await fetch(SCRIPT_URL,{
-        method:'POST',
-        mode:'no-cors',
-        body:JSON.stringify(data)
-    });
-
-    form.reset();
-
-    const saved = JSON.parse(localStorage.getItem('ssinne_customer') || '{}');
-
-    document.getElementById('nickname').value = saved.nickname || '';
-    document.getElementById('name').value = saved.name || '';
-    document.getElementById('phone').value = saved.phone || '';
-    document.getElementById('zipcode').value = saved.zipcode || '';
-    document.getElementById('address').value = saved.address || '';
-    document.getElementById('detailAddress').value = saved.detailAddress || '';
-
-    document.getElementById('completePage').style.display = 'flex';
-
-    isSubmitting = false;
-    submitBtn.disabled = false;
-    submitBtn.innerText = '제출하기';
 });
