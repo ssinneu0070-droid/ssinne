@@ -306,25 +306,25 @@ th {
 </div>
 
 <div class="cards">
-  <div class="card">
-    <div class="card-title blue">전체 문의</div>
-    <div class="card-number" id="countTotal">0</div>
-  </div>
+<div class="card" onclick="filterByStatus('')">
+  <div class="card-title blue">전체 문의</div>
+  <div class="card-number" id="countTotal">0</div>
+</div>
 
-  <div class="card">
-    <div class="card-title orange">접수</div>
-    <div class="card-number" id="countWait">0</div>
-  </div>
+<div class="card" onclick="filterByStatus('접수')">
+  <div class="card-title orange">접수</div>
+  <div class="card-number" id="countWait">0</div>
+</div>
 
-  <div class="card">
-    <div class="card-title green">진행중</div>
-    <div class="card-number" id="countWork">0</div>
-  </div>
+<div class="card" onclick="filterByStatus('진행중')">
+  <div class="card-title green">진행중</div>
+  <div class="card-number" id="countWork">0</div>
+</div>
 
-  <div class="card">
-    <div class="card-title purple">완료</div>
-    <div class="card-number" id="countDone">0</div>
-  </div>
+<div class="card" onclick="filterByStatus('완료')">
+  <div class="card-title purple">완료</div>
+  <div class="card-number" id="countDone">0</div>
+</div>
 </div>
 
 <div class="search-box">
@@ -690,6 +690,12 @@ function quickStatusUpdate(rowNumber, newStatus) {
     alert("상태 저장 중 오류가 발생했습니다.");
     console.error(err);
   });
+}
+function filterByStatus(status) {
+  document.getElementById("searchInput").value = "";
+  document.getElementById("typeFilter").value = "";
+  document.getElementById("statusFilter").value = status;
+  renderList();
 }
 </script>
 
