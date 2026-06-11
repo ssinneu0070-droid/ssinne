@@ -434,21 +434,38 @@ async function uploadProductImage() {
     return;
   }
 
+  alert("사진을 압축해서 업로드 중입니다. 잠시만 기다려주세요.");
+
+  const img = new Image();
   const reader = new FileReader();
 
-  reader.onload = async function () {
-    const base64 = reader.result.split(",")[1];
+  reader.onload = function (e) {
+    img.src = e.target.result;
+  };
+
+  img.onload = async function () {
+    const canvas = document.createElement("canvas");
+    const maxWidth = 900;
+    const scale = maxWidth / img.width;
+
+    canvas.width = maxWidth;
+    canvas.height = img.height * scale;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    const compressedBase64 = canvas
+      .toDataURL("image/jpeg", 0.75)
+      .split(",")[1];
 
     try {
-      alert("사진 업로드 중입니다. 잠시만 기다려주세요.");
-
       const res = await fetch(PRODUCT_SCRIPT_URL, {
         method: "POST",
         body: JSON.stringify({
           action: "uploadImage",
-          fileName: file.name,
-          mimeType: file.type,
-          base64: base64
+          fileName: "product-image.jpg",
+          mimeType: "image/jpeg",
+          base64: compressedBase64
         })
       });
 
@@ -459,11 +476,11 @@ async function uploadProductImage() {
       }
 
       document.getElementById("image").value = data.imageUrl;
-      alert("사진 업로드가 완료되었습니다. 이제 저장하기를 눌러주세요.");
+      alert("사진 업로드 완료! 이제 저장하기를 눌러주세요.");
 
     } catch (error) {
       console.error(error);
-      alert("사진 업로드 중 오류가 발생했습니다. Apps Script 배포 또는 Drive 폴더 ID를 확인해주세요.");
+      alert("사진 업로드 실패: " + error.message);
     }
   };
 
