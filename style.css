@@ -362,4 +362,36 @@ select:focus {
     height:34px;
     cursor:pointer;
     accent-color:#ff4f8b;
+}@media (min-width: 768px){
+
+  .notice-box{
+    max-width:700px;
+    margin:20px auto;
+    padding:15px;
+  }
+
+  .notice-title{
+    font-size:20px;
+  }
+
+  .notice-list li{
+    font-size:15px;
+    padding:10px 0;
+  }
+
+  .icon{
+    width:30px;
+    height:30px;
+    font-size:16px;
+  }
+
+  .agree-text{
+    font-size:16px;
+  }
+
+  .agree-checkbox{
+    width:24px;
+    height:24px;
+  }
+
 }
