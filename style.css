@@ -281,6 +281,9 @@ textarea:focus {
   font-size: 16px;
   cursor: pointer;
 }
+.restart-btn:hover {
+  opacity: 0.9;
+}
 
 .channel-btn {
   background: #7c4dff;
