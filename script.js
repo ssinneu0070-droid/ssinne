@@ -35,11 +35,42 @@ document.getElementById('phone').addEventListener('input',function(e){
   else e.target.value=number.slice(0,3)+'-'+number.slice(3,7)+'-'+number.slice(7,11);
 });
 
-function addProduct(){
-  const div=document.createElement('div');
-  div.className='product-item';
-  div.innerHTML=`<input type="text" class="product-number" placeholder="상품번호 예 : 20"><input type="text" class="product-color" placeholder="색상 예 : 화이트"><input type="text" class="product-size" placeholder="사이즈 예 : 55 / FREE"><input type="number" class="product-qty" placeholder="수량" value="1" min="1"><button type="button" class="remove-product-btn" onclick="this.parentElement.remove()">삭제</button>`;
-  document.getElementById('productList').appendChild(div);
+function addProduct() {
+  const productList = document.getElementById('productList');
+
+  const div = document.createElement('div');
+  div.className = 'product-item';
+
+  div.innerHTML = `
+    <div class="product-row">
+      <div>
+        <label>상품번호</label>
+        <input type="text" class="product-number" placeholder="20">
+      </div>
+
+      <div>
+        <label>색상</label>
+        <input type="text" class="product-color" placeholder="화이트">
+      </div>
+
+      <div>
+        <label>사이즈</label>
+        <input type="text" class="product-size" placeholder="55 / FREE">
+      </div>
+
+      <div>
+        <label>수량</label>
+        <input type="number" class="product-qty" value="1" min="1">
+      </div>
+    </div>
+
+    <button type="button" class="remove-product-btn" onclick="this.closest('.product-item').remove()">
+      🗑 삭제
+    </button>
+  `;
+
+  productList.appendChild(div);
+}
 }
 
 function makeOrderItemsText(){
