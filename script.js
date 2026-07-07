@@ -63,7 +63,6 @@ const form=document.getElementById('shippingForm');const submitBtn=document.quer
 form.addEventListener('submit',async function(e){
   e.preventDefault();if(isSubmitting)return;
   try{
-    if(!document.getElementById('agreeCheck').checked){alert('안내사항 동의 체크 후 진행해주세요 💖');return;}
     if(!makeOrderItemsText())return;
     const data={nickname:val('nickname'),name:val('name'),phone:val('phone'),zipcode:val('zipcode'),address:val('address'),detailAddress:val('detailAddress'),memo:val('memo'),orderItems:val('orderItems'),payment:val('payment')};
     if(!data.nickname){alert('닉네임을 입력해주세요');return;}if(!data.name){alert('수령인 성함을 입력해주세요');return;}
