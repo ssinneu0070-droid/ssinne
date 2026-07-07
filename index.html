@@ -1,7 +1,13 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>씬느샵 배송지 입력</title><link rel="stylesheet" href="style.css"><script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>씬느샵 배송지 입력</title>
+
+<link rel="stylesheet" href="style.css">
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+</head>
 </head>
 <body>
 <div class="top-banner"><div class="main-title">씬느샵</div><div class="sub-title">배송지 입력 시스템</div></div>
@@ -14,10 +20,31 @@
   <div class="form-group"><label>배송지 주소 *</label><div class="address-row"><input type="text" id="zipcode" placeholder="우편번호" readonly><button type="button" class="search-btn" onclick="searchAddress()">주소찾기</button></div><input type="text" id="address" placeholder="기본 주소" readonly><input type="text" id="detailAddress" placeholder="상세 주소"></div>
   <div class="form-group"><label>배송 메모</label><textarea id="memo" placeholder="예 : 문 앞에 놓아주세요"></textarea></div>
   <div class="add-order-notice">📢 추가주문 고객님 안내<br><br>추가주문 시에는 추가 상품만 입력해주세요.<br>기존 주문은 이미 저장되어 있습니다.</div>
-  <div class="form-group"><label>구매내역 *</label><div class="order-guide">상품번호 / 색상 / 사이즈 / 수량을 각각 입력해주세요.</div><div id="productList"><div class="product-item"><input type="text" class="product-number" placeholder="상품번호 예 : 20"><input type="text" class="product-color" placeholder="색상 예 : 화이트"><input type="text" class="product-size" placeholder="사이즈 예 : 55 / FREE"><input type="number" class="product-qty" placeholder="수량" value="1" min="1"></div></div><button type="button" class="add-product-btn" onclick="addProduct()">➕ 상품 추가</button><input type="hidden" id="orderItems"></div>
+  <div class="form-group"><div class="form-group">
+  <label>구매내역 *</label>
+
+  <div class="order-guide">
+    상품번호 / 색상 / 사이즈 / 수량을 각각 입력해주세요.
+  </div>
+
+  <div id="productList">
+    <div class="product-item">
+      <input type="text" class="product-number" placeholder="상품번호 예 : 20">
+      <input type="text" class="product-color" placeholder="색상 예 : 화이트">
+      <input type="text" class="product-size" placeholder="사이즈 예 : 55 / FREE">
+      <input type="number" class="product-qty" placeholder="수량" value="1" min="1">
+    </div>
+  </div>
+
+  <button type="button" class="add-product-btn" onclick="addProduct()">
+    ➕ 상품 추가
+  </button>
+
+  <input type="hidden" id="orderItems">
+</div>
   <div class="form-group"><label>입금금액 *</label><input type="number" id="payment" placeholder="이체한 금액을 입력해주세요"></div>
   <button type="submit" class="submit-btn">제출하기</button>
 </form>
 <div id="completePage" class="complete-page" style="display:none;"><div class="complete-card"><div class="complete-icon">💖</div><h2>주문이 정상 접수되었습니다</h2><p>입금 확인 및 주문 누락 방지를 위해<br>채널톡으로 입금내역을 보내주세요.</p><a href="http://pf.kakao.com/_YVncn/chat" target="_blank" class="channel-btn">💜 채널톡 바로가기</a><a href="https://band.us/n/adafbc6dFc5ez" target="_blank" class="band-btn">💚 씬느샵 밴드 입장하기</a><button type="button" onclick="window.location.reload()" class="restart-btn">➕ 추가 주문하기</button></div></div>
-</div><script src="script.js"></script>
+</div><script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </body></html>
