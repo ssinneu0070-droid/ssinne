@@ -18,7 +18,7 @@ body{margin:0;font-family:Arial,"Noto Sans KR",sans-serif;background:#fff5fa;col
 .card{background:#fff;border-radius:18px;box-shadow:0 6px 18px rgba(0,0,0,.08);padding:18px;margin-bottom:18px}
 .card-title{font-size:20px;font-weight:900;margin-bottom:14px}
 .search{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
-.search input{flex:1;min-width:180px;padding:14px;border:1px solid #ddd;border-radius:13px;font-size:15px}
+.search input{flex:1;min-width:160px;padding:14px;border:1px solid #ddd;border-radius:13px;font-size:15px}
 button{border:none;border-radius:13px;padding:13px 16px;font-size:15px;font-weight:900;cursor:pointer}
 .pink{background:#ff4fa1;color:#fff}
 .gray{background:#eee;color:#333}
@@ -46,6 +46,9 @@ th{background:#ffe3f1;font-weight:900}
 .section{display:none}
 .section.active{display:block}
 .notice{font-size:14px;line-height:1.7;color:#555}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.summary-box{background:#fff0f7;border-radius:15px;padding:15px;text-align:center;font-weight:900}
+.summary-box span{display:block;color:#ff2f91;font-size:24px;margin-top:5px}
 
 @media(max-width:700px){
 .header h1{font-size:23px}
@@ -54,6 +57,7 @@ th{background:#ffe3f1;font-weight:900}
 .grid{grid-template-columns:1fr}
 .btn-row,.search{flex-direction:column}
 .search input,.search button{width:100%;min-width:0}
+.summary{grid-template-columns:1fr}
 table,thead,tbody,tr,td,th{display:block;min-width:0}
 thead{display:none}
 tr{background:white;border:1px solid #eee;border-radius:16px;margin-bottom:12px;padding:12px}
@@ -67,7 +71,7 @@ td::before{content:attr(data-label);display:block;font-weight:900;color:#ff4fa1;
 
 <div class="header">
   <h1>씬느샵 통합 관리자</h1>
-  <p>주문관리 · 입금상태 변경 · 상품관리</p>
+  <p>주문관리 · 날짜별 조회 · 입금상태 변경 · 상품관리</p>
 </div>
 
 <div class="container">
@@ -81,13 +85,26 @@ td::before{content:attr(data-label);display:block;font-weight:900;color:#ff4fa1;
 <section id="orders" class="section active">
   <div class="card">
     <div class="card-title">주문 검색</div>
+
     <div class="search">
+      <input type="date" id="startDate">
+      <input type="date" id="endDate">
       <input type="text" id="searchInput" placeholder="닉네임 또는 수령인 성함 검색">
-      <button type="button" class="pink" onclick="searchOrders()">검색</button>
+      <button type="button" class="pink" onclick="searchOrders()">조회하기</button>
+      <button type="button" class="gray" onclick="loadTodayOrders()">오늘 주문</button>
+      <button type="button" class="gray" onclick="resetOrderSearch()">초기화</button>
     </div>
+
     <div class="notice">
-      검색 후 입금상태를 변경하면 스프레드시트 C열에 바로 저장됩니다.
+      날짜만 선택하면 해당 날짜 주문이 전부 나옵니다.<br>
+      하루만 조회하려면 시작일과 종료일을 같은 날짜로 선택하세요.
     </div>
+  </div>
+
+  <div class="summary">
+    <div class="summary-box">조회 주문건 <span id="orderCount">0</span></div>
+    <div class="summary-box">입금완료 <span id="paidCount">0</span></div>
+    <div class="summary-box">입금합계 <span id="paymentTotal">0원</span></div>
   </div>
 
   <div class="card">
@@ -99,6 +116,7 @@ td::before{content:attr(data-label);display:block;font-weight:900;color:#ff4fa1;
             <th>주문일</th>
             <th>입금상태</th>
             <th>입금금액</th>
+            <th>입금내역</th>
             <th>닉네임</th>
             <th>수령인</th>
             <th>연락처</th>
@@ -109,7 +127,7 @@ td::before{content:attr(data-label);display:block;font-weight:900;color:#ff4fa1;
           </tr>
         </thead>
         <tbody id="orderList">
-          <tr><td colspan="10" class="loading">닉네임 또는 수령인 성함을 검색하면 주문이 표시됩니다.</td></tr>
+          <tr><td colspan="11" class="loading">날짜 또는 이름으로 주문을 조회하세요.</td></tr>
         </tbody>
       </table>
     </div>
@@ -200,25 +218,61 @@ function showSection(name) {
   }
 }
 
+function loadTodayOrders(){
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, "0");
+  const d = String(today.getDate()).padStart(2, "0");
+  const date = `${y}-${m}-${d}`;
+
+  document.getElementById("startDate").value = date;
+  document.getElementById("endDate").value = date;
+  document.getElementById("searchInput").value = "";
+
+  searchOrders();
+}
+
+function resetOrderSearch(){
+  document.getElementById("startDate").value = "";
+  document.getElementById("endDate").value = "";
+  document.getElementById("searchInput").value = "";
+
+  document.getElementById("orderCount").innerText = "0";
+  document.getElementById("paidCount").innerText = "0";
+  document.getElementById("paymentTotal").innerText = "0원";
+
+  document.getElementById("orderList").innerHTML =
+    '<tr><td colspan="11" class="loading">날짜 또는 이름으로 주문을 조회하세요.</td></tr>';
+}
+
 async function searchOrders() {
   const keyword = document.getElementById("searchInput").value.trim();
+  const startDate = document.getElementById("startDate").value;
+  const endDate = document.getElementById("endDate").value;
 
-  if (keyword === "") {
-    alert("검색어를 입력해주세요");
+  if (keyword === "" && startDate === "" && endDate === "") {
+    alert("날짜 또는 검색어를 입력해주세요.");
     return;
   }
 
   document.getElementById("orderList").innerHTML =
-    '<tr><td colspan="10" class="loading">주문을 검색중입니다...</td></tr>';
+    '<tr><td colspan="11" class="loading">주문을 검색중입니다...</td></tr>';
+
+  let params = [];
+
+  if(keyword !== "") params.push("search=" + encodeURIComponent(keyword));
+  if(startDate !== "") params.push("startDate=" + encodeURIComponent(startDate));
+  if(endDate !== "") params.push("endDate=" + encodeURIComponent(endDate));
 
   try {
-    const res = await fetch(ORDER_SCRIPT_URL + "?search=" + encodeURIComponent(keyword));
+    const res = await fetch(ORDER_SCRIPT_URL + "?" + params.join("&"));
     const data = await res.json();
+
     renderOrders(Array.isArray(data) ? data.reverse() : []);
   } catch (error) {
     console.log(error);
     document.getElementById("orderList").innerHTML =
-      '<tr><td colspan="10" class="loading">데이터를 불러오지 못했습니다.</td></tr>';
+      '<tr><td colspan="11" class="loading">데이터를 불러오지 못했습니다.</td></tr>';
   }
 }
 
@@ -226,15 +280,17 @@ function renderOrders(orders) {
   const list = document.getElementById("orderList");
   list.innerHTML = "";
 
+  updateOrderSummary(orders);
+
   if (orders.length === 0) {
-    list.innerHTML = '<tr><td colspan="10" class="loading">검색 결과가 없습니다.</td></tr>';
+    list.innerHTML = '<tr><td colspan="11" class="loading">검색 결과가 없습니다.</td></tr>';
     return;
   }
 
   orders.forEach(order => {
     list.innerHTML += `
       <tr>
-        <td data-label="주문일">${order.orderDate || ""}</td>
+        <td data-label="주문일">${escapeHtml(order.orderDate || "")}</td>
         <td data-label="입금상태">
           <select class="pay-select" onchange="changePaymentStatus('${order.rowNumber || ""}', this.value)">
             <option value="미입금" ${order.paymentStatus === "미입금" ? "selected" : ""}>미입금</option>
@@ -242,17 +298,30 @@ function renderOrders(orders) {
             <option value="환불" ${order.paymentStatus === "환불" ? "selected" : ""}>환불</option>
           </select>
         </td>
-        <td data-label="입금금액">${Number(order.payment || 0).toLocaleString()}</td>
-        <td data-label="닉네임">${order.nickname || ""}</td>
-        <td data-label="수령인">${order.name || ""}</td>
-        <td data-label="연락처">${order.phone || ""}</td>
-        <td data-label="주소">${order.address || ""}</td>
-        <td data-label="배송메모">${order.memo || ""}</td>
-        <td data-label="구매내역">${order.orderItems || ""}</td>
-        <td data-label="내품수량">${order.quantity || ""}</td>
+        <td data-label="입금금액">${Number(String(order.payment || "0").replace(/[^0-9]/g,"")).toLocaleString()}원</td>
+        <td data-label="입금내역">${escapeHtml(order.paymentMemo || "")}</td>
+        <td data-label="닉네임">${escapeHtml(order.nickname || "")}</td>
+        <td data-label="수령인">${escapeHtml(order.name || "")}</td>
+        <td data-label="연락처">${escapeHtml(order.phone || "")}</td>
+        <td data-label="주소">${escapeHtml(order.address || "")}</td>
+        <td data-label="배송메모">${escapeHtml(order.memo || "")}</td>
+        <td data-label="구매내역" style="white-space:pre-line">${escapeHtml(order.orderItems || "")}</td>
+        <td data-label="내품수량">${escapeHtml(order.quantity || "")}</td>
       </tr>
     `;
   });
+}
+
+function updateOrderSummary(orders){
+  const total = orders.length;
+  const paid = orders.filter(o => String(o.paymentStatus || "") === "입금완료").length;
+  const paymentTotal = orders.reduce((sum, o) => {
+    return sum + Number(String(o.payment || "0").replace(/[^0-9]/g, ""));
+  }, 0);
+
+  document.getElementById("orderCount").innerText = total;
+  document.getElementById("paidCount").innerText = paid;
+  document.getElementById("paymentTotal").innerText = paymentTotal.toLocaleString() + "원";
 }
 
 async function changePaymentStatus(rowNumber, paymentStatus) {
@@ -280,6 +349,15 @@ async function changePaymentStatus(rowNumber, paymentStatus) {
     console.error(error);
     alert("입금상태 변경 중 오류가 발생했습니다. 주문용 Apps Script 배포를 확인해주세요.");
   }
+}
+
+function escapeHtml(text){
+  return String(text ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
 }
 
 let products = [];
@@ -325,15 +403,15 @@ function renderProducts() {
     tbody.innerHTML += `
       <tr>
         <td data-label="사진">${img}</td>
-        <td data-label="상품번호">${p.no || ""}</td>
-        <td data-label="상품명"><b>${p.name || ""}</b></td>
-        <td data-label="색상">${p.color || ""}</td>
-        <td data-label="사이즈">${p.size || ""}</td>
+        <td data-label="상품번호">${escapeHtml(p.no || "")}</td>
+        <td data-label="상품명"><b>${escapeHtml(p.name || "")}</b></td>
+        <td data-label="색상">${escapeHtml(p.color || "")}</td>
+        <td data-label="사이즈">${escapeHtml(p.size || "")}</td>
         <td data-label="판매가">${Number(p.price || 0).toLocaleString()}원</td>
-        <td data-label="상태"><span class="status ${statusClass}">${p.status || "판매중"}</span></td>
+        <td data-label="상태"><span class="status ${statusClass}">${escapeHtml(p.status || "판매중")}</span></td>
         <td data-label="관리">
-          <button class="small-btn black" onclick="editProduct('${p.no}')">수정</button>
-          <button class="small-btn red" onclick="deleteProduct('${p.no}')">삭제</button>
+          <button class="small-btn black" onclick="editProduct('${escapeHtml(p.no)}')">수정</button>
+          <button class="small-btn red" onclick="deleteProduct('${escapeHtml(p.no)}')">삭제</button>
         </td>
       </tr>
     `;
