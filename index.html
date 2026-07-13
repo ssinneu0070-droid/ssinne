@@ -2,107 +2,1884 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>씬느샵 배송지 입력</title>
-<link rel="stylesheet" href="style.css">
-<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-</head>
-<body>
 
-<div class="top-banner">
-  <div class="main-title">씬느샵</div>
-  <div class="sub-title">배송지 입력 시스템</div>
-</div>
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+>
 
-<div class="container">
-  <form id="shippingForm">
+<title>씬느샵 주문서</title>
 
-    <div class="notice-box">
-      <div class="notice-title">💖 씬느샵 주문 전 필독 안내</div>
-      <ul class="notice-list">
-        <li><span class="icon">❗</span><span>단순변심, 사이즈미스, 미세불량은 반품/교환이 어렵습니다.</span></li>
-        <li><span class="icon">🚚</span><span>택배비는 기본 4,000원, 제주 및 도서산간은 7,000원입니다.</span></li>
-        <li><span class="icon">📝</span><span>주문서 작성 후 유튜브 닉네임 또는 성함을 채널톡에 남겨주세요.</span></li>
-        <li><span class="icon">📸</span><span>입금완료 후 캡처사진을 채널톡으로 보내주시면 확인이 빠릅니다.</span></li>
-        <li><span class="icon">🏦</span><span>입금계좌 : 토스뱅크 1002-5790-8378</span></li>
-      </ul>
+<script>
+const SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbyLgTXCFDuCkDSS_bv-Jx0f2wa0CD0Y4la7qUw12IoE4V0-lZoliTbmxNw1vxRynytiHg/exec";
+
+let PRODUCTS = [];
+let productCardCount = 0;
+let isSubmitting = false;
+
+document.addEventListener("DOMContentLoaded", async function () {
+  document
+    .getElementById("phone")
+    .addEventListener("input", formatPhoneNumber);
+
+  document
+    .getElementById("orderForm")
+    .addEventListener("submit", handleSubmit);
+
+  await loadProducts();
+
+  addProductCard();
+});
+
+
+async function loadProducts() {
+  setSubmitButton(false, "상품정보 불러오는 중...");
+
+  try {
+    const response = await fetch(
+      SCRIPT_URL + "?action=products&t=" + Date.now()
+    );
+
+    if (!response.ok) {
+      throw new Error("상품정보 요청에 실패했습니다.");
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(
+        data.message || "상품정보를 불러오지 못했습니다."
+      );
+    }
+
+    PRODUCTS = Array.isArray(data.products)
+      ? data.products
+      : [];
+
+    if (PRODUCTS.length === 0) {
+      throw new Error(
+        "상품정보 시트에 등록된 상품이 없습니다."
+      );
+    }
+
+    setSubmitButton(true, "주문서 제출하기");
+
+  } catch (error) {
+    console.error(error);
+
+    PRODUCTS = [];
+
+    setSubmitButton(false, "상품정보 연결 오류");
+
+    alert(
+      "상품정보를 불러오지 못했습니다.\n\n" +
+      error.message +
+      "\n\nApps Script 주소와 배포 설정을 확인해주세요."
+    );
+  }
+}
+
+
+function setSubmitButton(enabled, text) {
+  const button = document.getElementById("submitButton");
+
+  button.disabled = !enabled;
+  button.textContent = text;
+}
+
+
+function addProductCard() {
+  productCardCount += 1;
+
+  const cardId = productCardCount;
+  const card = document.createElement("div");
+
+  card.className = "product-card";
+  card.dataset.cardId = String(cardId);
+  card.dataset.price = "0";
+  card.dataset.total = "0";
+  card.dataset.checked = "false";
+
+  card.innerHTML = `
+    <div class="product-card-title">
+      상품 ${cardId}
     </div>
 
-    <div class="form-group">
-      <label>닉네임 *</label>
-      <input type="text" id="nickname">
-    </div>
+    <div class="product-grid">
 
-    <div class="form-group">
-      <label>수령인 성함 *</label>
-      <input type="text" id="name">
-    </div>
+      <div class="field full">
+        <label>
+          상품번호 <span class="required">*</span>
+        </label>
 
-    <div class="form-group">
-      <label>연락처 *</label>
-      <input type="text" id="phone" maxlength="13" placeholder="010-1234-5678">
-    </div>
+        <div class="number-row">
+          <input
+            type="text"
+            class="product-no"
+            inputmode="numeric"
+            maxlength="3"
+            placeholder="예: 12"
+            oninput="onlyNumber(this)"
+            required
+          >
 
-    <div class="form-group">
-      <label>배송지 주소 *</label>
-      <div class="address-row">
-        <input type="text" id="zipcode" placeholder="우편번호" readonly>
-        <button type="button" class="search-btn" onclick="searchAddress()">주소찾기</button>
-      </div>
-      <input type="text" id="address" placeholder="기본 주소" readonly>
-      <input type="text" id="detailAddress" placeholder="상세 주소">
-    </div>
+          <button
+            type="button"
+            class="check-product-button"
+            onclick="checkProduct(${cardId})"
+          >
+            상품 확인
+          </button>
+        </div>
 
-    <div class="form-group">
-      <label>배송 메모</label>
-      <textarea id="memo" placeholder="예 : 문 앞에 놓아주세요"></textarea>
-    </div>
-
-    <div class="add-order-notice">
-      📢 추가주문 고객님 안내<br><br>
-      추가주문 시에는 추가 상품만 입력해주세요.<br>
-      기존 주문은 이미 저장되어 있습니다.
-    </div>
-
-    <div class="form-group">
-      <label>구매내역 *</label>
-      <div class="order-guide">
-        상품번호 / 색상 / 사이즈 / 수량을 각각 입력해주세요.
-      </div>
-
-      <div id="productList">
-        <div class="product-item">
-          <input type="text" class="product-number" placeholder="상품번호 예 : 20 숫자만 입력">
-          <input type="text" class="product-color" placeholder="색상 예 : 화이트">
-          <input type="text" class="product-size" placeholder="사이즈 예 : 55 / FREE">
-          <input type="number" class="product-qty" placeholder="수량" value="1" min="1">
+        <div class="product-message">
+          상품번호 입력 후 상품 확인을 눌러주세요.
         </div>
       </div>
 
-      <button type="button" class="add-product-btn" onclick="addProduct()">➕ 상품 추가</button>
-      <input type="hidden" id="orderItems">
+      <div class="field">
+        <label>
+          칼라 <span class="required">*</span>
+        </label>
+
+        <select
+          class="product-color"
+          onchange="changeColor(${cardId})"
+          disabled
+          required
+        >
+          <option value="">상품 확인 후 선택</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>
+          사이즈 <span class="required">*</span>
+        </label>
+
+        <select
+          class="product-size"
+          onchange="calculateCard(${cardId})"
+          disabled
+          required
+        >
+          <option value="">칼라 선택 후 선택</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>
+          수량 <span class="required">*</span>
+        </label>
+
+        <div class="quantity-control">
+          <button
+            type="button"
+            onclick="changeQuantity(${cardId}, -1)"
+          >
+            −
+          </button>
+
+          <input
+            type="number"
+            class="product-quantity"
+            value="1"
+            min="1"
+            max="99"
+            inputmode="numeric"
+            oninput="calculateCard(${cardId})"
+            required
+          >
+
+          <button
+            type="button"
+            onclick="changeQuantity(${cardId}, 1)"
+          >
+            ＋
+          </button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>금액</label>
+
+        <div class="price-box">
+          <div class="price-row">
+            <span>판매가</span>
+            <strong class="unit-price">0원</strong>
+          </div>
+
+          <div class="price-row">
+            <span>상품 합계</span>
+            <strong class="item-total">0원</strong>
+          </div>
+        </div>
+      </div>
+
     </div>
 
-    <div class="form-group">
-      <label>입금금액 *</label>
-      <input type="number" id="payment" placeholder="이체한 금액을 입력해주세요">
+    ${
+      cardId > 1
+        ? `
+          <button
+            type="button"
+            class="remove-button"
+            onclick="removeProductCard(${cardId})"
+          >
+            이 상품 삭제
+          </button>
+        `
+        : ""
+    }
+  `;
+
+  document
+    .getElementById("productList")
+    .appendChild(card);
+}
+
+
+function getCard(cardId) {
+  return document.querySelector(
+    `.product-card[data-card-id="${cardId}"]`
+  );
+}
+
+
+function onlyNumber(input) {
+  input.value = input.value.replace(/[^0-9]/g, "");
+
+  const card = input.closest(".product-card");
+
+  card.dataset.checked = "false";
+  card.dataset.price = "0";
+  card.dataset.total = "0";
+
+  const colorSelect =
+    card.querySelector(".product-color");
+
+  const sizeSelect =
+    card.querySelector(".product-size");
+
+  const message =
+    card.querySelector(".product-message");
+
+  colorSelect.innerHTML =
+    '<option value="">상품 확인 후 선택</option>';
+
+  sizeSelect.innerHTML =
+    '<option value="">칼라 선택 후 선택</option>';
+
+  colorSelect.disabled = true;
+  sizeSelect.disabled = true;
+
+  card.querySelector(".unit-price").textContent =
+    "0원";
+
+  card.querySelector(".item-total").textContent =
+    "0원";
+
+  message.className = "product-message";
+  message.textContent =
+    "상품번호 입력 후 상품 확인을 눌러주세요.";
+
+  calculateGrandTotal();
+}
+
+
+function checkProduct(cardId) {
+  const card = getCard(cardId);
+
+  if (!card) return;
+
+  const productNo = card
+    .querySelector(".product-no")
+    .value
+    .trim();
+
+  const message =
+    card.querySelector(".product-message");
+
+  const colorSelect =
+    card.querySelector(".product-color");
+
+  const sizeSelect =
+    card.querySelector(".product-size");
+
+  if (!productNo) {
+    message.className =
+      "product-message error";
+
+    message.textContent =
+      "상품번호를 입력해주세요.";
+
+    return;
+  }
+
+  const product = PRODUCTS.find(function (item) {
+    return String(item.productNo) === productNo;
+  });
+
+  if (!product) {
+    card.dataset.checked = "false";
+    card.dataset.price = "0";
+    card.dataset.total = "0";
+
+    colorSelect.disabled = true;
+    sizeSelect.disabled = true;
+
+    colorSelect.innerHTML =
+      '<option value="">등록되지 않은 상품</option>';
+
+    sizeSelect.innerHTML =
+      '<option value="">선택할 수 없음</option>';
+
+    message.className =
+      "product-message error";
+
+    message.textContent =
+      "등록되지 않은 상품번호입니다.";
+
+    calculateCard(cardId);
+    return;
+  }
+
+  card.dataset.checked = "true";
+  card.dataset.price = String(product.price || 0);
+  card.dataset.total = "0";
+
+  colorSelect.innerHTML =
+    '<option value="">칼라를 선택하세요</option>';
+
+  Object.keys(product.colors || {}).forEach(
+    function (color) {
+      const option =
+        document.createElement("option");
+
+      option.value = color;
+      option.textContent = color;
+
+      colorSelect.appendChild(option);
+    }
+  );
+
+  colorSelect.disabled = false;
+
+  sizeSelect.innerHTML =
+    '<option value="">칼라 선택 후 선택</option>';
+
+  sizeSelect.disabled = true;
+
+  message.className =
+    "product-message success";
+
+  message.textContent =
+    "상품이 확인되었습니다. 칼라를 선택해주세요.";
+
+  calculateCard(cardId);
+}
+
+
+function changeColor(cardId) {
+  const card = getCard(cardId);
+
+  if (!card) return;
+
+  const productNo = card
+    .querySelector(".product-no")
+    .value
+    .trim();
+
+  const color = card
+    .querySelector(".product-color")
+    .value;
+
+  const sizeSelect =
+    card.querySelector(".product-size");
+
+  const message =
+    card.querySelector(".product-message");
+
+  const product = PRODUCTS.find(function (item) {
+    return String(item.productNo) === productNo;
+  });
+
+  sizeSelect.innerHTML =
+    '<option value="">사이즈를 선택하세요</option>';
+
+  if (
+    !product ||
+    !color ||
+    !product.colors ||
+    !product.colors[color]
+  ) {
+    sizeSelect.disabled = true;
+    calculateCard(cardId);
+    return;
+  }
+
+  product.colors[color].forEach(function (size) {
+    const option =
+      document.createElement("option");
+
+    option.value = size;
+    option.textContent = size;
+
+    sizeSelect.appendChild(option);
+  });
+
+  sizeSelect.disabled = false;
+
+  message.className =
+    "product-message success";
+
+  message.textContent =
+    "사이즈와 수량을 선택해주세요.";
+
+  calculateCard(cardId);
+}
+
+
+function changeQuantity(cardId, amount) {
+  const card = getCard(cardId);
+
+  if (!card) return;
+
+  const input =
+    card.querySelector(".product-quantity");
+
+  let quantity = Number(input.value || 1);
+
+  quantity += amount;
+
+  if (quantity < 1) quantity = 1;
+  if (quantity > 99) quantity = 99;
+
+  input.value = quantity;
+
+  calculateCard(cardId);
+}
+
+
+function calculateCard(cardId) {
+  const card = getCard(cardId);
+
+  if (!card) return;
+
+  const price =
+    Number(card.dataset.price || 0);
+
+  let quantity = Number(
+    card.querySelector(".product-quantity").value || 1
+  );
+
+  if (!Number.isFinite(quantity) || quantity < 1) {
+    quantity = 1;
+  }
+
+  if (quantity > 99) {
+    quantity = 99;
+  }
+
+  card.querySelector(
+    ".product-quantity"
+  ).value = quantity;
+
+  const total = price * quantity;
+
+  card.querySelector(
+    ".unit-price"
+  ).textContent =
+    price.toLocaleString("ko-KR") + "원";
+
+  card.querySelector(
+    ".item-total"
+  ).textContent =
+    total.toLocaleString("ko-KR") + "원";
+
+  card.dataset.total = String(total);
+
+  calculateGrandTotal();
+}
+
+
+function calculateGrandTotal() {
+  const cards =
+    document.querySelectorAll(".product-card");
+
+  let total = 0;
+
+  cards.forEach(function (card) {
+    total += Number(card.dataset.total || 0);
+  });
+
+  document.getElementById(
+    "grandTotal"
+  ).textContent =
+    total.toLocaleString("ko-KR") + "원";
+}
+
+
+function removeProductCard(cardId) {
+  const card = getCard(cardId);
+
+  if (!card) return;
+
+  card.remove();
+
+  calculateGrandTotal();
+}
+
+
+function formatPhoneNumber(event) {
+  let number = event.target.value
+    .replace(/[^0-9]/g, "")
+    .slice(0, 11);
+
+  if (number.length <= 3) {
+    event.target.value = number;
+    return;
+  }
+
+  if (number.length <= 7) {
+    event.target.value =
+      number.slice(0, 3) +
+      "-" +
+      number.slice(3);
+
+    return;
+  }
+
+  event.target.value =
+    number.slice(0, 3) +
+    "-" +
+    number.slice(3, 7) +
+    "-" +
+    number.slice(7, 11);
+}
+
+
+function findAddress() {
+  if (
+    typeof daum === "undefined" ||
+    !daum.Postcode
+  ) {
+    alert(
+      "주소검색 프로그램을 불러오지 못했습니다.\n" +
+      "인터넷 연결을 확인한 뒤 새로고침해주세요."
+    );
+
+    return;
+  }
+
+  new daum.Postcode({
+    oncomplete: function (data) {
+      const selectedAddress =
+        data.userSelectedType === "R"
+          ? data.roadAddress
+          : data.jibunAddress;
+
+      document.getElementById(
+        "zipcode"
+      ).value = data.zonecode;
+
+      document.getElementById(
+        "address"
+      ).value = selectedAddress;
+
+      document.getElementById(
+        "detailAddress"
+      ).focus();
+    }
+  }).open();
+}
+
+
+function collectProducts() {
+  const cards =
+    document.querySelectorAll(".product-card");
+
+  const products = [];
+
+  for (const card of cards) {
+    const productNo = card
+      .querySelector(".product-no")
+      .value
+      .trim();
+
+    const color = card
+      .querySelector(".product-color")
+      .value;
+
+    const size = card
+      .querySelector(".product-size")
+      .value;
+
+    const quantity = Number(
+      card
+        .querySelector(".product-quantity")
+        .value || 1
+    );
+
+    const price =
+      Number(card.dataset.price || 0);
+
+    const checked =
+      card.dataset.checked === "true";
+
+    if (!productNo) {
+      throw new Error(
+        "상품번호를 입력해주세요."
+      );
+    }
+
+    if (!checked) {
+      throw new Error(
+        productNo +
+        "번 상품의 상품 확인 버튼을 눌러주세요."
+      );
+    }
+
+    if (!color) {
+      throw new Error(
+        productNo +
+        "번 상품의 칼라를 선택해주세요."
+      );
+    }
+
+    if (!size) {
+      throw new Error(
+        productNo +
+        "번 상품의 사이즈를 선택해주세요."
+      );
+    }
+
+    if (
+      !Number.isFinite(quantity) ||
+      quantity < 1
+    ) {
+      throw new Error(
+        productNo +
+        "번 상품의 수량을 확인해주세요."
+      );
+    }
+
+    products.push({
+      productNo: productNo,
+      color: color,
+      size: size,
+      quantity: quantity,
+      price: price,
+      total: price * quantity
+    });
+  }
+
+  return products;
+}
+
+
+async function handleSubmit(event) {
+  event.preventDefault();
+
+  if (isSubmitting) return;
+
+  if (!SCRIPT_URL.startsWith("https://script.google.com/")) {
+    alert(
+      "SCRIPT_URL에 Apps Script 웹앱 주소를 넣어주세요."
+    );
+
+    return;
+  }
+
+  try {
+    const products = collectProducts();
+
+    const orderData = {
+      action: "saveOrder",
+
+      nickname:
+        document
+          .getElementById("nickname")
+          .value
+          .trim(),
+
+      receiverName:
+        document
+          .getElementById("receiverName")
+          .value
+          .trim(),
+
+      phone:
+        document
+          .getElementById("phone")
+          .value
+          .trim(),
+
+      zipcode:
+        document
+          .getElementById("zipcode")
+          .value
+          .trim(),
+
+      address:
+        document
+          .getElementById("address")
+          .value
+          .trim(),
+
+      detailAddress:
+        document
+          .getElementById("detailAddress")
+          .value
+          .trim(),
+
+      shippingMemo:
+        document
+          .getElementById("shippingMemo")
+          .value
+          .trim(),
+
+      products: products
+    };
+
+    if (!orderData.nickname) {
+      throw new Error(
+        "닉네임을 입력해주세요."
+      );
+    }
+
+    if (!orderData.receiverName) {
+      throw new Error(
+        "수령인 성함을 입력해주세요."
+      );
+    }
+
+    const phoneNumbers =
+      orderData.phone.replace(/[^0-9]/g, "");
+
+    if (phoneNumbers.length < 10) {
+      throw new Error(
+        "연락처를 정확하게 입력해주세요."
+      );
+    }
+
+    if (!orderData.zipcode || !orderData.address) {
+      throw new Error(
+        "주소 찾기를 이용해 주소를 입력해주세요."
+      );
+    }
+
+    if (!orderData.detailAddress) {
+      throw new Error(
+        "상세주소를 입력해주세요."
+      );
+    }
+
+    isSubmitting = true;
+
+    setSubmitButton(false, "주문서 저장 중...");
+
+    const response = await fetch(SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify(orderData)
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        "주문 저장 요청에 실패했습니다."
+      );
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(
+        result.message ||
+        "주문 저장 중 오류가 발생했습니다."
+      );
+    }
+
+    alert(
+      "주문이 정상적으로 접수되었습니다.\n\n" +
+      "총 입금금액: " +
+      Number(
+        result.paymentAmount || 0
+      ).toLocaleString("ko-KR") +
+      "원"
+    );
+
+    resetOrderForm();
+
+  } catch (error) {
+    console.error(error);
+
+    alert(
+      error.message ||
+      "주문 저장 중 오류가 발생했습니다."
+    );
+
+  } finally {
+    isSubmitting = false;
+
+    setSubmitButton(true, "주문서 제출하기");
+  }
+}
+
+
+function resetOrderForm() {
+  document.getElementById("orderForm").reset();
+
+  document.getElementById("zipcode").value = "";
+  document.getElementById("address").value = "";
+  document.getElementById("detailAddress").value = "";
+
+  document.getElementById("productList").innerHTML = "";
+
+  productCardCount = 0;
+
+  addProductCard();
+
+  calculateGrandTotal();
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
+</script>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #fff4f8;
+  font-family: Arial, "Noto Sans KR", sans-serif;
+  color: #222;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+.top-banner {
+  background: linear-gradient(135deg, #ff4fa1, #ff91c3);
+  color: #fff;
+  text-align: center;
+  padding: 25px 15px;
+}
+
+.top-banner h1 {
+  margin: 0;
+  font-size: 29px;
+  font-weight: 900;
+}
+
+.top-banner p {
+  margin: 7px 0 0;
+  font-size: 14px;
+}
+
+.container {
+  width: 100%;
+  max-width: 720px;
+  margin: 22px auto;
+  padding: 0 14px 40px;
+}
+
+.box {
+  background: #fff;
+  border-radius: 20px;
+  padding: 22px;
+  margin-bottom: 16px;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.08);
+}
+
+.box-title {
+  margin-bottom: 18px;
+  font-size: 21px;
+  font-weight: 900;
+  color: #ff3e98;
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+.field:last-child {
+  margin-bottom: 0;
+}
+
+label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.required {
+  color: #ff277f;
+}
+
+input,
+select,
+textarea {
+  display: block;
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 13px;
+  background: #fff;
+  padding: 14px;
+  font-size: 16px;
+  outline: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #ff63a9;
+  box-shadow: 0 0 0 3px rgba(255, 79, 161, 0.12);
+}
+
+textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.address-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.address-button {
+  border: none;
+  border-radius: 13px;
+  background: #555;
+  color: #fff;
+  padding: 0 17px;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.product-card {
+  position: relative;
+  border: 2px solid #ffd8ea;
+  border-radius: 18px;
+  background: #fffafd;
+  padding: 18px;
+  margin-bottom: 14px;
+}
+
+.product-card-title {
+  margin-bottom: 17px;
+  font-size: 17px;
+  font-weight: 900;
+  color: #ff3e98;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 13px;
+}
+
+.product-grid .full {
+  grid-column: 1 / -1;
+}
+
+.number-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.check-product-button {
+  border: none;
+  border-radius: 13px;
+  background: #ff4fa1;
+  color: #fff;
+  padding: 0 17px;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.price-box {
+  background: #fff0f7;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  font-size: 15px;
+}
+
+.price-row strong {
+  color: #ff2e8d;
+}
+
+.product-message {
+  min-height: 20px;
+  margin-top: 7px;
+  font-size: 13px;
+  color: #777;
+}
+
+.product-message.error {
+  color: #e4315b;
+  font-weight: 900;
+}
+
+.product-message.success {
+  color: #168c4a;
+  font-weight: 900;
+}
+
+.quantity-control {
+  display: grid;
+  grid-template-columns: 48px 1fr 48px;
+  gap: 7px;
+}
+
+.quantity-control button {
+  border: none;
+  border-radius: 12px;
+  background: #ffe0ee;
+  color: #ff2e8d;
+  font-size: 22px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.quantity-control input {
+  text-align: center;
+  font-weight: 900;
+}
+
+.remove-button {
+  width: 100%;
+  margin-top: 14px;
+  border: none;
+  border-radius: 12px;
+  background: #f1f1f1;
+  color: #555;
+  padding: 11px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.add-product-button {
+  width: 100%;
+  border: 2px dashed #ff79b5;
+  border-radius: 15px;
+  background: #fff;
+  color: #ff378f;
+  padding: 15px;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.total-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  border-radius: 16px;
+  background: #ffedf6;
+  padding: 18px;
+  margin-top: 15px;
+}
+
+.total-box span {
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.total-box strong {
+  color: #ff2785;
+  font-size: 25px;
+}
+
+.submit-button {
+  width: 100%;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ff4fa1, #ff75b3);
+  color: #fff;
+  padding: 17px;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 6px 15px rgba(255, 79, 161, 0.25);
+}
+
+.submit-button:disabled {
+  background: #bbb;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.guide {
+  color: #666;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+@media (max-width: 600px) {
+  .top-banner {
+    padding: 20px 12px;
+  }
+
+  .top-banner h1 {
+    font-size: 25px;
+  }
+
+  .container {
+    margin-top: 15px;
+    padding: 0 10px 30px;
+  }
+
+  .box {
+    padding: 18px 15px;
+    border-radius: 17px;
+  }
+
+  .product-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .product-grid .full {
+    grid-column: auto;
+  }
+
+  .address-row,
+  .number-row {
+    grid-template-columns: 1fr;
+  }
+
+  .address-button,
+  .check-product-button {
+    padding: 13px;
+  }
+
+  .total-box {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header class="top-banner">
+  <h1>씬느샵</h1>
+  <p>라이브 주문서</p>
+</header>
+
+<main class="container">
+
+<form id="orderForm">
+
+  <section class="box">
+    <div class="box-title">배송지 정보</div>
+
+    <div class="field">
+      <label for="nickname">
+        닉네임 <span class="required">*</span>
+      </label>
+
+      <input
+        type="text"
+        id="nickname"
+        placeholder="라이브 방송 닉네임"
+        required
+      >
     </div>
 
-    <button type="submit" class="submit-btn">제출하기</button>
-  </form>
+    <div class="field">
+      <label for="receiverName">
+        수령인 성함 <span class="required">*</span>
+      </label>
 
-  <div id="completePage" class="complete-page" style="display:none;">
-    <div class="complete-card">
-      <div class="complete-icon">💖</div>
-      <h2>주문이 정상 접수되었습니다</h2>
-      <p>입금 확인 및 주문 누락 방지를 위해<br>채널톡으로 입금내역을 보내주세요.</p>
-      <a href="http://pf.kakao.com/_YVncn/chat" target="_blank" class="channel-btn">💜 채널톡 바로가기</a>
-      <a href="https://band.us/n/adafbc6dFc5ez" target="_blank" class="band-btn">💚 씬느샵 밴드 입장하기</a>
-      <button type="button" onclick="window.location.reload()" class="restart-btn">➕ 추가 주문하기</button>
+      <input
+        type="text"
+        id="receiverName"
+        placeholder="받으시는 분 성함"
+        required
+      >
     </div>
-  </div>
-</div>
 
-<script src="script.js"></script>
+    <div class="field">
+      <label for="phone">
+        연락처 <span class="required">*</span>
+      </label>
+
+      <input
+        type="tel"
+        id="phone"
+        inputmode="numeric"
+        maxlength="13"
+        placeholder="010-0000-0000"
+        required
+      >
+    </div>
+
+    <div class="field">
+      <label for="zipcode">
+        우편번호 <span class="required">*</span>
+      </label>
+
+      <div class="address-row">
+        <input
+          type="text"
+          id="zipcode"
+          placeholder="우편번호"
+          readonly
+          required
+        >
+
+        <button
+          type="button"
+          class="address-button"
+          onclick="findAddress()"
+        >
+          주소 찾기
+        </button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="address">
+        주소 <span class="required">*</span>
+      </label>
+
+      <input
+        type="text"
+        id="address"
+        placeholder="주소 찾기를 눌러주세요"
+        readonly
+        required
+      >
+    </div>
+
+    <div class="field">
+      <label for="detailAddress">
+        상세주소 <span class="required">*</span>
+      </label>
+
+      <input
+        type="text"
+        id="detailAddress"
+        placeholder="동·호수 또는 상세주소"
+        required
+      >
+    </div>
+
+    <div class="field">
+      <label for="shippingMemo">배송메모</label>
+
+      <textarea
+        id="shippingMemo"
+        placeholder="예: 문 앞에 놓아주세요"
+      ></textarea>
+    </div>
+  </section>
+
+  <section class="box">
+    <div class="box-title">구매내역</div>
+
+    <div class="guide">
+      상품번호는 숫자만 입력할 수 있습니다.<br>
+      상품 확인 버튼을 누른 뒤 칼라와 사이즈를 선택하세요.
+    </div>
+
+    <div id="productList"></div>
+
+    <button
+      type="button"
+      class="add-product-button"
+      onclick="addProductCard()"
+    >
+      ＋ 추가 상품 입력
+    </button>
+
+    <div class="total-box">
+      <span>총 입금금액</span>
+      <strong id="grandTotal">0원</strong>
+    </div>
+  </section>
+
+  <button
+    type="submit"
+    class="submit-button"
+    id="submitButton"
+  >
+    주문서 제출하기
+  </button>
+
+</form>
+
+</main>
+
+<script>
+const TEST_PRODUCTS = [
+  {
+    productNo: "12",
+    colors: {
+      "청플리츠": ["55", "66"],
+      "블랙": ["55", "66"]
+    },
+    price: 49000
+  },
+  {
+    productNo: "13",
+    colors: {
+      "베이지": ["FREE"],
+      "블랙": ["FREE"]
+    },
+    price: 59000
+  },
+  {
+    productNo: "14",
+    colors: {
+      "진청": ["S", "M", "L"],
+      "연청": ["S", "M", "L"]
+    },
+    price: 49000
+  }
+];
+
+let productCardCount = 0;
+
+document.addEventListener("DOMContentLoaded", function () {
+  addProductCard();
+
+  document
+    .getElementById("phone")
+    .addEventListener("input", formatPhoneNumber);
+
+  document
+    .getElementById("orderForm")
+    .addEventListener("submit", handleSubmit);
+});
+
+function addProductCard() {
+  productCardCount += 1;
+
+  const cardId = productCardCount;
+  const card = document.createElement("div");
+
+  card.className = "product-card";
+  card.dataset.cardId = String(cardId);
+  card.dataset.price = "0";
+  card.dataset.checked = "false";
+
+  card.innerHTML = `
+    <div class="product-card-title">
+      상품 ${cardId}
+    </div>
+
+    <div class="product-grid">
+
+      <div class="field full">
+        <label>
+          상품번호 <span class="required">*</span>
+        </label>
+
+        <div class="number-row">
+          <input
+            type="text"
+            class="product-no"
+            inputmode="numeric"
+            maxlength="3"
+            placeholder="예: 12"
+            oninput="onlyNumber(this)"
+            required
+          >
+
+          <button
+            type="button"
+            class="check-product-button"
+            onclick="checkProduct(${cardId})"
+          >
+            상품 확인
+          </button>
+        </div>
+
+        <div class="product-message">
+          상품번호 입력 후 상품 확인을 눌러주세요.
+        </div>
+      </div>
+
+      <div class="field">
+        <label>
+          칼라 <span class="required">*</span>
+        </label>
+
+        <select
+          class="product-color"
+          onchange="changeColor(${cardId})"
+          disabled
+          required
+        >
+          <option value="">상품 확인 후 선택</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>
+          사이즈 <span class="required">*</span>
+        </label>
+
+        <select
+          class="product-size"
+          onchange="calculateCard(${cardId})"
+          disabled
+          required
+        >
+          <option value="">칼라 선택 후 선택</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>수량</label>
+
+        <div class="quantity-control">
+          <button
+            type="button"
+            onclick="changeQuantity(${cardId}, -1)"
+          >
+            −
+          </button>
+
+          <input
+            type="number"
+            class="product-quantity"
+            value="1"
+            min="1"
+            max="99"
+            oninput="calculateCard(${cardId})"
+            required
+          >
+
+          <button
+            type="button"
+            onclick="changeQuantity(${cardId}, 1)"
+          >
+            ＋
+          </button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>금액</label>
+
+        <div class="price-box">
+          <div class="price-row">
+            <span>판매가</span>
+            <strong class="unit-price">0원</strong>
+          </div>
+
+          <div class="price-row">
+            <span>상품 합계</span>
+            <strong class="item-total">0원</strong>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    ${
+      cardId > 1
+        ? `
+          <button
+            type="button"
+            class="remove-button"
+            onclick="removeProductCard(${cardId})"
+          >
+            이 상품 삭제
+          </button>
+        `
+        : ""
+    }
+  `;
+
+  document.getElementById("productList").appendChild(card);
+}
+
+function getCard(cardId) {
+  return document.querySelector(
+    `.product-card[data-card-id="${cardId}"]`
+  );
+}
+
+function onlyNumber(input) {
+  input.value = input.value.replace(/[^0-9]/g, "");
+
+  const card = input.closest(".product-card");
+
+  card.dataset.checked = "false";
+  card.dataset.price = "0";
+
+  const colorSelect = card.querySelector(".product-color");
+  const sizeSelect = card.querySelector(".product-size");
+  const message = card.querySelector(".product-message");
+
+  colorSelect.innerHTML =
+    '<option value="">상품 확인 후 선택</option>';
+
+  sizeSelect.innerHTML =
+    '<option value="">칼라 선택 후 선택</option>';
+
+  colorSelect.disabled = true;
+  sizeSelect.disabled = true;
+
+  card.querySelector(".unit-price").textContent = "0원";
+  card.querySelector(".item-total").textContent = "0원";
+
+  message.className = "product-message";
+  message.textContent =
+    "상품번호 입력 후 상품 확인을 눌러주세요.";
+
+  calculateGrandTotal();
+}
+
+function checkProduct(cardId) {
+  const card = getCard(cardId);
+  const productNo = card
+    .querySelector(".product-no")
+    .value
+    .trim();
+
+  const message = card.querySelector(".product-message");
+  const colorSelect = card.querySelector(".product-color");
+  const sizeSelect = card.querySelector(".product-size");
+
+  if (!productNo) {
+    message.className = "product-message error";
+    message.textContent = "상품번호를 입력해주세요.";
+    return;
+  }
+
+  const product = TEST_PRODUCTS.find(
+    item => item.productNo === productNo
+  );
+
+  if (!product) {
+    card.dataset.checked = "false";
+    card.dataset.price = "0";
+
+    colorSelect.disabled = true;
+    sizeSelect.disabled = true;
+
+    colorSelect.innerHTML =
+      '<option value="">등록되지 않은 상품</option>';
+
+    sizeSelect.innerHTML =
+      '<option value="">선택할 수 없음</option>';
+
+    message.className = "product-message error";
+    message.textContent =
+      "등록되지 않은 상품번호입니다.";
+
+    calculateCard(cardId);
+    return;
+  }
+
+  card.dataset.checked = "true";
+  card.dataset.price = String(product.price);
+
+  colorSelect.innerHTML =
+    '<option value="">칼라를 선택하세요</option>';
+
+  Object.keys(product.colors).forEach(color => {
+    const option = document.createElement("option");
+    option.value = color;
+    option.textContent = color;
+    colorSelect.appendChild(option);
+  });
+
+  colorSelect.disabled = false;
+
+  sizeSelect.innerHTML =
+    '<option value="">칼라 선택 후 선택</option>';
+
+  sizeSelect.disabled = true;
+
+  message.className = "product-message success";
+  message.textContent =
+    "상품이 확인되었습니다. 칼라를 선택해주세요.";
+
+  calculateCard(cardId);
+}
+
+function changeColor(cardId) {
+  const card = getCard(cardId);
+
+  const productNo = card
+    .querySelector(".product-no")
+    .value
+    .trim();
+
+  const color = card
+    .querySelector(".product-color")
+    .value;
+
+  const sizeSelect = card.querySelector(".product-size");
+
+  const product = TEST_PRODUCTS.find(
+    item => item.productNo === productNo
+  );
+
+  sizeSelect.innerHTML =
+    '<option value="">사이즈를 선택하세요</option>';
+
+  if (!product || !color || !product.colors[color]) {
+    sizeSelect.disabled = true;
+    calculateCard(cardId);
+    return;
+  }
+
+  product.colors[color].forEach(size => {
+    const option = document.createElement("option");
+    option.value = size;
+    option.textContent = size;
+    sizeSelect.appendChild(option);
+  });
+
+  sizeSelect.disabled = false;
+
+  calculateCard(cardId);
+}
+
+function changeQuantity(cardId, amount) {
+  const card = getCard(cardId);
+  const input = card.querySelector(".product-quantity");
+
+  let quantity = Number(input.value || 1);
+  quantity += amount;
+
+  if (quantity < 1) quantity = 1;
+  if (quantity > 99) quantity = 99;
+
+  input.value = quantity;
+
+  calculateCard(cardId);
+}
+
+function calculateCard(cardId) {
+  const card = getCard(cardId);
+
+  if (!card) return;
+
+  const price = Number(card.dataset.price || 0);
+  let quantity = Number(
+    card.querySelector(".product-quantity").value || 1
+  );
+
+  if (quantity < 1) quantity = 1;
+  if (quantity > 99) quantity = 99;
+
+  card.querySelector(".product-quantity").value = quantity;
+
+  const total = price * quantity;
+
+  card.querySelector(".unit-price").textContent =
+    price.toLocaleString("ko-KR") + "원";
+
+  card.querySelector(".item-total").textContent =
+    total.toLocaleString("ko-KR") + "원";
+
+  card.dataset.total = String(total);
+
+  calculateGrandTotal();
+}
+
+function calculateGrandTotal() {
+  const cards = document.querySelectorAll(".product-card");
+
+  let total = 0;
+
+  cards.forEach(card => {
+    total += Number(card.dataset.total || 0);
+  });
+
+  document.getElementById("grandTotal").textContent =
+    total.toLocaleString("ko-KR") + "원";
+}
+
+function removeProductCard(cardId) {
+  const card = getCard(cardId);
+
+  if (!card) return;
+
+  card.remove();
+  calculateGrandTotal();
+}
+
+function formatPhoneNumber(event) {
+  let number = event.target.value.replace(/[^0-9]/g, "");
+
+  if (number.length <= 3) {
+    event.target.value = number;
+    return;
+  }
+
+  if (number.length <= 7) {
+    event.target.value =
+      number.slice(0, 3) + "-" + number.slice(3);
+    return;
+  }
+
+  event.target.value =
+    number.slice(0, 3) +
+    "-" +
+    number.slice(3, 7) +
+    "-" +
+    number.slice(7, 11);
+}
+
+function findAddress() {
+  new daum.Postcode({
+    oncomplete: function (data) {
+      const address =
+        data.userSelectedType === "R"
+          ? data.roadAddress
+          : data.jibunAddress;
+
+      document.getElementById("zipcode").value =
+        data.zonecode;
+
+      document.getElementById("address").value =
+        address;
+
+      document.getElementById("detailAddress").focus();
+    }
+  }).open();
+}
+
+function collectProducts() {
+  const cards = document.querySelectorAll(".product-card");
+  const products = [];
+
+  for (const card of cards) {
+    const productNo = card
+      .querySelector(".product-no")
+      .value
+      .trim();
+
+    const color = card
+      .querySelector(".product-color")
+      .value;
+
+    const size = card
+      .querySelector(".product-size")
+      .value;
+
+    const quantity = Number(
+      card.querySelector(".product-quantity").value || 1
+    );
+
+    const price = Number(card.dataset.price || 0);
+    const checked = card.dataset.checked === "true";
+
+    if (!checked) {
+      throw new Error(
+        `${productNo || "입력하지 않은"}번 상품을 확인해주세요.`
+      );
+    }
+
+    if (!color) {
+      throw new Error(
+        `${productNo}번 상품의 칼라를 선택해주세요.`
+      );
+    }
+
+    if (!size) {
+      throw new Error(
+        `${productNo}번 상품의 사이즈를 선택해주세요.`
+      );
+    }
+
+    products.push({
+      productNo,
+      color,
+      size,
+      quantity,
+      price,
+      total: price * quantity
+    });
+  }
+
+  return products;
+}
+
+function handleSubmit(event) {
+  event.preventDefault();
+
+  try {
+    const products = collectProducts();
+
+    const orderData = {
+      nickname:
+        document.getElementById("nickname").value.trim(),
+
+      receiverName:
+        document.getElementById("receiverName").value.trim(),
+
+      phone:
+        document.getElementById("phone").value.trim(),
+
+      zipcode:
+        document.getElementById("zipcode").value.trim(),
+
+      address:
+        document.getElementById("address").value.trim(),
+
+      detailAddress:
+        document.getElementById("detailAddress").value.trim(),
+
+      shippingMemo:
+        document.getElementById("shippingMemo").value.trim(),
+
+      products,
+
+      paymentAmount:
+        products.reduce(
+          (sum, item) => sum + item.total,
+          0
+        )
+    };
+
+    console.log("주문 데이터", orderData);
+
+    alert(
+      "주문서 화면 테스트가 완료되었습니다.\n\n" +
+      "현재는 시트에 저장되지 않습니다.\n" +
+      "다음 단계에서 구글시트 저장을 연결합니다."
+    );
+
+  } catch (error) {
+    alert(error.message);
+  }
+}
+</script>
+
 </body>
 </html>
