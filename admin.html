@@ -45,12 +45,35 @@
           <span class="eyebrow dark">SSINNEU ADMIN</span>
           <h1>통합 관리자</h1>
         </div>
-        <button class="btn btn-dark" type="button" id="rebuildButton">
-          거래처발주·3PL 다시 만들기
-        </button>
+        <div class="topbar-actions">
+          <button class="btn btn-subtle" type="button" id="archiveOrdersButton">
+            주문정보 전체 동기화
+          </button>
+          <button class="btn btn-dark" type="button" id="rebuildButton">
+            거래처발주·3PL 다시 만들기
+          </button>
+        </div>
       </header>
 
       <section id="ordersTab" class="tab-section active">
+        <section class="admin-panel">
+          <div class="panel-title-row">
+            <div>
+              <h2>주문 조회 구분</h2>
+              <p>오늘 운영 주문과 전체 보관 주문을 나누어 확인할 수 있습니다.</p>
+            </div>
+          </div>
+
+          <div class="order-source-tabs">
+            <button type="button" class="source-tab active" id="currentOrdersSourceButton">
+              오늘 주문
+            </button>
+            <button type="button" class="source-tab" id="historyOrdersSourceButton">
+              전체 주문이력
+            </button>
+          </div>
+        </section>
+
         <div class="summary-grid premium">
           <div class="metric-card">
             <span>조회 주문건</span>
@@ -62,11 +85,11 @@
             <strong id="summaryPaidCount">0</strong>
             <small>입금 확인된 주문</small>
           </div>
-          <div class="metric-card accent">
+          <button type="button" class="metric-card accent clickable-metric" id="summaryPaymentCard">
             <span>조회 금액</span>
             <strong id="summaryPaymentTotal">0원</strong>
-            <small>선택 기간 주문 합계</small>
-          </div>
+            <small>눌러서 금액만 보기</small>
+          </button>
         </div>
 
         <section class="admin-panel">
@@ -99,7 +122,15 @@
           </div>
         </section>
 
-        <section class="admin-panel">
+        <section class="amount-only-panel" id="amountOnlyPanel">
+          <span>조회 기간 주문금액 합계</span>
+          <strong id="amountOnlyValue">0원</strong>
+          <button type="button" class="btn btn-subtle" id="backToOrderListButton">
+            주문 목록으로 돌아가기
+          </button>
+        </section>
+
+        <section class="admin-panel" id="orderListPanel">
           <div class="panel-title-row">
             <div>
               <h2>주문 목록</h2>
@@ -123,10 +154,16 @@
                   <th>우편번호</th>
                   <th>구매내역</th>
                   <th>내품수량</th>
+                  <th>택배사</th>
+                  <th>송장번호</th>
                 </tr>
               </thead>
               <tbody id="adminOrderList">
-                <tr><td colspan="12" class="empty-cell">전체 보기 또는 날짜 조회를 눌러주세요.</td></tr>
+                <tr>
+                  <td colspan="14" class="empty-cell">
+                    날짜 또는 검색 조건을 선택한 뒤 조회하기를 눌러주세요.
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
