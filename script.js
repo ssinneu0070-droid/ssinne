@@ -3,7 +3,7 @@
   아래 3개 주소만 실제 주소로 바꾸세요.
 */
 const CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyoBJUglhwiwDCbs9l-GBlSEsFNarPbGS0pkDo1VleokD-CJsLoioexRE0orNQO7QyTtQ/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzV_rB0_SSMwnTSWGDYZAgcD7O_J5sxtKQwkiszbuN9zrYT0txv2IL7hrcpMtogJcnnrg/exec",
   BAND_URL: "https://www.band.us/band/102398891/post",
   CHANNEL_URL: "https://pf.kakao.com/_YVncn"
 };
