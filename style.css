@@ -712,3 +712,45 @@ textarea{min-height:92px;resize:vertical}
   .notice-main-title{font-size:25px}
   .notice-warning-list,.notice-shipping-grid{grid-template-columns:1fr}
 }
+
+
+.amount-period{
+  display:block;
+  margin-top:12px;
+  color:#c7ceda;
+  font-size:14px;
+  font-weight:800;
+}
+.amount-grand-total{
+  display:block;
+  margin:12px 0 18px;
+  font-size:42px;
+  letter-spacing:-1.5px;
+}
+.amount-breakdown{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:20px;
+}
+.amount-breakdown div{
+  padding:14px;
+  border-radius:14px;
+  background:rgba(255,255,255,.1);
+}
+.amount-breakdown span{
+  display:block;
+  color:#cbd2df;
+  font-size:12px;
+  font-weight:800;
+}
+.amount-breakdown b{
+  display:block;
+  margin-top:6px;
+  color:#fff;
+  font-size:18px;
+}
+@media(max-width:600px){
+  .amount-breakdown{grid-template-columns:1fr}
+  .amount-grand-total{font-size:34px}
+}

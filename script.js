@@ -3,7 +3,7 @@
   아래 3개 주소만 실제 주소로 바꾸세요.
 */
 const CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzV_rB0_SSMwnTSWGDYZAgcD7O_J5sxtKQwkiszbuN9zrYT0txv2IL7hrcpMtogJcnnrg/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwJSpTF6Uv65nKHZWvucrhKCb4EZq3GiVcJDvsNrUgsNENDL51JRMWeXSUTHC1xCQ-W/exec",
   BAND_URL: "https://www.band.us/band/102398891/post",
   CHANNEL_URL: "https://pf.kakao.com/_YVncn"
 };
@@ -397,37 +397,120 @@ function resetAdminOrderDisplay() {
       '</td></tr>';
 }
 
-function showAmountOnlyView() {
-  if (!adminHasSearched) {
-    alert("먼저 날짜를 선택하고 조회하기를 눌러주세요.");
+async function showAmountOnlyView() {
+  const startDate =
+    document.getElementById("startDate").value;
+
+  const endDate =
+    document.getElementById("endDate").value;
+
+  const keyword =
+    document.getElementById("orderKeyword")
+      .value.trim();
+
+  if (!startDate || !endDate) {
+    alert("조회할 시작일과 종료일을 선택해주세요.");
     return;
   }
 
-  const total = adminOrders.reduce(
-    function(sum, order) {
-      return sum +
-        Number(order.paymentAmount || 0);
-    },
-    0
-  );
+  if (startDate > endDate) {
+    alert("시작일이 종료일보다 늦을 수 없습니다.");
+    return;
+  }
 
-  document.getElementById("amountOnlyValue")
-    .textContent = money(total);
+  const params = {
+    action:
+      adminOrderSource === "history"
+        ? "adminHistoryOrders"
+        : "adminOrders",
+    startDate: startDate,
+    endDate: endDate,
+    search: keyword
+  };
 
-  document.getElementById("summaryPaymentTotal")
-    .textContent = money(total);
+  showLoading("선택한 날짜의 주문금액을 계산하는 중입니다.");
 
-  document.getElementById("orderListPanel")
-    .style.display = "none";
+  try {
+    const data = await apiGet(params);
 
-  document.getElementById("amountOnlyPanel")
-    .classList.add("show");
+    adminOrders =
+      Array.isArray(data.orders)
+        ? data.orders
+        : [];
 
-  document.getElementById("amountOnlyPanel")
-    .scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
+    adminHasSearched = true;
+
+    const total = adminOrders.reduce(
+      function(sum, order) {
+        return sum +
+          Number(order.paymentAmount || 0);
+      },
+      0
+    );
+
+    const paidOrders = adminOrders.filter(
+      function(order) {
+        return (
+          order.paymentStatus === "입금완료" ||
+          order.paymentStatus === "카드결제"
+        );
+      }
+    );
+
+    const paidTotal = paidOrders.reduce(
+      function(sum, order) {
+        return sum +
+          Number(order.paymentAmount || 0);
+      },
+      0
+    );
+
+    document.getElementById("summaryOrderCount")
+      .textContent = adminOrders.length;
+
+    document.getElementById("summaryPaidCount")
+      .textContent = paidOrders.length;
+
+    document.getElementById("summaryPaymentTotal")
+      .textContent = money(total);
+
+    document.getElementById("amountOnlyValue")
+      .innerHTML =
+        '<span class="amount-period">' +
+        escapeHtml(startDate) +
+        ' ~ ' +
+        escapeHtml(endDate) +
+        '</span>' +
+        '<strong class="amount-grand-total">' +
+        money(total) +
+        '</strong>' +
+        '<div class="amount-breakdown">' +
+          '<div><span>총 주문건수</span><b>' +
+          adminOrders.length +
+          '건</b></div>' +
+          '<div><span>입금완료·카드결제 금액</span><b>' +
+          money(paidTotal) +
+          '</b></div>' +
+        '</div>';
+
+    document.getElementById("orderListPanel")
+      .style.display = "none";
+
+    document.getElementById("amountOnlyPanel")
+      .classList.add("show");
+
+    document.getElementById("amountOnlyPanel")
+      .scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+
+  } catch (error) {
+    alert(error.message);
+
+  } finally {
+    hideLoading();
+  }
 }
 
 function showOrderListView() {
