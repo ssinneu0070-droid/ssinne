@@ -3,15 +3,90 @@
   아래 3개 주소만 실제 주소로 바꾸세요.
 */
 const CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbznqveK3V6jDIACKhHt8t-xDdEKGyKaZWrsnpSVqrsPseSFTul9LAOm04x4YO4LcDVmPg/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyoBJUglhwiwDCbs9l-GBlSEsFNarPbGS0pkDo1VleokD-CJsLoioexRE0orNQO7QyTtQ/exec",
   BAND_URL: "https://www.band.us/band/102398891/post",
   CHANNEL_URL: "https://pf.kakao.com/_YVncn"
 };
 
 const CUSTOMER_STORAGE_KEY = "ssinne_customer_info_v2";
 
+
+function initNoticeGate() {
+  const checkbox =
+    document.getElementById("noticeConfirmCheckbox");
+
+  const startButton =
+    document.getElementById("noticeStartButton");
+
+  const noticeGate =
+    document.getElementById("noticeGate");
+
+  const orderContent =
+    document.getElementById("orderContent");
+
+  if (
+    !checkbox ||
+    !startButton ||
+    !noticeGate ||
+    !orderContent
+  ) {
+    return;
+  }
+
+  function updateButtonState() {
+    startButton.disabled = !checkbox.checked;
+
+    startButton.classList.toggle(
+      "enabled",
+      checkbox.checked
+    );
+  }
+
+  checkbox.addEventListener(
+    "change",
+    updateButtonState
+  );
+
+  checkbox.addEventListener(
+    "click",
+    updateButtonState
+  );
+
+  startButton.addEventListener(
+    "click",
+    function() {
+      if (!checkbox.checked) {
+        alert("필독 내용을 확인한 뒤 체크해주세요.");
+        return;
+      }
+
+      noticeGate.style.display = "none";
+
+      orderContent.classList.remove(
+        "order-content-hidden"
+      );
+
+      orderContent.classList.add(
+        "order-content-visible"
+      );
+
+      orderContent.style.display = "block";
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    }
+  );
+
+  updateButtonState();
+}
+
+
 document.addEventListener("DOMContentLoaded", function () {
   const page = document.body.dataset.page;
+
+  if (page === "order") initNoticeGate();
 
   if (page === "order") initOrderPage();
   if (page === "admin") initAdminPage();
