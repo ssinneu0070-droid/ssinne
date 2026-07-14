@@ -1,168 +1,37 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#ff4f97">
-  <title>씬느샵 라이브 주문서</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-  <script src="script.js" defer></script>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="theme-color" content="#ff4f97">
+<title>씬느샵 주문서 입력</title><link rel="stylesheet" href="style.css?v=20260714-v1-final">
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script><script src="script.js?v=20260714-v1-final" defer></script>
 </head>
-<body data-page="order" class="page-order">
-  <header class="brand-header">
-    <div class="brand-shell">
-      <div class="brand-mark">S</div>
-      <div class="brand-copy">
-        <h1>씬느샵</h1>
-        <p>Live Order Service</p>
-      </div>
-      <div class="header-badge">LIVE</div>
-    </div>
-  </header>
-
-  <main class="page-shell order-shell">
-    <section class="hero-card">
-      <div>
-        <span class="eyebrow">LIVE ORDER</span>
-        <h2>라이브 주문서</h2>
-        <p>배송지와 상품을 입력하면 주문이 바로 접수됩니다.</p>
-      </div>
-      <div class="step-badges">
-        <span class="active">1 주문 작성</span>
-        <span>2 주문 확인</span>
-        <span>3 주문 완료</span>
-      </div>
-    </section>
-
-    <form id="orderForm" class="order-layout">
-      <section class="panel-card">
-        <div class="section-head">
-          <div class="section-icon">01</div>
-          <div>
-            <h3>배송지 정보</h3>
-            <p>받으실 분의 정보를 정확하게 입력해주세요.</p>
-          </div>
-        </div>
-
-        <div class="saved-notice" id="savedNotice">
-          저장된 고객정보를 불러왔습니다. 추가 주문은 상품만 새로 입력하면 됩니다.
-        </div>
-
-        <div class="form-grid two">
-          <div class="field">
-            <label for="nickname">닉네임 <span class="required">*</span></label>
-            <input id="nickname" type="text" placeholder="라이브 방송 닉네임" required>
-          </div>
-
-          <div class="field">
-            <label for="receiverName">수령인 성함 <span class="required">*</span></label>
-            <input id="receiverName" type="text" placeholder="받으시는 분 성함" required>
-          </div>
-
-          <div class="field">
-            <label for="phone">연락처 <span class="required">*</span></label>
-            <input id="phone" type="tel" inputmode="numeric" maxlength="13"
-                   placeholder="010-0000-0000" required>
-          </div>
-
-          <div class="field">
-            <label for="zipcode">우편번호 <span class="required">*</span></label>
-            <div class="inline-row address-row">
-              <input id="zipcode" type="text" placeholder="우편번호" readonly required>
-              <button type="button" class="btn btn-dark" id="addressSearchButton">주소 찾기</button>
-            </div>
-          </div>
-
-          <div class="field full">
-            <label for="address">주소 <span class="required">*</span></label>
-            <input id="address" type="text" placeholder="주소 찾기 버튼을 눌러주세요" readonly required>
-          </div>
-
-          <div class="field full">
-            <label for="detailAddress">상세주소 <span class="required">*</span></label>
-            <input id="detailAddress" type="text" placeholder="동·호수 또는 상세주소" required>
-          </div>
-
-          <div class="field full">
-            <label for="shippingMemo">배송메모</label>
-            <textarea id="shippingMemo" placeholder="예: 문 앞에 놓아주세요"></textarea>
-          </div>
-        </div>
-
-        <button type="button" class="btn btn-subtle full-width" id="clearCustomerButton">
-          저장된 고객정보 지우기
-        </button>
-      </section>
-
-      <section class="panel-card">
-        <div class="section-head">
-          <div class="section-icon">02</div>
-          <div>
-            <h3>주문 상품</h3>
-            <p>상품번호를 확인한 뒤 칼라와 사이즈를 선택해주세요.</p>
-          </div>
-        </div>
-
-        <div class="info-banner">
-          상품번호는 숫자만 입력할 수 있습니다. 상품 확인 후 옵션을 선택해주세요.
-        </div>
-
-        <div id="productList"></div>
-
-        <div class="stack-actions">
-          <button type="button" class="btn btn-outline full-width" id="addProductButton">
-            ＋ 상품 추가
-          </button>
-          <button type="button" class="btn btn-subtle full-width" id="refreshProductButton">
-            상품정보 새로고침
-          </button>
-        </div>
-
-        <div class="payment-summary">
-          <div>
-            <span>총 입금금액</span>
-            <small>판매가 × 수량 자동 계산</small>
-          </div>
-          <strong id="grandTotal">0원</strong>
-        </div>
-      </section>
-
-      <button type="submit" class="btn btn-primary submit-cta" id="submitButton">
-        주문서 제출하기
-      </button>
-    </form>
-
-    <section class="complete-card" id="completeScreen">
-      <div class="complete-check">✓</div>
-      <span class="eyebrow">ORDER COMPLETE</span>
-      <h2>주문이 완료되었습니다</h2>
-      <p>채널톡에 닉네임 주문자 이름 입금캡쳐 꼭 남겨주세요<br></p>
-
-      <div class="complete-amount">
-        <span>이번 주문 입금금액</span>
-        <strong id="completePaymentAmount">0원</strong>
-      </div>
-
-      <div class="complete-actions">
-        <a id="bandLink" class="btn btn-band full-width" target="_blank" rel="noopener noreferrer">
-          씬느샵 밴드 가기
-        </a>
-        <a id="channelLink" class="btn btn-channel full-width" target="_blank" rel="noopener noreferrer">
-          채널톡 바로가기
-        </a>
-        <button type="button" class="btn btn-primary full-width" id="finishOrderButton">
-          추가 주문하기
-        </button>
-      </div>
-    </section>
-  </main>
-
-  <div class="loading-overlay" id="loadingOverlay">
-    <div class="loading-card">
-      <div class="spinner"></div>
-      <p id="loadingText">처리 중입니다.</p>
-    </div>
-  </div>
-</body>
-</html>
+<body data-page="order" class="page-order final-order-page">
+<header class="final-order-header"><div class="final-brand">💗 씬느샵 💗</div><h1>주문서 입력</h1></header>
+<main class="final-order-shell">
+<form id="orderForm" class="final-order-grid">
+<section class="final-column">
+<div class="final-card"><div class="final-section-title">🎁 상품 입력</div>
+<div class="field"><label for="singleProductNo">상품번호</label><div class="product-search-row"><input id="singleProductNo" type="text" inputmode="numeric" maxlength="3" placeholder="상품번호를 입력하세요"><button type="button" class="final-btn search" id="singleProductSearchButton">검색</button></div><div class="product-message" id="singleProductMessage">상품번호 입력 후 검색을 눌러주세요.</div></div>
+<div class="field"><label for="singleProductName">상품명</label><input id="singleProductName" type="text" placeholder="상품 검색 후 자동 표시됩니다" readonly></div>
+<div class="field"><label for="singleProductColor">칼라</label><select id="singleProductColor" disabled><option value="">칼라를 선택하세요</option></select></div>
+<div class="field"><label for="singleProductSize">사이즈</label><select id="singleProductSize" disabled><option value="">사이즈를 선택하세요</option></select></div>
+<div class="field"><label>수량</label><div class="final-quantity"><button type="button" id="singleMinusButton">−</button><input id="singleProductQuantity" type="number" value="1" min="1" max="99"><button type="button" id="singlePlusButton">＋</button></div></div>
+<button type="button" class="final-btn primary full-width" id="addToCartButton">🛒 담기</button></div>
+<div class="final-card"><div class="final-section-title">🛒 주문 목록</div><div id="cartList" class="cart-list"><div class="cart-empty">담긴 상품이 없습니다.</div></div><button type="button" class="final-btn dashed full-width" id="focusProductButton">＋ 상품 추가</button></div>
+<div class="final-summary-card"><div><span>총 상품 수</span><strong id="totalItemCount">0개</strong></div><div><span>총 결제 금액</span><strong id="grandTotal">0원</strong></div></div>
+</section>
+<section class="final-column">
+<div class="final-card"><div class="final-section-title">👤 주문자 정보</div><div class="saved-notice" id="savedNotice">저장된 고객정보를 불러왔습니다. 추가 주문은 상품만 담으면 됩니다.</div>
+<div class="field"><label for="nickname">닉네임</label><input id="nickname" type="text" placeholder="닉네임을 입력해주세요" required></div>
+<div class="field"><label for="receiverName">수령인 성함</label><input id="receiverName" type="text" placeholder="수령인 성함을 입력해주세요" required></div>
+<div class="field"><label for="phone">연락처</label><input id="phone" type="tel" inputmode="numeric" maxlength="13" placeholder="010-0000-0000" required></div>
+<div class="field"><label for="zipcode">우편번호</label><div class="product-search-row"><input id="zipcode" type="text" readonly required><button type="button" class="final-btn search" id="addressSearchButton">주소 검색</button></div></div>
+<div class="field"><label for="address">주소</label><input id="address" type="text" placeholder="주소를 입력해주세요" readonly required></div>
+<div class="field"><label for="detailAddress">상세주소</label><input id="detailAddress" type="text" placeholder="상세주소를 입력해주세요" required></div>
+<div class="field"><label for="shippingMemo">배송메모 <span class="muted">(선택)</span></label><textarea id="shippingMemo" placeholder="배송 시 요청사항이 있으면 입력해주세요"></textarea></div></div>
+<div class="final-card"><div class="final-section-title">💳 결제 정보</div><div class="field"><label>입금 금액</label><input id="displayPaymentAmount" type="text" value="0원" readonly></div><div class="field"><label>입금 방법</label><select id="paymentMethod"><option value="무통장입금">무통장입금</option><option value="카드결제">카드결제</option></select></div></div>
+<div class="final-card"><div class="final-section-title">🧾 구매 내역 <span class="muted">(자동)</span></div><div id="purchaseSummary" class="purchase-summary">상품을 담으면 구매내역이 자동으로 표시됩니다.</div></div>
+<button type="submit" class="final-btn primary order-submit" id="submitButton">✈ 주문하기</button><button type="button" class="final-btn subtle full-width" id="clearCustomerButton">↻ 저장된 고객정보 지우기</button>
+</section></form>
+<section class="complete-card" id="completeScreen"><div class="complete-check">✓</div><h2>주문이 완료되었습니다</h2><p>씬느샵 주문이 정상적으로 접수되었습니다.</p><div class="complete-amount"><span>이번 주문 입금금액</span><strong id="completePaymentAmount">0원</strong></div><div class="complete-actions"><a id="bandLink" class="final-btn band full-width" target="_blank" rel="noopener">씬느샵 밴드 가기</a><a id="channelLink" class="final-btn channel full-width" target="_blank" rel="noopener">채널톡 바로가기</a><button type="button" class="final-btn primary full-width" id="finishOrderButton">추가 주문하기</button></div></section>
+</main><div class="loading-overlay" id="loadingOverlay"><div class="loading-card"><div class="spinner"></div><p id="loadingText">처리 중입니다.</p></div></div></body></html>

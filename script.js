@@ -3,7 +3,7 @@
   아래 3개 주소만 실제 주소로 바꾸세요.
 */
 const CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyLgTXCFDuCkDSS_bv-Jx0f2wa0CD0Y4la7qUw12IoE4V0-lZoliTbmxNw1vxRynytiHg/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbztcWuQ_W9FPfKKI9QL26g6qc4RkTwwYTXxsI2j3J7EZnhW94G5-6wWXIpmMlF9pW0nwA/exec",
   BAND_URL: "https://www.band.us/band/102398891/post",
   CHANNEL_URL: "https://pf.kakao.com/_YVncn"
 };
@@ -112,526 +112,307 @@ function todayString() {
 /* =========================
    고객 주문서
 ========================= */
-let orderProducts = [];
-let orderProductCardCount = 0;
-let orderSubmitting = false;
-
-async function initOrderPage() {
-  document.getElementById("bandLink").href = CONFIG.BAND_URL;
-  document.getElementById("channelLink").href = CONFIG.CHANNEL_URL;
-
-  document.getElementById("phone").addEventListener("input", formatPhoneInput);
-  document.getElementById("addressSearchButton").addEventListener("click", openAddressSearch);
-  document.getElementById("addProductButton").addEventListener("click", addOrderProductCard);
-  document.getElementById("refreshProductButton").addEventListener("click", function () {
-    loadOrderProducts(true);
-  });
-  document.getElementById("clearCustomerButton").addEventListener("click", clearSavedCustomer);
-  document.getElementById("finishOrderButton").addEventListener("click", finishOrder);
-  document.getElementById("orderForm").addEventListener("submit", submitOrder);
-
-  loadSavedCustomer();
-  addOrderProductCard();
-
-  try {
-    await loadOrderProducts(false);
-  } catch (error) {
-    alert(error.message);
-  }
-}
-
-async function loadOrderProducts(showMessage) {
-  const data = await apiGet({ action: "products" });
-  orderProducts = Array.isArray(data.products) ? data.products : [];
-
-  if (!orderProducts.length) {
-    throw new Error("상품정보 시트에 등록된 상품이 없습니다.");
-  }
-
-  if (showMessage) alert("상품정보를 새로 불러왔습니다.");
-}
-
-function addOrderProductCard() {
-  orderProductCardCount += 1;
-
-  const cardId = orderProductCardCount;
-  const card = document.createElement("div");
-
-  card.className = "product-card";
-  card.dataset.cardId = String(cardId);
-  card.dataset.price = "0";
-  card.dataset.total = "0";
-  card.dataset.checked = "false";
-
-  card.innerHTML = `
-    <div class="product-card-title">상품 ${cardId}</div>
-    <div class="product-grid">
-      <div class="field full">
-        <label>상품번호 <span class="required">*</span></label>
-        <div class="product-number-row">
-          <input class="product-no" type="text" inputmode="numeric"
-                 maxlength="3" placeholder="예: 12" required>
-          <button type="button" class="button primary product-check-button">상품 확인</button>
-        </div>
-        <div class="product-message">상품번호 입력 후 상품 확인을 눌러주세요.</div>
-      </div>
-
-      <div class="field">
-        <label>칼라 <span class="required">*</span></label>
-        <select class="product-color" disabled required>
-          <option value="">상품 확인 후 선택</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>사이즈 <span class="required">*</span></label>
-        <select class="product-size" disabled required>
-          <option value="">칼라 선택 후 선택</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>수량 <span class="required">*</span></label>
-        <div class="quantity-control">
-          <button type="button" class="minus-button">−</button>
-          <input class="product-quantity" type="number" value="1" min="1" max="99" required>
-          <button type="button" class="plus-button">＋</button>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>금액</label>
-        <div class="price-box">
-          <div class="price-row">
-            <span>판매가</span>
-            <strong class="unit-price">0원</strong>
-          </div>
-          <div class="price-row">
-            <span>상품 합계</span>
-            <strong class="item-total">0원</strong>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    ${cardId > 1 ? '<button type="button" class="remove-button">이 상품 삭제</button>' : ""}
-  `;
-
-  document.getElementById("productList").appendChild(card);
-
-  const numberInput = card.querySelector(".product-no");
-
-  numberInput.addEventListener("input", function () {
-    numberInput.value = numberInput.value.replace(/[^0-9]/g, "");
-    resetOrderProductCard(card);
-  });
-
-  numberInput.addEventListener("keydown", function (event) {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      checkOrderProduct(card);
-    }
-  });
-
-  card.querySelector(".product-check-button").addEventListener("click", function () {
-    checkOrderProduct(card);
-  });
-
-  card.querySelector(".product-color").addEventListener("change", function () {
-    changeOrderColor(card);
-  });
-
-  card.querySelector(".product-size").addEventListener("change", function () {
-    calculateOrderProduct(card);
-  });
-
-  card.querySelector(".product-quantity").addEventListener("input", function () {
-    calculateOrderProduct(card);
-  });
-
-  card.querySelector(".minus-button").addEventListener("click", function () {
-    changeOrderQuantity(card, -1);
-  });
-
-  card.querySelector(".plus-button").addEventListener("click", function () {
-    changeOrderQuantity(card, 1);
-  });
-
-  const removeButton = card.querySelector(".remove-button");
-
-  if (removeButton) {
-    removeButton.addEventListener("click", function () {
-      card.remove();
-      calculateOrderGrandTotal();
-    });
-  }
-}
-
-function resetOrderProductCard(card) {
-  card.dataset.checked = "false";
-  card.dataset.price = "0";
-  card.dataset.total = "0";
-
-  const color = card.querySelector(".product-color");
-  const size = card.querySelector(".product-size");
-  const message = card.querySelector(".product-message");
-
-  color.disabled = true;
-  size.disabled = true;
-  color.innerHTML = '<option value="">상품 확인 후 선택</option>';
-  size.innerHTML = '<option value="">칼라 선택 후 선택</option>';
-
-  card.querySelector(".unit-price").textContent = "0원";
-  card.querySelector(".item-total").textContent = "0원";
-
-  message.className = "product-message";
-  message.textContent = "상품번호 입력 후 상품 확인을 눌러주세요.";
-
-  calculateOrderGrandTotal();
-}
-
-function checkOrderProduct(card) {
-  const productNo = card.querySelector(".product-no").value.trim();
-  const message = card.querySelector(".product-message");
-  const colorSelect = card.querySelector(".product-color");
-  const sizeSelect = card.querySelector(".product-size");
-
-  if (!productNo) {
-    message.className = "product-message error";
-    message.textContent = "상품번호를 입력해주세요.";
-    return;
-  }
-
-  const product = orderProducts.find(function (item) {
-    return String(item.productNo) === productNo;
-  });
-
-  if (!product) {
-    resetOrderProductCard(card);
-    message.className = "product-message error";
-    message.textContent = "등록되지 않은 상품번호입니다.";
-    return;
-  }
-
-  card.dataset.checked = "true";
-  card.dataset.price = String(Number(product.price || 0));
-
-  colorSelect.disabled = false;
-  colorSelect.innerHTML = '<option value="">칼라를 선택하세요</option>';
-
-  Object.keys(product.colors || {}).forEach(function (color) {
-    const option = document.createElement("option");
-    option.value = color;
-    option.textContent = color;
-    colorSelect.appendChild(option);
-  });
-
-  sizeSelect.disabled = true;
-  sizeSelect.innerHTML = '<option value="">칼라 선택 후 선택</option>';
-
-  message.className = "product-message success";
-  message.textContent = "상품이 확인되었습니다.";
-
-  calculateOrderProduct(card);
-}
-
-function changeOrderColor(card) {
-  const productNo = card.querySelector(".product-no").value.trim();
-  const color = card.querySelector(".product-color").value;
-  const sizeSelect = card.querySelector(".product-size");
-
-  const product = orderProducts.find(function (item) {
-    return String(item.productNo) === productNo;
-  });
-
-  sizeSelect.innerHTML = '<option value="">사이즈를 선택하세요</option>';
-
-  if (!product || !color || !product.colors[color]) {
-    sizeSelect.disabled = true;
-    return;
-  }
-
-  product.colors[color].forEach(function (size) {
-    const option = document.createElement("option");
-    option.value = size;
-    option.textContent = size;
-    sizeSelect.appendChild(option);
-  });
-
-  sizeSelect.disabled = false;
-}
-
-function changeOrderQuantity(card, amount) {
-  const input = card.querySelector(".product-quantity");
-  let quantity = Number(input.value || 1) + amount;
-
-  quantity = Math.min(99, Math.max(1, quantity));
-  input.value = quantity;
-
-  calculateOrderProduct(card);
-}
-
-function calculateOrderProduct(card) {
-  const price = Number(card.dataset.price || 0);
-  let quantity = Number(card.querySelector(".product-quantity").value || 1);
-
-  quantity = Math.min(99, Math.max(1, quantity));
-
-  card.querySelector(".product-quantity").value = quantity;
-  card.dataset.total = String(price * quantity);
-
-  card.querySelector(".unit-price").textContent = money(price);
-  card.querySelector(".item-total").textContent = money(price * quantity);
-
-  calculateOrderGrandTotal();
-}
-
-function calculateOrderGrandTotal() {
-  let total = 0;
-
-  document.querySelectorAll(".product-card").forEach(function (card) {
-    total += Number(card.dataset.total || 0);
-  });
-
-  document.getElementById("grandTotal").textContent = money(total);
-}
-
-function collectOrderProducts() {
-  const products = [];
-
-  document.querySelectorAll(".product-card").forEach(function (card) {
-    const productNo = card.querySelector(".product-no").value.trim();
-    const color = card.querySelector(".product-color").value;
-    const size = card.querySelector(".product-size").value;
-    const quantity = Number(card.querySelector(".product-quantity").value || 1);
-
-    if (!productNo) throw new Error("상품번호를 입력해주세요.");
-    if (card.dataset.checked !== "true") {
-      throw new Error(productNo + "번 상품의 상품 확인을 눌러주세요.");
-    }
-    if (!color) throw new Error(productNo + "번 상품의 칼라를 선택해주세요.");
-    if (!size) throw new Error(productNo + "번 상품의 사이즈를 선택해주세요.");
-
-    products.push({
-      productNo: productNo,
-      color: color,
-      size: size,
-      quantity: quantity
-    });
-  });
-
-  return products;
-}
-
-async function submitOrder(event) {
-  event.preventDefault();
-
-  if (orderSubmitting) return;
-
-  try {
-    const payload = {
-      action: "saveOrder",
-      nickname: document.getElementById("nickname").value.trim(),
-      receiverName: document.getElementById("receiverName").value.trim(),
-      phone: document.getElementById("phone").value.trim(),
-      zipcode: document.getElementById("zipcode").value.trim(),
-      address: document.getElementById("address").value.trim(),
-      detailAddress: document.getElementById("detailAddress").value.trim(),
-      shippingMemo: document.getElementById("shippingMemo").value.trim(),
-      products: collectOrderProducts()
-    };
-
-    if (!payload.nickname || !payload.receiverName) {
-      throw new Error("닉네임과 수령인 성함을 입력해주세요.");
-    }
-
-    if (payload.phone.replace(/[^0-9]/g, "").length < 10) {
-      throw new Error("연락처를 정확하게 입력해주세요.");
-    }
-
-    if (!payload.zipcode || !payload.address || !payload.detailAddress) {
-      throw new Error("주소와 상세주소를 입력해주세요.");
-    }
-
-    orderSubmitting = true;
-    showLoading("주문서를 저장하고 있습니다.");
-    document.getElementById("submitButton").disabled = true;
-
-    const result = await apiPost(payload);
-
-    saveCustomerInfo();
-
-    document.getElementById("orderForm").style.display = "none";
-    document.getElementById("completePaymentAmount").textContent =
-      money(result.paymentAmount || 0);
-    document.getElementById("completeScreen").classList.add("show");
-
-    window.scrollTo({ top: 0, behavior: "smooth" });
-
-  } catch (error) {
-    alert(error.message);
-
-  } finally {
-    orderSubmitting = false;
-    hideLoading();
-    document.getElementById("submitButton").disabled = false;
-  }
-}
-
-function saveCustomerInfo() {
-  const info = {
-    nickname: document.getElementById("nickname").value.trim(),
-    receiverName: document.getElementById("receiverName").value.trim(),
-    phone: document.getElementById("phone").value.trim(),
-    zipcode: document.getElementById("zipcode").value.trim(),
-    address: document.getElementById("address").value.trim(),
-    detailAddress: document.getElementById("detailAddress").value.trim(),
-    shippingMemo: document.getElementById("shippingMemo").value.trim()
-  };
-
-  localStorage.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(info));
-}
-
-function loadSavedCustomer() {
-  try {
-    const raw = localStorage.getItem(CUSTOMER_STORAGE_KEY);
-    if (!raw) return;
-
-    const info = JSON.parse(raw);
-
-    Object.keys(info).forEach(function (key) {
-      const element = document.getElementById(key);
-      if (element) element.value = info[key] || "";
-    });
-
-    if (info.nickname || info.phone) {
-      document.getElementById("savedNotice").classList.add("show");
-    }
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-function clearSavedCustomer() {
-  if (!confirm("저장된 고객정보를 지울까요?")) return;
-
-  localStorage.removeItem(CUSTOMER_STORAGE_KEY);
-
-  ["nickname","receiverName","phone","zipcode","address","detailAddress","shippingMemo"]
-    .forEach(function (id) {
-      document.getElementById(id).value = "";
-    });
-
-  document.getElementById("savedNotice").classList.remove("show");
-}
-
-function finishOrder() {
-  document.getElementById("completeScreen").classList.remove("show");
-  document.getElementById("orderForm").style.display = "block";
-  document.getElementById("productList").innerHTML = "";
-
-  orderProductCardCount = 0;
-  addOrderProductCard();
-  calculateOrderGrandTotal();
-  loadSavedCustomer();
-
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-function formatPhoneInput(event) {
-  let number = event.target.value.replace(/[^0-9]/g, "").slice(0, 11);
-
-  if (number.length <= 3) {
-    event.target.value = number;
-  } else if (number.length <= 7) {
-    event.target.value = number.slice(0, 3) + "-" + number.slice(3);
-  } else {
-    event.target.value =
-      number.slice(0, 3) + "-" +
-      number.slice(3, 7) + "-" +
-      number.slice(7);
-  }
-}
-
-function openAddressSearch() {
-  if (!window.daum || !window.daum.Postcode) {
-    alert("주소검색 프로그램을 불러오지 못했습니다.");
-    return;
-  }
-
-  new window.daum.Postcode({
-    oncomplete: function (data) {
-      document.getElementById("zipcode").value = data.zonecode || "";
-      document.getElementById("address").value =
-        data.userSelectedType === "R"
-          ? (data.roadAddress || "")
-          : (data.jibunAddress || "");
-
-      document.getElementById("detailAddress").value = "";
-      document.getElementById("detailAddress").focus();
-    }
-  }).open();
-}
+let orderProducts=[];let orderCart=[];let selectedOrderProduct=null;let orderSubmitting=false;
+async function initOrderPage(){document.getElementById("bandLink").href=CONFIG.BAND_URL;document.getElementById("channelLink").href=CONFIG.CHANNEL_URL;document.getElementById("phone").addEventListener("input",formatPhoneInput);document.getElementById("addressSearchButton").addEventListener("click",openAddressSearch);document.getElementById("singleProductNo").addEventListener("input",function(e){e.target.value=e.target.value.replace(/[^0-9]/g,"");resetSingleProductSelection()});document.getElementById("singleProductNo").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();searchSingleProduct()}});document.getElementById("singleProductSearchButton").addEventListener("click",searchSingleProduct);document.getElementById("singleProductColor").addEventListener("change",updateSingleSizes);document.getElementById("singleMinusButton").addEventListener("click",function(){changeSingleQuantity(-1)});document.getElementById("singlePlusButton").addEventListener("click",function(){changeSingleQuantity(1)});document.getElementById("addToCartButton").addEventListener("click",addSelectedProductToCart);document.getElementById("focusProductButton").addEventListener("click",function(){document.getElementById("singleProductNo").focus();window.scrollTo({top:0,behavior:"smooth"})});document.getElementById("clearCustomerButton").addEventListener("click",clearSavedCustomer);document.getElementById("finishOrderButton").addEventListener("click",finishOrder);document.getElementById("orderForm").addEventListener("submit",submitOrder);loadSavedCustomer();renderOrderCart();try{await loadOrderProducts(false)}catch(e){alert(e.message)}}
+async function loadOrderProducts(show){const d=await apiGet({action:"products"});orderProducts=Array.isArray(d.products)?d.products:[];if(!orderProducts.length)throw new Error("상품정보 시트에 등록된 상품이 없습니다.");if(show)alert("상품정보를 새로 불러왔습니다.")}
+function resetSingleProductSelection(){selectedOrderProduct=null;singleProductName.value="";singleProductColor.innerHTML='<option value="">칼라를 선택하세요</option>';singleProductSize.innerHTML='<option value="">사이즈를 선택하세요</option>';singleProductColor.disabled=true;singleProductSize.disabled=true;singleProductMessage.className="product-message";singleProductMessage.textContent="상품번호 입력 후 검색을 눌러주세요."}
+function searchSingleProduct(){const no=singleProductNo.value.trim();if(!no){singleProductMessage.className="product-message error";singleProductMessage.textContent="상품번호를 입력해주세요.";return}const p=orderProducts.find(x=>String(x.productNo)===no);if(!p){resetSingleProductSelection();singleProductMessage.className="product-message error";singleProductMessage.textContent="등록되지 않은 상품번호입니다.";return}selectedOrderProduct=p;singleProductName.value=p.productName||"";singleProductColor.innerHTML='<option value="">칼라를 선택하세요</option>';Object.keys(p.colors||{}).forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;singleProductColor.appendChild(o)});singleProductColor.disabled=false;singleProductMessage.className="product-message success";singleProductMessage.textContent="상품이 확인되었습니다."}
+function updateSingleSizes(){const c=singleProductColor.value;singleProductSize.innerHTML='<option value="">사이즈를 선택하세요</option>';if(!selectedOrderProduct||!c||!selectedOrderProduct.colors[c]){singleProductSize.disabled=true;return}selectedOrderProduct.colors[c].forEach(s=>{const o=document.createElement("option");o.value=s;o.textContent=s;singleProductSize.appendChild(o)});singleProductSize.disabled=false}
+function changeSingleQuantity(n){singleProductQuantity.value=Math.min(99,Math.max(1,Number(singleProductQuantity.value||1)+n))}
+function addSelectedProductToCart(){const no=singleProductNo.value.trim(),c=singleProductColor.value,s=singleProductSize.value,q=Math.min(99,Math.max(1,Number(singleProductQuantity.value||1)));if(!selectedOrderProduct||String(selectedOrderProduct.productNo)!==no){alert("상품번호를 검색해주세요.");return}if(!c){alert("칼라를 선택해주세요.");return}if(!s){alert("사이즈를 선택해주세요.");return}orderCart.push({productNo:no,productName:selectedOrderProduct.productName||"",color:c,size:s,quantity:q,price:Number(selectedOrderProduct.price||0)});renderOrderCart();singleProductNo.value="";singleProductQuantity.value="1";resetSingleProductSelection();singleProductNo.focus()}
+function removeCartItem(i){orderCart.splice(i,1);renderOrderCart()}
+function renderOrderCart(){if(!orderCart.length){cartList.innerHTML='<div class="cart-empty">담긴 상품이 없습니다.</div>';purchaseSummary.textContent="상품을 담으면 구매내역이 자동으로 표시됩니다."}else{cartList.innerHTML=orderCart.map((x,i)=>`<div class="cart-item"><div class="cart-number">${i+1}</div><div class="cart-info"><strong>${escapeHtml(x.productNo)}번 ${escapeHtml(x.productName)}</strong><span>${escapeHtml(x.color)} / ${escapeHtml(x.size)} / ${x.quantity}개</span></div><div class="cart-side"><span class="cart-price">${money(x.price*x.quantity)}</span><button type="button" class="cart-delete" data-index="${i}">🗑 삭제</button></div></div>`).join("");cartList.querySelectorAll(".cart-delete").forEach(b=>b.addEventListener("click",()=>removeCartItem(Number(b.dataset.index))));purchaseSummary.textContent=orderCart.map(x=>`${x.productNo}번 ${x.productName} / ${x.color} / ${x.size} / ${x.quantity}개 / ${money(x.price*x.quantity)}`).join("\n")}const count=orderCart.reduce((a,x)=>a+x.quantity,0),total=orderCart.reduce((a,x)=>a+x.price*x.quantity,0);totalItemCount.textContent=count+"개";grandTotal.textContent=money(total);displayPaymentAmount.value=money(total)}
+async function submitOrder(e){e.preventDefault();if(orderSubmitting)return;try{if(!orderCart.length)throw new Error("주문 상품을 한 개 이상 담아주세요.");const data={action:"saveOrder",nickname:nickname.value.trim(),receiverName:receiverName.value.trim(),phone:phone.value.trim(),zipcode:zipcode.value.trim(),address:address.value.trim(),detailAddress:detailAddress.value.trim(),shippingMemo:shippingMemo.value.trim(),paymentMethod:paymentMethod.value,products:orderCart.map(x=>({productNo:x.productNo,color:x.color,size:x.size,quantity:x.quantity}))};if(!data.nickname||!data.receiverName)throw new Error("닉네임과 수령인 성함을 입력해주세요.");if(data.phone.replace(/[^0-9]/g,"").length<10)throw new Error("연락처를 정확하게 입력해주세요.");if(!data.zipcode||!data.address||!data.detailAddress)throw new Error("주소와 상세주소를 입력해주세요.");orderSubmitting=true;showLoading("주문서를 저장하고 있습니다.");submitButton.disabled=true;const r=await apiPost(data);saveCustomerInfo();orderForm.style.display="none";completePaymentAmount.textContent=money(r.paymentAmount||0);completeScreen.classList.add("show");window.scrollTo({top:0,behavior:"smooth"})}catch(err){alert(err.message)}finally{orderSubmitting=false;hideLoading();submitButton.disabled=false}}
+function saveCustomerInfo(){localStorage.setItem(CUSTOMER_STORAGE_KEY,JSON.stringify({nickname:nickname.value.trim(),receiverName:receiverName.value.trim(),phone:phone.value.trim(),zipcode:zipcode.value.trim(),address:address.value.trim(),detailAddress:detailAddress.value.trim(),shippingMemo:shippingMemo.value.trim()}))}
+function loadSavedCustomer(){try{const raw=localStorage.getItem(CUSTOMER_STORAGE_KEY);if(!raw)return;const info=JSON.parse(raw);Object.keys(info).forEach(k=>{const e=document.getElementById(k);if(e)e.value=info[k]||""});if(info.nickname||info.phone)savedNotice.classList.add("show")}catch(e){console.error(e)}}
+function clearSavedCustomer(){if(!confirm("저장된 고객정보를 지울까요?"))return;localStorage.removeItem(CUSTOMER_STORAGE_KEY);["nickname","receiverName","phone","zipcode","address","detailAddress","shippingMemo"].forEach(id=>document.getElementById(id).value="");savedNotice.classList.remove("show")}
+function finishOrder(){completeScreen.classList.remove("show");orderForm.style.display="grid";orderCart=[];renderOrderCart();loadSavedCustomer();window.scrollTo({top:0,behavior:"smooth"})}
+function formatPhoneInput(e){let n=e.target.value.replace(/[^0-9]/g,"").slice(0,11);e.target.value=n.length<=3?n:n.length<=7?n.slice(0,3)+"-"+n.slice(3):n.slice(0,3)+"-"+n.slice(3,7)+"-"+n.slice(7)}
+function openAddressSearch(){if(!window.daum||!window.daum.Postcode){alert("주소검색 프로그램을 불러오지 못했습니다.");return}new window.daum.Postcode({oncomplete:d=>{zipcode.value=d.zonecode||"";address.value=d.userSelectedType==="R"?(d.roadAddress||""):(d.jibunAddress||"");detailAddress.value="";detailAddress.focus()}}).open()}
 
 /* =========================
    관리자
 ========================= */
 let adminOrders = [];
 let adminProducts = [];
+let adminOrderSource = "current";
+let adminHasSearched = false;
 
 function initAdminPage() {
-  document.querySelectorAll(".tab-button[data-tab]").forEach(function (button) {
-    button.addEventListener("click", function () {
+  document.querySelectorAll(".side-link[data-tab]").forEach(function(button) {
+    button.addEventListener("click", function() {
       showAdminTab(button.dataset.tab);
     });
   });
 
-  document.getElementById("searchOrdersButton").addEventListener("click", searchAdminOrders);
-  document.getElementById("todayOrdersButton").addEventListener("click", loadTodayAdminOrders);
-  document.getElementById("allOrdersButton").addEventListener("click", loadAllAdminOrders);
-  document.getElementById("rebuildButton").addEventListener("click", rebuildDerivedSheets);
+  document.getElementById("searchOrdersButton")
+    .addEventListener("click", searchAdminOrders);
 
-  document.getElementById("adminProductNo").addEventListener("input", function (event) {
-    event.target.value = event.target.value.replace(/[^0-9]/g, "");
-  });
+  document.getElementById("todayOrdersButton")
+    .addEventListener("click", function() {
+      const today = todayString();
+      document.getElementById("startDate").value = today;
+      document.getElementById("endDate").value = today;
+      document.getElementById("orderKeyword").value = "";
+      searchAdminOrders();
+    });
 
-  document.getElementById("saveProductButton").addEventListener("click", saveAdminProduct);
-  document.getElementById("resetProductButton").addEventListener("click", resetAdminProductForm);
-  document.getElementById("reloadProductsButton").addEventListener("click", loadAdminProducts);
-  document.getElementById("productKeyword").addEventListener("input", renderAdminProducts);
+  document.getElementById("allOrdersButton")
+    .addEventListener("click", function() {
+      document.getElementById("startDate").value = "";
+      document.getElementById("endDate").value = "";
+      document.getElementById("orderKeyword").value = "";
+      searchAdminOrders();
+    });
 
-  loadTodayAdminOrders();
+  document.getElementById("rebuildButton")
+    .addEventListener("click", rebuildDerivedSheets);
+
+  const archiveButton =
+    document.getElementById("archiveOrdersButton");
+
+  if (archiveButton) {
+    archiveButton.addEventListener(
+      "click",
+      archiveCurrentOrders
+    );
+  }
+
+  document.getElementById("currentOrdersSourceButton")
+    .addEventListener("click", function() {
+      setAdminOrderSource("current");
+    });
+
+  document.getElementById("historyOrdersSourceButton")
+    .addEventListener("click", function() {
+      setAdminOrderSource("history");
+    });
+
+  document.getElementById("summaryPaymentCard")
+    .addEventListener("click", showAmountOnlyView);
+
+  document.getElementById("backToOrderListButton")
+    .addEventListener("click", showOrderListView);
+
+  document.getElementById("adminProductNo")
+    .addEventListener("input", function(event) {
+      event.target.value =
+        event.target.value.replace(/[^0-9]/g, "");
+    });
+
+  document.getElementById("saveProductButton")
+    .addEventListener("click", saveAdminProduct);
+
+  document.getElementById("resetProductButton")
+    .addEventListener("click", resetAdminProductForm);
+
+  document.getElementById("reloadProductsButton")
+    .addEventListener("click", loadAdminProducts);
+
+  document.getElementById("productKeyword")
+    .addEventListener("input", renderAdminProducts);
+
+  resetAdminOrderDisplay();
 }
 
 function showAdminTab(tabName) {
-  document.querySelectorAll(".tab-button[data-tab]").forEach(function (button) {
-    button.classList.toggle("active", button.dataset.tab === tabName);
-  });
+  document.querySelectorAll(".side-link[data-tab]")
+    .forEach(function(button) {
+      button.classList.toggle(
+        "active",
+        button.dataset.tab === tabName
+      );
+    });
 
-  document.getElementById("ordersTab").classList.toggle("active", tabName === "orders");
-  document.getElementById("productsTab").classList.toggle("active", tabName === "products");
+  document.getElementById("ordersTab")
+    .classList.toggle(
+      "active",
+      tabName === "orders"
+    );
 
-  if (tabName === "products" && adminProducts.length === 0) {
+  document.getElementById("productsTab")
+    .classList.toggle(
+      "active",
+      tabName === "products"
+    );
+
+  if (tabName === "products") {
     loadAdminProducts();
   }
 }
 
+function setAdminOrderSource(source) {
+  adminOrderSource = source;
+
+  document.getElementById("currentOrdersSourceButton")
+    .classList.toggle("active", source === "current");
+
+  document.getElementById("historyOrdersSourceButton")
+    .classList.toggle("active", source === "history");
+
+  const archiveButton =
+    document.getElementById("archiveOrdersButton");
+
+  if (archiveButton) {
+    archiveButton.style.display =
+      source === "current"
+        ? "inline-flex"
+        : "none";
+  }
+
+  document.getElementById("startDate").value = "";
+  document.getElementById("endDate").value = "";
+  document.getElementById("orderKeyword").value = "";
+
+  resetAdminOrderDisplay();
+}
+
+async function archiveCurrentOrders() {
+  if (!confirm(
+    "고객주문·3PL출고·전체주문이력을 지금 다시 동기화할까요?\n\n" +
+    "전체주문이력의 기존 송장번호는 유지됩니다."
+  )) {
+    return;
+  }
+
+  showLoading("세 시트의 주문정보를 동기화하는 중입니다.");
+
+  try {
+    const result = await apiPost({
+      action: "archiveCurrentOrders"
+    });
+
+    alert(
+      "주문정보 동기화가 완료되었습니다.\n" +
+      "새로 추가된 이력: " + Number(result.addedCount || 0) + "건"
+    );
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    hideLoading();
+  }
+}
+
+function resetAdminOrderDisplay() {
+  adminOrders = [];
+  adminHasSearched = false;
+
+  document.getElementById("summaryOrderCount")
+    .textContent = "0";
+
+  document.getElementById("summaryPaidCount")
+    .textContent = "0";
+
+  document.getElementById("summaryPaymentTotal")
+    .textContent = "0원";
+
+  document.getElementById("amountOnlyValue")
+    .textContent = "0원";
+
+  document.getElementById("amountOnlyPanel")
+    .classList.remove("show");
+
+  document.getElementById("orderListPanel")
+    .style.display = "block";
+
+  document.getElementById("adminOrderList")
+    .innerHTML =
+      '<tr><td colspan="14" class="empty-cell">' +
+      '날짜 또는 검색 조건을 선택한 뒤 조회하기를 눌러주세요.' +
+      '</td></tr>';
+}
+
+function showAmountOnlyView() {
+  if (!adminHasSearched) {
+    alert("먼저 날짜를 선택하고 조회하기를 눌러주세요.");
+    return;
+  }
+
+  const total = adminOrders.reduce(
+    function(sum, order) {
+      return sum +
+        Number(order.paymentAmount || 0);
+    },
+    0
+  );
+
+  document.getElementById("amountOnlyValue")
+    .textContent = money(total);
+
+  document.getElementById("summaryPaymentTotal")
+    .textContent = money(total);
+
+  document.getElementById("orderListPanel")
+    .style.display = "none";
+
+  document.getElementById("amountOnlyPanel")
+    .classList.add("show");
+
+  document.getElementById("amountOnlyPanel")
+    .scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+}
+
+function showOrderListView() {
+  document.getElementById("amountOnlyPanel").classList.remove("show");
+  document.getElementById("orderListPanel").style.display = "block";
+
+  document.getElementById("orderListPanel").scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+
 async function searchAdminOrders() {
+  const startDate =
+    document.getElementById("startDate").value;
+
+  const endDate =
+    document.getElementById("endDate").value;
+
+  const keyword =
+    document.getElementById("orderKeyword")
+      .value.trim();
+
+  if (
+    startDate &&
+    endDate &&
+    startDate > endDate
+  ) {
+    alert("시작일이 종료일보다 늦을 수 없습니다.");
+    return;
+  }
+
   const params = {
-    action: "adminOrders",
-    startDate: document.getElementById("startDate").value,
-    endDate: document.getElementById("endDate").value,
-    search: document.getElementById("orderKeyword").value.trim()
+    action:
+      adminOrderSource === "history"
+        ? "adminHistoryOrders"
+        : "adminOrders",
+    startDate: startDate,
+    endDate: endDate,
+    search: keyword
   };
 
-  showLoading("주문을 불러오는 중입니다.");
+  showLoading("주문을 조회하는 중입니다.");
 
   try {
     const data = await apiGet(params);
-    adminOrders = Array.isArray(data.orders) ? data.orders : [];
+
+    adminOrders =
+      Array.isArray(data.orders)
+        ? data.orders
+        : [];
+
+    adminHasSearched = true;
+
     renderAdminOrders();
+    showOrderListView();
+
   } catch (error) {
     alert(error.message);
+
   } finally {
     hideLoading();
   }
@@ -655,10 +436,16 @@ function loadAllAdminOrders() {
 function renderAdminOrders() {
   const tbody = document.getElementById("adminOrderList");
 
+  if (!adminHasSearched) {
+    resetAdminOrderDisplay();
+    return;
+  }
+
   document.getElementById("summaryOrderCount").textContent = adminOrders.length;
   document.getElementById("summaryPaidCount").textContent =
     adminOrders.filter(function (order) {
-      return order.paymentStatus === "입금완료";
+      return order.paymentStatus === "입금완료" ||
+             order.paymentStatus === "카드결제";
     }).length;
 
   const total = adminOrders.reduce(function (sum, order) {
@@ -673,15 +460,23 @@ function renderAdminOrders() {
   }
 
   tbody.innerHTML = adminOrders.map(function (order) {
+    const isHistory = adminOrderSource === "history";
+    const trackingNumber = order.trackingNumber || "";
+    const courier = order.courier || (isHistory ? "CJ대한통운" : "");
+
     return `
       <tr>
-        <td data-label="주문일">${escapeHtml(order.orderDate)}</td>
+        <td data-label="주문일">
+          ${escapeHtml(order.orderDate || (isHistory ? "보관 주문" : ""))}
+          <div class="order-source-label">${isHistory ? "전체이력" : "오늘주문"}</div>
+        </td>
         <td data-label="입금금액">${money(order.paymentAmount)}</td>
         <td data-label="입금상태">
-          <select class="status-select" data-row="${order.rowNumber}">
+          <select class="status-select" data-row="${order.rowNumber}"
+                  data-source="${isHistory ? "history" : "current"}">
             <option value="미입금" ${order.paymentStatus === "미입금" ? "selected" : ""}>미입금</option>
             <option value="입금완료" ${order.paymentStatus === "입금완료" ? "selected" : ""}>입금완료</option>
-            <option value="환불" ${order.paymentStatus === "환불" ? "selected" : ""}>환불</option>
+            <option value="카드결제" ${order.paymentStatus === "카드결제" ? "selected" : ""}>카드결제</option>
           </select>
         </td>
         <td data-label="입금내역">${escapeHtml(order.paymentMemo)}</td>
@@ -693,25 +488,78 @@ function renderAdminOrders() {
         <td data-label="우편번호">${escapeHtml(order.zipcode)}</td>
         <td data-label="구매내역" class="preline">${escapeHtml(order.orderItems)}</td>
         <td data-label="내품수량">${escapeHtml(order.itemQuantity)}</td>
+        <td data-label="택배사">
+          ${isHistory ? `
+            <span class="shipping-badge">${escapeHtml(courier || "CJ대한통운")}</span>
+          ` : "-"}
+        </td>
+        <td data-label="송장번호" class="tracking-cell">
+          ${isHistory ? `
+            <input class="tracking-input" type="text"
+                   data-row="${order.rowNumber}"
+                   value="${escapeHtml(trackingNumber)}"
+                   placeholder="송장번호 입력">
+            ${trackingNumber ? `
+              <a class="delivery-button" target="_blank" rel="noopener"
+                 href="https://trace.cjlogistics.com/next/tracking.html?wblNo=${encodeURIComponent(String(trackingNumber).replace(/[^0-9]/g, ""))}">
+                배송조회
+              </a>
+            ` : ""}
+          ` : "-"}
+        </td>
       </tr>
     `;
   }).join("");
 
   tbody.querySelectorAll(".status-select").forEach(function (select) {
     select.addEventListener("change", function () {
-      updateAdminPaymentStatus(Number(select.dataset.row), select.value);
+      updateAdminPaymentStatus(
+        Number(select.dataset.row),
+        select.value,
+        select.dataset.source
+      );
+    });
+  });
+
+  tbody.querySelectorAll(".tracking-input").forEach(function (input) {
+    input.addEventListener("change", function () {
+      updateHistoryTrackingNumber(
+        Number(input.dataset.row),
+        input.value.trim()
+      );
     });
   });
 }
 
-async function updateAdminPaymentStatus(rowNumber, paymentStatus) {
+async function updateAdminPaymentStatus(rowNumber, paymentStatus, source) {
   showLoading("입금상태를 변경하는 중입니다.");
 
   try {
     await apiPost({
-      action: "updatePaymentStatus",
+      action: source === "history"
+        ? "updateHistoryPaymentStatus"
+        : "updatePaymentStatus",
       rowNumber: rowNumber,
       paymentStatus: paymentStatus
+    });
+
+    await searchAdminOrders();
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    hideLoading();
+  }
+}
+
+async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
+  showLoading("송장번호를 저장하는 중입니다.");
+
+  try {
+    await apiPost({
+      action: "updateHistoryTracking",
+      rowNumber: rowNumber,
+      courier: "CJ대한통운",
+      trackingNumber: trackingNumber
     });
 
     await searchAdminOrders();
@@ -736,14 +584,23 @@ async function rebuildDerivedSheets() {
 }
 
 async function loadAdminProducts() {
-  showLoading("상품정보를 불러오는 중입니다.");
+  showLoading("상품정보 시트와 동기화하는 중입니다.");
 
   try {
-    const data = await apiGet({ action: "adminProducts" });
-    adminProducts = Array.isArray(data.products) ? data.products : [];
+    const data = await apiGet({
+      action: "adminProducts"
+    });
+
+    adminProducts =
+      Array.isArray(data.products)
+        ? data.products
+        : [];
+
     renderAdminProducts();
+
   } catch (error) {
     alert(error.message);
+
   } finally {
     hideLoading();
   }
@@ -939,9 +796,13 @@ function renderCustomerOrders(orders) {
   }
 
   container.innerHTML = orders.map(function (order) {
+    const trackingNumber = order.trackingNumber || "";
+    const courier = order.courier || "CJ대한통운";
+    const numericTracking = String(trackingNumber).replace(/[^0-9]/g, "");
+
     return `
       <article class="order-result-card">
-        <h3>${escapeHtml(order.orderDate)} 주문</h3>
+        <h3>${escapeHtml(order.orderDate || "보관 주문")}</h3>
 
         <div class="order-result-meta">
           <div><strong>입금금액</strong><br>${money(order.paymentAmount)}</div>
@@ -951,6 +812,24 @@ function renderCustomerOrders(orders) {
         </div>
 
         <div class="order-result-items">${escapeHtml(order.orderItems)}</div>
+
+        <div class="customer-delivery-box">
+          ${trackingNumber ? `
+            <div>
+              <span>${escapeHtml(courier)}</span>
+              <strong>${escapeHtml(trackingNumber)}</strong>
+            </div>
+            <a class="delivery-button" target="_blank" rel="noopener"
+               href="https://trace.cjlogistics.com/next/tracking.html?wblNo=${encodeURIComponent(numericTracking)}">
+              배송조회
+            </a>
+          ` : `
+            <div>
+              <span>배송상태</span>
+              <strong>배송 준비 중</strong>
+            </div>
+          `}
+        </div>
       </article>
     `;
   }).join("");

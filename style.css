@@ -483,3 +483,158 @@ textarea{min-height:92px;resize:vertical}
   }
   .order-result-meta{grid-template-columns:1fr}
 }
+
+
+/* 주문 소스 탭 */
+.order-source-tabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.source-tab{
+  min-height:48px;
+  border:1px solid #e5e9f0;
+  border-radius:13px;
+  background:#f7f8fb;
+  color:#667085;
+  font-weight:900;
+}
+.source-tab.active{
+  border-color:transparent;
+  color:#fff;
+  background:linear-gradient(135deg,var(--pink),#ff7fb6);
+  box-shadow:0 10px 22px rgba(255,79,151,.18);
+}
+.topbar-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+.tracking-cell{
+  min-width:150px;
+}
+.tracking-input{
+  width:150px;
+  min-height:38px;
+  padding:8px 10px;
+  border-radius:10px;
+  font-size:13px;
+}
+.shipping-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:30px;
+  padding:5px 9px;
+  border-radius:999px;
+  background:#eef2ff;
+  color:#4454a5;
+  font-size:11px;
+  font-weight:900;
+}
+.delivery-button{
+  display:inline-flex;
+  margin-top:8px;
+  min-height:34px;
+  padding:7px 10px;
+  border-radius:10px;
+  background:#202737;
+  color:#fff;
+  text-decoration:none;
+  font-size:12px;
+  font-weight:900;
+}
+.order-source-label{
+  display:inline-flex;
+  padding:5px 9px;
+  border-radius:999px;
+  background:var(--pink-soft);
+  color:var(--pink-dark);
+  font-size:11px;
+  font-weight:900;
+}
+@media(max-width:760px){
+  .topbar-actions{width:100%;justify-content:stretch}
+  .topbar-actions .btn{flex:1}
+}
+
+.customer-delivery-box{
+  margin-top:12px;
+  padding:13px 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  border-radius:13px;
+  background:#f7f8fb;
+}
+.customer-delivery-box span{
+  display:block;
+  color:#8790a1;
+  font-size:11px;
+  font-weight:800;
+}
+.customer-delivery-box strong{
+  display:block;
+  margin-top:3px;
+  color:#202737;
+  font-size:14px;
+}
+
+
+/* 어드민 조회 전 비노출 및 금액 전용 보기 */
+.clickable-metric{
+  width:100%;
+  text-align:left;
+  cursor:pointer;
+  appearance:none;
+}
+.clickable-metric:hover{
+  transform:translateY(-2px);
+  box-shadow:0 14px 28px rgba(255,79,151,.22);
+}
+.amount-only-panel{
+  display:none;
+  margin-bottom:18px;
+  padding:34px 26px;
+  border-radius:22px;
+  text-align:center;
+  color:#fff;
+  background:linear-gradient(135deg,#202737,#111827);
+  box-shadow:0 18px 38px rgba(17,24,39,.16);
+}
+.amount-only-panel.show{display:block}
+.amount-only-panel span{
+  display:block;
+  color:#c7ceda;
+  font-size:14px;
+  font-weight:800;
+}
+.amount-only-panel strong{
+  display:block;
+  margin:12px 0 22px;
+  font-size:42px;
+  letter-spacing:-1.5px;
+}
+.amount-only-panel .btn{
+  background:#fff;
+  color:#202737;
+}
+
+/* 고객조회 버튼 여백 */
+.lookup-submit-button{
+  margin-top:18px;
+}
+
+/* 3PL 상세 상품 열 */
+.multi-line-cell{
+  min-width:110px;
+  white-space:pre-line;
+  line-height:1.7;
+}
+
+/* 최종 고객 주문서 */
+.final-order-page{background:#fff8fb}.final-order-header{padding:28px 16px 24px;color:#fff;text-align:center;background:linear-gradient(135deg,#ff5a9f,#ff85b8)}.final-order-header .final-brand{font-size:32px;font-weight:900;letter-spacing:-1px}.final-order-header h1{margin:6px 0 0;font-size:23px}.final-order-shell{width:100%;max-width:1120px;margin:0 auto;padding:18px 16px 50px}.final-order-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}.final-column{display:grid;gap:16px}.final-card{padding:20px;border:1px solid #f3d6e3;border-radius:20px;background:#fff;box-shadow:0 8px 24px rgba(200,77,126,.08)}.final-section-title{margin-bottom:18px;color:#ff3f88;font-size:20px;font-weight:900}.final-card .field{margin-bottom:15px}.final-card label{display:block;margin-bottom:7px;font-weight:800}.product-search-row{display:grid;grid-template-columns:1fr auto;gap:10px}.final-btn{min-height:48px;padding:12px 18px;border:none;border-radius:11px;display:inline-flex;align-items:center;justify-content:center;font-weight:900;text-decoration:none}.final-btn.primary{color:#fff;background:linear-gradient(135deg,#ff3f88,#f52f79)}.final-btn.search{min-width:95px;color:#fff;background:#f63b83}.final-btn.subtle{color:#444;background:#f1f1f3}.final-btn.dashed{color:#ff3f88;background:#fff;border:1.5px dashed #ff6ba5}.final-btn.band{background:#34b34a;color:#fff}.final-btn.channel{background:#ffd443;color:#222}.final-quantity{display:grid;grid-template-columns:88px 1fr 88px;gap:12px}.final-quantity button{border:1px solid #ffc5da;border-radius:10px;color:#f33c82;background:#fff0f6;font-size:23px;font-weight:900}.final-quantity input{text-align:center;font-weight:900}.cart-list{display:grid;gap:10px;margin-bottom:14px}.cart-empty{padding:28px 14px;color:#9b9b9b;text-align:center;border:1px dashed #ead8df;border-radius:14px}.cart-item{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;padding:14px 12px;border:1px solid #f1dce5;border-radius:14px;background:#fff}.cart-number{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:#ff4a92;font-weight:900}.cart-info strong{display:block;margin-bottom:5px}.cart-info span{color:#555;font-size:13px}.cart-side{text-align:right}.cart-price{display:block;margin-bottom:8px;color:#ff357f;font-weight:900}.cart-delete{min-height:34px;padding:7px 10px;border:none;border-radius:8px;color:#555;background:#f1f1f2;font-size:12px;font-weight:800}.final-summary-card{padding:20px;border-radius:18px;background:linear-gradient(135deg,#fff0f6,#fff7fa);border:1px solid #f5d8e4}.final-summary-card>div{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:7px 0}.final-summary-card span{font-weight:800}.final-summary-card strong{color:#111;font-size:20px}.final-summary-card>div:last-child strong{color:#ff347e;font-size:29px}.purchase-summary{min-height:120px;padding:14px;border:1px solid #e3e3e3;border-radius:11px;background:#fafafa;color:#333;white-space:pre-line;line-height:1.8;font-size:14px}.order-submit{width:100%;min-height:58px;font-size:18px}.muted{color:#999;font-size:.8em;font-weight:600}@media(max-width:820px){.final-order-grid{grid-template-columns:1fr}.final-order-shell{padding:12px 10px 40px}.final-order-header .final-brand{font-size:27px}}@media(max-width:520px){.final-card{padding:16px;border-radius:17px}.product-search-row{grid-template-columns:1fr 92px}.final-quantity{grid-template-columns:64px 1fr 64px}.cart-item{grid-template-columns:34px 1fr}.cart-side{grid-column:2;text-align:left;display:flex;align-items:center;justify-content:space-between}}
+
+
