@@ -1,1 +1,74 @@
-<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>씬느샵 주문조회</title><style>*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#fff4f7;color:#333}.header{background:linear-gradient(135deg,#ff7aa2,#ffb6c9);color:white;text-align:center;padding:28px 15px}.header h1{margin:0;font-size:26px}.header p{margin:8px 0 0;font-size:14px}.container{max-width:520px;margin:24px auto;padding:0 16px}.box,.order-card,.empty{background:white;border-radius:18px;box-shadow:0 4px 14px rgba(0,0,0,.08)}.box{padding:22px}label{display:block;font-weight:bold;margin-top:14px;margin-bottom:6px}input{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;font-size:16px}button{width:100%;margin-top:20px;padding:15px;border:none;border-radius:14px;background:#ff5f91;color:white;font-size:17px;font-weight:bold;cursor:pointer}button:disabled{background:#ccc}.notice{margin-top:12px;font-size:13px;color:#777;line-height:1.5}.result{margin-top:22px}.order-card{padding:20px;margin-top:15px;border-left:6px solid #ff7aa2}.row{margin-bottom:13px;line-height:1.5}.row strong{display:block;color:#ff5f91;margin-bottom:3px}.product-box{white-space:pre-line;background:#fff7fa;padding:12px;border-radius:12px;line-height:1.6}.tracking{font-size:18px;font-weight:bold;color:#222;word-break:break-all}.tracking-empty{color:#999;font-weight:bold}.track-btn{display:block;text-align:center;margin-top:12px;padding:13px;border-radius:14px;background:#333;color:white;text-decoration:none;font-weight:bold}.empty{text-align:center;padding:24px;margin-top:20px;color:#777;line-height:1.6}.footer{text-align:center;color:#999;font-size:12px;margin:25px 0}</style></head><body><div class="header"><h1>씬느샵 주문조회</h1><p>주문 접수와 CJ대한통운 송장번호를 확인하실 수 있습니다.</p></div><div class="container"><div class="box"><label>받는분 성명</label><input type="text" id="name" placeholder="예: 홍길동"><label>전화번호 뒷 4자리</label><input type="tel" id="phoneLast" maxlength="4" placeholder="예: 1234"><button id="searchBtn" onclick="searchOrder()">주문 조회하기</button><div class="notice">주문서에 입력하신 받는분 성명과 전화번호 뒷 4자리를 입력해주세요.</div></div><div id="result" class="result"></div><div class="footer">씬느샵 주문조회 시스템</div></div><script>const SCRIPT_URL="https://script.google.com/macros/s/AKfycbycRpihssGhbRJR_1BNdB1fkDgovehoDrE9SPRPiRjmMmhI9Ut3wLA_zllFiymEXpQa/exec";function searchOrder(){const name=document.getElementById('name').value.trim();const phoneLast=document.getElementById('phoneLast').value.trim();const result=document.getElementById('result');const btn=document.getElementById('searchBtn');if(!name){alert('받는분 성명을 입력해주세요.');return;}if(!/^[0-9]{4}$/.test(phoneLast)){alert('전화번호 뒷 4자리를 숫자로 입력해주세요.');return;}result.innerHTML='';btn.disabled=true;btn.innerText='조회중...';const url=SCRIPT_URL+'?type=customer&name='+encodeURIComponent(name)+'&phoneLast='+encodeURIComponent(phoneLast);fetch(url).then(r=>r.json()).then(data=>{btn.disabled=false;btn.innerText='주문 조회하기';if(!data.success||data.count===0){result.innerHTML='<div class="empty">조회된 주문이 없습니다.<br><br>받는분 성명과 전화번호 뒷 4자리를 다시 확인해주세요.</div>';return;}let html='';data.orders.forEach(order=>{const tracking=order.trackingNumber||'';const product=(order.option1||'-')+(order.option2?'\n'+order.option2:'');html+=`<div class="order-card"><div class="row"><strong>주문일</strong>${order.orderDate||'-'}</div><div class="row"><strong>닉네임</strong>${order.nickname||'-'}</div><div class="row"><strong>입금금액</strong>${formatMoney(order.payment)}원</div><div class="row"><strong>입금상태</strong><span class="tracking-empty">${order.paymentStatus||'미입금'}</span></div><div class="row"><strong>주문상품</strong><div class="product-box">${escapeHtml(product)}</div></div><div class="row"><strong>수량</strong>${order.quantity||'-'}</div><div class="row"><strong>택배사</strong>CJ대한통운</div><div class="row"><strong>송장번호</strong>${tracking?`<div class="tracking">${tracking}</div><a class="track-btn" href="https://www.cjlogistics.com/ko/tool/parcel/tracking" target="_blank">CJ대한통운 배송조회 하기</a>`:'<div class="tracking-empty">아직 등록되지 않았습니다.</div>'}</div></div>`;});result.innerHTML=html;}).catch(()=>{btn.disabled=false;btn.innerText='주문 조회하기';result.innerHTML='<div class="empty">주문 조회 중 오류가 발생했습니다.<br><br>잠시 후 다시 시도해주세요.</div>';});}function formatMoney(v){const n=Number(v||0);return n?n.toLocaleString('ko-KR'):'-';}function escapeHtml(t){return String(t??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');}</script></body></html>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#ff4f97">
+  <title>씬느샵 주문조회</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body data-page="customer" class="page-customer">
+  <header class="brand-header">
+    <div class="brand-shell">
+      <div class="brand-mark">S</div>
+      <div class="brand-copy">
+        <h1>씬느샵</h1>
+        <p>Order Tracking</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-shell lookup-shell">
+    <section class="hero-card compact-hero">
+      <div>
+        <span class="eyebrow">ORDER LOOKUP</span>
+        <h2>주문내역 조회</h2>
+        <p>수령인 성함과 연락처 뒤 4자리로 본인의 주문만 확인할 수 있습니다.</p>
+      </div>
+    </section>
+
+    <section class="lookup-card">
+      <div class="form-grid two">
+        <div class="field">
+          <label for="lookupName">수령인 성함</label>
+          <input id="lookupName" type="text" placeholder="예: 유영인">
+        </div>
+
+        <div class="field">
+          <label for="lookupPhoneLast">연락처 뒤 4자리</label>
+          <input id="lookupPhoneLast" type="text" inputmode="numeric"
+                 maxlength="4" placeholder="예: 6337">
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-primary full-width" id="lookupButton">
+        주문 조회하기
+      </button>
+    </section>
+
+    <section id="lookupResultSection" class="lookup-results">
+      <div class="result-head">
+        <div>
+          <span class="eyebrow">MY ORDERS</span>
+          <h2>주문내역</h2>
+        </div>
+        <span class="result-count" id="lookupCount">0건</span>
+      </div>
+
+      <div id="customerOrderList">
+        <div class="empty-state">
+          수령인 성함과 연락처 뒤 4자리를 입력해주세요.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-card">
+      <div class="spinner"></div>
+      <p id="loadingText">조회 중입니다.</p>
+    </div>
+  </div>
+</body>
+</html>

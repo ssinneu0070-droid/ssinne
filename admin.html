@@ -1,115 +1,226 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>씬느샵 통합 관리자 v1.0</title>
-<style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans KR",sans-serif;background:#fff5fa;color:#222}.header{background:linear-gradient(135deg,#ff4fa1,#ff9fc7);color:#fff;padding:24px 16px;text-align:center}.header h1{margin:0;font-size:26px}.header p{margin:8px 0 0;font-size:14px}.container{max-width:1280px;margin:20px auto;padding:0 14px}.menu{display:flex;gap:10px;margin-bottom:16px}.menu button{flex:1;border:none;border-radius:14px;padding:15px;background:#fff;color:#ff4fa1;font-weight:900;font-size:16px;box-shadow:0 4px 12px rgba(0,0,0,.08);cursor:pointer}.menu button.active{background:#ff4fa1;color:#fff}.section{display:none}.section.active{display:block}.card{background:#fff;border-radius:18px;box-shadow:0 6px 18px rgba(0,0,0,.08);padding:18px;margin-bottom:18px}.card-title{font-size:20px;font-weight:900;margin-bottom:14px}.search{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}.search input,.search select{flex:1;min-width:145px;padding:14px;border:1px solid #ddd;border-radius:13px;font-size:15px}button{border:none;border-radius:13px;padding:13px 16px;font-size:15px;font-weight:900;cursor:pointer}.pink{background:#ff4fa1;color:#fff}.gray{background:#eee;color:#333}.black{background:#222;color:#fff}.red{background:#ffe7ef;color:#e6325b}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}.summary-box{background:#fff;border-radius:18px;padding:18px;text-align:center;font-weight:900;box-shadow:0 5px 15px rgba(0,0,0,.06);border:1px solid #ffe1ef}.summary-box .icon{font-size:24px}.summary-box span{display:block;color:#ff2f91;font-size:25px;margin-top:6px}.summary-box small{display:block;color:#777;margin-top:5px;font-size:12px}.summary-box.clickable{cursor:pointer;transition:.2s}.summary-box.clickable:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(255,79,161,.18)}.filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.filter-row button{padding:10px 13px;border-radius:999px;background:#fff0f7;color:#ff2f91}.filter-row button.active{background:#ff4fa1;color:#fff}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;background:white;min-width:980px}th,td{border-bottom:1px solid #eee;padding:11px;text-align:left;font-size:14px;vertical-align:middle;white-space:nowrap}th{background:#ffe3f1;font-weight:900}.loading{text-align:center;padding:30px;color:#777}.pay-select{min-width:105px;padding:9px;border-radius:10px;border:1px solid #ddd;font-weight:900}.order-items{white-space:pre-line;min-width:180px}.addr{min-width:220px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}label{display:block;font-size:13px;font-weight:900;margin-bottom:6px}input,select,textarea{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;font-size:15px}textarea{min-height:76px;resize:vertical}.full{grid-column:1/-1}.btn-row{display:flex;gap:10px;margin-top:14px}.btn-row button{flex:1}.status{display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:900}.sale{background:#e7f8ee;color:#159447}.soldout{background:#ffe8ec;color:#e6325b}.end{background:#eee;color:#555}.small-btn{padding:8px 10px;font-size:13px;border-radius:9px;margin:2px}.notice{font-size:14px;line-height:1.7;color:#555}.price-total{font-size:14px;color:#ff2f91;font-weight:900;margin-top:6px}.copy-btn{padding:6px 9px;font-size:12px;background:#fff0f7;color:#ff2f91;margin-left:5px}
-@media(max-width:760px){.header h1{font-size:23px}.menu{position:sticky;top:0;z-index:9;background:#fff5fa;padding:8px 0}.menu button{font-size:14px;padding:12px}.summary{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.btn-row,.search{flex-direction:column}.search input,.search select,.search button{width:100%;min-width:0}table,thead,tbody,tr,td,th{display:block;min-width:0}thead{display:none}tr{background:white;border:1px solid #eee;border-radius:16px;margin-bottom:12px;padding:12px}td{border:none;padding:7px 0;white-space:normal}td::before{content:attr(data-label);display:block;font-weight:900;color:#ff4fa1;margin-bottom:3px;font-size:12px}.order-items{white-space:pre-line}.addr{min-width:0}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111827">
+  <title>씬느샵 관리자</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
 </head>
-<body>
-<div class="header"><h1>씬느샵 통합 관리자 v1.0</h1><p>주문관리 · 상품관리 · 고객페이지 통합 운영</p></div>
-<div class="container">
-  <div class="menu">
-    <button id="orderTab" class="active" onclick="showSection('orders')">📦 주문관리</button>
-    <button id="productTab" onclick="showSection('products')">🛍 상품관리</button>
-    <button onclick="location.href='shop.html'">🛒 고객페이지</button>
+<body data-page="admin" class="page-admin">
+  <div class="admin-app">
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <div class="brand-mark small">S</div>
+        <div>
+          <strong>씬느샵</strong>
+          <span>관리자</span>
+        </div>
+      </div>
+
+      <nav class="side-nav">
+        <button class="side-link active" data-tab="orders">
+          <span>▣</span> 주문 관리
+        </button>
+        <button class="side-link" data-tab="products">
+          <span>◇</span> 상품 관리
+        </button>
+        <a class="side-link" href="customer.html">
+          <span>⌕</span> 고객 조회
+        </a>
+        <a class="side-link" href="index.html">
+          <span>＋</span> 주문서
+        </a>
+      </nav>
+
+      <div class="side-foot">
+        씬느샵 Live Commerce
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div>
+          <span class="eyebrow dark">SSINNEU ADMIN</span>
+          <h1>통합 관리자</h1>
+        </div>
+        <button class="btn btn-dark" type="button" id="rebuildButton">
+          거래처발주·3PL 다시 만들기
+        </button>
+      </header>
+
+      <section id="ordersTab" class="tab-section active">
+        <div class="summary-grid premium">
+          <div class="metric-card">
+            <span>조회 주문건</span>
+            <strong id="summaryOrderCount">0</strong>
+            <small>선택 기간 주문 수</small>
+          </div>
+          <div class="metric-card">
+            <span>입금완료</span>
+            <strong id="summaryPaidCount">0</strong>
+            <small>입금 확인된 주문</small>
+          </div>
+          <div class="metric-card accent">
+            <span>조회 금액</span>
+            <strong id="summaryPaymentTotal">0원</strong>
+            <small>선택 기간 주문 합계</small>
+          </div>
+        </div>
+
+        <section class="admin-panel">
+          <div class="panel-title-row">
+            <div>
+              <h2>주문 검색</h2>
+              <p>날짜 또는 고객정보로 주문을 조회하세요.</p>
+            </div>
+          </div>
+
+          <div class="search-toolbar">
+            <div class="field compact">
+              <label for="startDate">시작일</label>
+              <input type="date" id="startDate">
+            </div>
+
+            <div class="field compact">
+              <label for="endDate">종료일</label>
+              <input type="date" id="endDate">
+            </div>
+
+            <div class="field compact grow">
+              <label for="orderKeyword">닉네임·수령인·연락처</label>
+              <input type="text" id="orderKeyword" placeholder="검색어 입력">
+            </div>
+
+            <button class="btn btn-primary" type="button" id="searchOrdersButton">조회하기</button>
+            <button class="btn btn-subtle" type="button" id="todayOrdersButton">오늘 주문</button>
+            <button class="btn btn-subtle" type="button" id="allOrdersButton">전체 보기</button>
+          </div>
+        </section>
+
+        <section class="admin-panel">
+          <div class="panel-title-row">
+            <div>
+              <h2>주문 목록</h2>
+              <p>입금상태를 바로 변경할 수 있습니다.</p>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="data-table order-table">
+              <thead>
+                <tr>
+                  <th>주문일</th>
+                  <th>입금금액</th>
+                  <th>입금상태</th>
+                  <th>입금내역</th>
+                  <th>닉네임</th>
+                  <th>수령인</th>
+                  <th>주소</th>
+                  <th>연락처</th>
+                  <th>배송메모</th>
+                  <th>우편번호</th>
+                  <th>구매내역</th>
+                  <th>내품수량</th>
+                </tr>
+              </thead>
+              <tbody id="adminOrderList">
+                <tr><td colspan="12" class="empty-cell">전체 보기 또는 날짜 조회를 눌러주세요.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="productsTab" class="tab-section">
+        <section class="admin-panel">
+          <div class="panel-title-row">
+            <div>
+              <h2 id="productFormTitle">상품정보 추가</h2>
+              <p>방송 전 상품번호·옵션·금액을 등록하세요.</p>
+            </div>
+          </div>
+
+          <input type="hidden" id="productRowNumber">
+
+          <div class="form-grid three">
+            <div class="field">
+              <label for="adminProductNo">상품번호</label>
+              <input id="adminProductNo" type="text" inputmode="numeric" maxlength="3" placeholder="숫자만 입력">
+            </div>
+            <div class="field">
+              <label for="adminProductName">상품명</label>
+              <input id="adminProductName" type="text">
+            </div>
+            <div class="field">
+              <label for="adminProductColor">칼라</label>
+              <input id="adminProductColor" type="text">
+            </div>
+            <div class="field">
+              <label for="adminProductSize">사이즈</label>
+              <input id="adminProductSize" type="text">
+            </div>
+            <div class="field">
+              <label for="adminSalePrice">판매가</label>
+              <input id="adminSalePrice" type="number" min="0">
+            </div>
+            <div class="field">
+              <label for="adminDepositPrice">입금가</label>
+              <input id="adminDepositPrice" type="number" min="0">
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button type="button" class="btn btn-primary" id="saveProductButton">저장하기</button>
+            <button type="button" class="btn btn-subtle" id="resetProductButton">새 상품 입력</button>
+          </div>
+        </section>
+
+        <section class="admin-panel">
+          <div class="panel-title-row">
+            <div>
+              <h2>상품정보 목록</h2>
+              <p>상품번호·상품명·칼라·사이즈로 검색하세요.</p>
+            </div>
+          </div>
+
+          <div class="search-toolbar product-toolbar">
+            <div class="field compact grow">
+              <label for="productKeyword">상품 검색</label>
+              <input id="productKeyword" type="text" placeholder="상품번호·상품명·칼라·사이즈">
+            </div>
+            <button type="button" class="btn btn-subtle" id="reloadProductsButton">새로고침</button>
+          </div>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>상품번호</th>
+                  <th>상품명</th>
+                  <th>칼라</th>
+                  <th>사이즈</th>
+                  <th>판매가</th>
+                  <th>입금가</th>
+                  <th>관리</th>
+                </tr>
+              </thead>
+              <tbody id="adminProductList">
+                <tr><td colspan="7" class="empty-cell">상품정보를 불러오는 중입니다.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
   </div>
 
-  <section id="orders" class="section active">
-    <div class="card">
-      <div class="card-title">주문 검색</div>
-      <div class="search">
-        <input type="date" id="startDate">
-        <input type="date" id="endDate">
-        <input type="text" id="searchInput" placeholder="닉네임 / 수령인 / 연락처 검색">
-        <button type="button" class="pink" onclick="searchOrders()">주문목록 조회</button>
-        <button type="button" class="gray" onclick="searchSummaryOnly()">입금합계만 조회</button>
-        <button type="button" class="gray" onclick="loadTodayOrders()">오늘 주문</button>
-        <button type="button" class="gray" onclick="resetOrderSearch()">초기화</button>
-      </div>
-      <div class="notice">하루만 조회하려면 시작일과 종료일을 같은 날짜로 선택하세요.</div>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-card">
+      <div class="spinner"></div>
+      <p id="loadingText">처리 중입니다.</p>
     </div>
-
-    <div class="summary">
-      <div class="summary-box"><div class="icon">📦</div>조회 주문건<span id="orderCount">0</span><small>현재 조회 기준</small></div>
-      <div class="summary-box clickable" onclick="filterPayment('입금완료')"><div class="icon">✅</div>입금완료<span id="paidCount">0</span><small>클릭하면 입금완료만 보기</small></div>
-      <div class="summary-box clickable" onclick="filterPayment('미입금')"><div class="icon">⏰</div>미입금<span id="unpaidCount">0</span><small>클릭하면 미입금만 보기</small></div>
-      <div class="summary-box clickable" onclick="searchSummaryOnly()"><div class="icon">💰</div>입금합계<span id="paymentTotal">0원</span><small>입금완료 금액만 합산</small></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">주문 목록</div>
-      <div class="filter-row">
-        <button id="payAll" class="active" onclick="filterPayment('전체')">전체</button>
-        <button id="payPaid" onclick="filterPayment('입금완료')">입금완료</button>
-        <button id="payUnpaid" onclick="filterPayment('미입금')">미입금</button>
-        <button id="payRefund" onclick="filterPayment('환불')">환불</button>
-      </div>
-      <br>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>주문일</th><th>입금상태</th><th>입금금액</th><th>닉네임</th><th>수령인</th><th>연락처</th><th>주소</th><th>구매내역</th><th>내품수량</th></tr></thead>
-          <tbody id="orderList"><tr><td colspan="9" class="loading">날짜 또는 이름으로 주문을 조회하세요.</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <section id="products" class="section">
-    <div class="card notice"><b>상품관리 사용법</b><br>상품을 저장하면 products 시트와 고객 상품페이지에 자동 반영됩니다. 사진 없이 상품번호 중심으로 운영됩니다.</div>
-    <div class="card">
-      <div class="card-title" id="formTitle">상품 추가</div>
-      <div class="grid">
-        <div><label>상품번호 *</label><input type="text" id="no" placeholder="예: 101"></div>
-        <div><label>상품명 *</label><input type="text" id="name" placeholder="예: 플리츠 원피스"></div>
-        <div><label>색상</label><input type="text" id="color" placeholder="예: 베이지 / 블랙"></div>
-        <div><label>사이즈</label><input type="text" id="size" placeholder="예: FREE"></div>
-        <div><label>판매가 *</label><input type="number" id="price" placeholder="예: 39000"></div>
-        <div><label>상태</label><select id="status"><option value="판매중">판매중</option><option value="품절">품절</option><option value="마감">마감</option></select></div>
-        <div class="full"><label>설명</label><textarea id="desc" placeholder="상품 설명 또는 라이브 안내를 입력하세요"></textarea></div>
-      </div>
-      <div class="btn-row"><button type="button" class="pink" onclick="saveProduct()">저장하기</button><button type="button" class="gray" onclick="resetForm()">새 상품 입력</button></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">상품 목록 <div class="price-total" id="productPriceTotal">판매중 합계 0원</div></div>
-      <div class="search"><input type="text" id="productSearch" placeholder="상품번호 / 상품명 / 색상 검색" oninput="renderProducts()"><button type="button" class="gray" onclick="loadProducts()">새로고침</button><button type="button" class="gray" onclick="location.href='shop.html'">고객 상품페이지 보기</button></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>상품번호</th><th>상품명</th><th>색상</th><th>사이즈</th><th>판매가</th><th>상태</th><th>관리</th></tr></thead>
-          <tbody id="productTable"><tr><td colspan="7" class="loading">상품관리 탭을 누르면 상품이 표시됩니다.</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-</div>
-<script>
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbycRpihssGhbRJR_1BNdB1fkDgovehoDrE9SPRPiRjmMmhI9Ut3wLA_zllFiymEXpQa/exec";
-let currentOrders=[];let currentPaymentFilter='전체';let products=[];
-function showSection(name){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.menu button').forEach(b=>b.classList.remove('active'));document.getElementById(name).classList.add('active');if(name==='orders')document.getElementById('orderTab').classList.add('active');if(name==='products'){document.getElementById('productTab').classList.add('active');loadProducts();}}
-function buildOrderParams(){const keyword=document.getElementById('searchInput').value.trim();const startDate=document.getElementById('startDate').value;const endDate=document.getElementById('endDate').value;let params=[];if(keyword)params.push('search='+encodeURIComponent(keyword));if(startDate)params.push('startDate='+encodeURIComponent(startDate));if(endDate)params.push('endDate='+encodeURIComponent(endDate));if(currentPaymentFilter && currentPaymentFilter!=='전체')params.push('paymentStatus='+encodeURIComponent(currentPaymentFilter));return params.join('&');}
-function hasSearchCondition(){return document.getElementById('searchInput').value.trim()||document.getElementById('startDate').value||document.getElementById('endDate').value;}
-async function loadTodayOrders(){const t=new Date();const date=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;document.getElementById('startDate').value=date;document.getElementById('endDate').value=date;document.getElementById('searchInput').value='';currentPaymentFilter='전체';setFilterButtons();await searchOrders();}
-function resetOrderSearch(){document.getElementById('startDate').value='';document.getElementById('endDate').value='';document.getElementById('searchInput').value='';currentOrders=[];currentPaymentFilter='전체';setFilterButtons();updateOrderSummary([]);document.getElementById('orderList').innerHTML='<tr><td colspan="9" class="loading">날짜 또는 이름으로 주문을 조회하세요.</td></tr>';}
-async function searchOrders(){if(!hasSearchCondition()){alert('날짜 또는 검색어를 입력해주세요.');return;}document.getElementById('orderList').innerHTML='<tr><td colspan="9" class="loading">주문을 검색중입니다...</td></tr>';try{const res=await fetch(WEB_APP_URL+'?'+buildOrderParams());const data=await res.json();currentOrders=Array.isArray(data)?data.reverse():[];renderOrders(currentOrders);}catch(e){console.error(e);document.getElementById('orderList').innerHTML='<tr><td colspan="9" class="loading">데이터를 불러오지 못했습니다.</td></tr>';}}
-async function searchSummaryOnly(){if(!hasSearchCondition()){alert('날짜 또는 검색어를 입력해주세요.');return;}try{const old=currentPaymentFilter;currentPaymentFilter='전체';const params=buildOrderParams();currentPaymentFilter=old;const res=await fetch(WEB_APP_URL+'?'+params);const data=await res.json();currentOrders=Array.isArray(data)?data:[];updateOrderSummary(currentOrders);document.getElementById('orderList').innerHTML='<tr><td colspan="9" class="loading">입금합계만 조회했습니다. 주문목록은 표시하지 않습니다.</td></tr>';}catch(e){console.error(e);alert('입금합계 조회 중 오류가 발생했습니다.');}}
-function filterPayment(status){currentPaymentFilter=status;setFilterButtons();if(hasSearchCondition())searchOrders();}
-function setFilterButtons(){const map={전체:'payAll',입금완료:'payPaid',미입금:'payUnpaid',환불:'payRefund'};Object.values(map).forEach(id=>document.getElementById(id)?.classList.remove('active'));document.getElementById(map[currentPaymentFilter]||'payAll')?.classList.add('active');}
-function renderOrders(orders){updateOrderSummary(orders);const list=document.getElementById('orderList');if(!orders.length){list.innerHTML='<tr><td colspan="9" class="loading">검색 결과가 없습니다.</td></tr>';return;}list.innerHTML='';orders.forEach(order=>{list.innerHTML+=`<tr><td data-label="주문일">${escapeHtml(order.orderDate||'')}</td><td data-label="입금상태"><select class="pay-select" onchange="changePaymentStatus('${order.rowNumber}',this.value)"><option value="미입금" ${order.paymentStatus==='미입금'?'selected':''}>미입금</option><option value="입금완료" ${order.paymentStatus==='입금완료'?'selected':''}>입금완료</option><option value="환불" ${order.paymentStatus==='환불'?'selected':''}>환불</option></select></td><td data-label="입금금액">${money(order.payment)}원</td><td data-label="닉네임">${escapeHtml(order.nickname||'')}</td><td data-label="수령인">${escapeHtml(order.name||'')}</td><td data-label="연락처">${escapeHtml(order.phone||'')}</td><td data-label="주소" class="addr">${escapeHtml(order.address||'')}</td><td data-label="구매내역" class="order-items">${escapeHtml(order.orderItems||'')}</td><td data-label="내품수량">${escapeHtml(order.quantity||'')}</td></tr>`;});}
-function updateOrderSummary(orders){const total=orders.length;const paidOrders=orders.filter(o=>String(o.paymentStatus||'')==='입금완료');const unpaid=orders.filter(o=>String(o.paymentStatus||'')==='미입금').length;const paidSum=paidOrders.reduce((s,o)=>s+num(o.payment),0);document.getElementById('orderCount').innerText=total+'건';document.getElementById('paidCount').innerText=paidOrders.length+'건';document.getElementById('unpaidCount').innerText=unpaid+'건';document.getElementById('paymentTotal').innerText=paidSum.toLocaleString()+'원';}
-async function changePaymentStatus(rowNumber,paymentStatus){if(!rowNumber){alert('행 번호가 없습니다.');return;}try{const res=await fetch(WEB_APP_URL,{method:'POST',body:JSON.stringify({action:'updatePaymentStatus',rowNumber,paymentStatus})});const data=await res.json();if(!data.success)throw new Error(data.message||'변경 실패');alert('입금상태가 변경되었습니다.');if(hasSearchCondition())searchOrders();}catch(e){console.error(e);alert('입금상태 변경 중 오류가 발생했습니다.');}}
-async function loadProducts(){const tbody=document.getElementById('productTable');tbody.innerHTML='<tr><td colspan="7" class="loading">상품을 불러오는 중입니다...</td></tr>';try{const res=await fetch(WEB_APP_URL+'?action=products');const data=await res.json();if(!data.success)throw new Error(data.message||'상품 불러오기 실패');products=data.products||[];renderProducts();}catch(e){console.error(e);tbody.innerHTML='<tr><td colspan="7" class="loading">상품을 불러오지 못했습니다.</td></tr>';}}
-function renderProducts(){const tbody=document.getElementById('productTable');const keyword=document.getElementById('productSearch').value.trim().toLowerCase();const filtered=products.filter(p=>`${p.no} ${p.name} ${p.color} ${p.size} ${p.status}`.toLowerCase().includes(keyword));const saleTotal=products.filter(p=>p.status==='판매중').reduce((s,p)=>s+num(p.price),0);document.getElementById('productPriceTotal').innerText='판매중 합계 '+saleTotal.toLocaleString()+'원';if(!filtered.length){tbody.innerHTML='<tr><td colspan="7" class="loading">표시할 상품이 없습니다.</td></tr>';return;}tbody.innerHTML='';filtered.forEach(p=>{const cls=p.status==='판매중'?'sale':p.status==='품절'?'soldout':'end';tbody.innerHTML+=`<tr><td data-label="상품번호"><b>${escapeHtml(p.no||'')}</b><button class="copy-btn" onclick="copyText('${escapeHtml(p.no||'')}')">복사</button></td><td data-label="상품명"><b>${escapeHtml(p.name||'')}</b></td><td data-label="색상">${escapeHtml(p.color||'')}</td><td data-label="사이즈">${escapeHtml(p.size||'')}</td><td data-label="판매가">${money(p.price)}원</td><td data-label="상태"><span class="status ${cls}">${escapeHtml(p.status||'판매중')}</span></td><td data-label="관리"><button class="small-btn black" onclick="editProduct('${escapeHtml(p.no)}')">수정</button><button class="small-btn red" onclick="deleteProduct('${escapeHtml(p.no)}')">삭제</button></td></tr>`;});}
-function editProduct(no){const p=products.find(item=>String(item.no)===String(no));if(!p)return;document.getElementById('formTitle').textContent='상품 수정';document.getElementById('no').value=p.no||'';document.getElementById('no').readOnly=true;document.getElementById('name').value=p.name||'';document.getElementById('color').value=p.color||'';document.getElementById('size').value=p.size||'';document.getElementById('price').value=p.price||'';document.getElementById('status').value=p.status||'판매중';document.getElementById('desc').value=p.desc||'';window.scrollTo({top:0,behavior:'smooth'});}
-function resetForm(){document.getElementById('formTitle').textContent='상품 추가';['no','name','color','size','price','desc'].forEach(id=>document.getElementById(id).value='');document.getElementById('no').readOnly=false;document.getElementById('status').value='판매중';}
-async function saveProduct(){const product={no:document.getElementById('no').value.trim(),name:document.getElementById('name').value.trim(),color:document.getElementById('color').value.trim(),size:document.getElementById('size').value.trim(),price:document.getElementById('price').value.trim(),status:document.getElementById('status').value,desc:document.getElementById('desc').value.trim()};if(!product.no||!product.name||!product.price){alert('상품번호, 상품명, 판매가는 꼭 입력해주세요.');return;}try{const res=await fetch(WEB_APP_URL,{method:'POST',body:JSON.stringify({action:'saveProduct',product})});const data=await res.json();if(!data.success)throw new Error(data.message||'저장 실패');alert(data.message||'상품이 저장되었습니다.');resetForm();loadProducts();}catch(e){console.error(e);alert('저장 중 오류가 발생했습니다. Apps Script 배포를 확인해주세요.');}}
-async function deleteProduct(no){if(!confirm('정말 삭제하시겠습니까?'))return;try{const res=await fetch(WEB_APP_URL,{method:'POST',body:JSON.stringify({action:'deleteProduct',no})});const data=await res.json();if(!data.success)throw new Error(data.message||'삭제 실패');alert('삭제되었습니다.');loadProducts();}catch(e){console.error(e);alert('삭제 중 오류가 발생했습니다.');}}
-function copyText(text){navigator.clipboard?.writeText(text);alert('상품번호가 복사되었습니다.');}
-function escapeHtml(text){return String(text??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');}
-function num(v){return Number(String(v||'0').replace(/[^0-9]/g,''))||0;}function money(v){return num(v).toLocaleString();}
-</script>
+  </div>
 </body>
 </html>
