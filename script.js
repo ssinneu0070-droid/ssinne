@@ -243,16 +243,6 @@ function initAdminPage() {
   document.getElementById("rebuildButton")
     .addEventListener("click", rebuildDerivedSheets);
 
-  const archiveButton =
-    document.getElementById("archiveOrdersButton");
-
-  if (archiveButton) {
-    archiveButton.addEventListener(
-      "click",
-      archiveCurrentOrders
-    );
-  }
-
   document.getElementById("currentOrdersSourceButton")
     .addEventListener("click", function() {
       setAdminOrderSource("current");
@@ -319,16 +309,6 @@ function setAdminOrderSource(source) {
   document.getElementById("historyOrdersSourceButton")
     .classList.toggle("active", source === "history");
 
-  const archiveButton =
-    document.getElementById("archiveOrdersButton");
-
-  if (archiveButton) {
-    archiveButton.style.display =
-      source === "current"
-        ? "inline-flex"
-        : "none";
-  }
-
   document.getElementById("startDate").value = "";
   document.getElementById("endDate").value = "";
   document.getElementById("orderKeyword").value = "";
@@ -336,31 +316,7 @@ function setAdminOrderSource(source) {
   resetAdminOrderDisplay();
 }
 
-async function archiveCurrentOrders() {
-  if (!confirm(
-    "고객주문·3PL출고·전체주문이력을 지금 다시 동기화할까요?\n\n" +
-    "전체주문이력의 기존 송장번호는 유지됩니다."
-  )) {
-    return;
-  }
-
-  showLoading("세 시트의 주문정보를 동기화하는 중입니다.");
-
-  try {
-    const result = await apiPost({
-      action: "archiveCurrentOrders"
-    });
-
-    alert(
-      "주문정보 동기화가 완료되었습니다.\n" +
-      "새로 추가된 이력: " + Number(result.addedCount || 0) + "건"
-    );
-  } catch (error) {
-    alert(error.message);
-  } finally {
-    hideLoading();
-  }
-}
+async 
 
 function resetAdminOrderDisplay() {
   adminOrders = [];
