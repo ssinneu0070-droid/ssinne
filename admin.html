@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#111827">
   <title>씬느샵 관리자</title>
-  <link rel="stylesheet" href="style.css?v=20260714-true-final">
-  <script src="script.js?v=20260714-true-final" defer></script>
+  <link rel="stylesheet" href="style.css?v=20260716-customer-management-final">
+  <script src="script.js?v=20260716-customer-management-final" defer></script>
 </head>
 <body data-page="admin" class="page-admin">
   <div class="admin-app">
@@ -25,6 +25,9 @@
         </button>
         <button class="side-link" data-tab="products">
           <span>◇</span> 상품 관리
+        </button>
+        <button class="side-link" data-tab="customers">
+          <span>♚</span> 고객 관리
         </button>
         <a class="side-link" href="customer.html">
           <span>⌕</span> 고객 조회
@@ -245,6 +248,86 @@
               </thead>
               <tbody id="adminProductList">
                 <tr><td colspan="7" class="empty-cell">상품정보를 불러오는 중입니다.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+
+      <section id="customersTab" class="tab-section">
+        <section class="admin-panel">
+          <div class="panel-title-row">
+            <div>
+              <h2>고객관리</h2>
+              <p>전체주문이력을 기준으로 고객별 누적 주문과 등급을 확인합니다.</p>
+            </div>
+            <button type="button" class="btn btn-subtle" id="reloadCustomersButton">
+              고객정보 새로고침
+            </button>
+          </div>
+
+          <div class="summary-grid customer-summary-grid">
+            <div class="metric-card">
+              <span>전체 고객</span>
+              <strong id="customerTotalCount">0</strong>
+            </div>
+            <div class="metric-card grade-vvip">
+              <span>VVIP</span>
+              <strong id="customerVvipCount">0</strong>
+            </div>
+            <div class="metric-card grade-vip">
+              <span>VIP</span>
+              <strong id="customerVipCount">0</strong>
+            </div>
+            <div class="metric-card grade-first">
+              <span>1등급</span>
+              <strong id="customerFirstCount">0</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="admin-panel">
+          <div class="search-toolbar customer-toolbar">
+            <div class="field compact grow">
+              <label for="customerKeyword">고객 검색</label>
+              <input id="customerKeyword" type="text"
+                     placeholder="닉네임·수령인·연락처·주소">
+            </div>
+
+            <div class="field compact">
+              <label for="customerGradeFilter">등급</label>
+              <select id="customerGradeFilter">
+                <option value="">전체 등급</option>
+                <option value="VVIP">VVIP</option>
+                <option value="VIP">VIP</option>
+                <option value="1등급">1등급</option>
+                <option value="일반">일반</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="data-table customer-management-table">
+              <thead>
+                <tr>
+                  <th>닉네임</th>
+                  <th>수령인</th>
+                  <th>연락처</th>
+                  <th>주소</th>
+                  <th>우편번호</th>
+                  <th>주문횟수</th>
+                  <th>누적주문수량</th>
+                  <th>누적주문금액</th>
+                  <th>등급</th>
+                </tr>
+              </thead>
+              <tbody id="adminCustomerList">
+                <tr>
+                  <td colspan="9" class="empty-cell">
+                    고객 관리 탭을 열면 전체주문이력 기준으로 불러옵니다.
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>

@@ -754,3 +754,64 @@ textarea{min-height:92px;resize:vertical}
   .amount-breakdown{grid-template-columns:1fr}
   .amount-grand-total{font-size:34px}
 }
+
+
+/* ===============================
+   고객관리 어드민
+================================ */
+.customer-summary-grid{
+  margin-top:18px;
+}
+.customer-toolbar{
+  grid-template-columns:minmax(240px,1fr) 180px;
+}
+.customer-management-table{
+  min-width:1120px;
+}
+.customer-address-cell{
+  min-width:260px;
+  white-space:normal;
+  line-height:1.55;
+}
+.number-cell{
+  text-align:right;
+  white-space:nowrap;
+}
+.customer-total-amount{
+  color:#e33578;
+  font-weight:900;
+}
+.customer-grade-badge{
+  min-width:72px;
+  padding:7px 11px;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:900;
+}
+.customer-grade-badge.grade-vvip,
+.metric-card.grade-vvip{
+  color:#5b0f8a;
+  background:#f1e7fb;
+}
+.customer-grade-badge.grade-vip,
+.metric-card.grade-vip{
+  color:#7f6000;
+  background:#fff5d7;
+}
+.customer-grade-badge.grade-first,
+.metric-card.grade-first{
+  color:#073763;
+  background:#e2f0fb;
+}
+.customer-grade-badge.grade-normal{
+  color:#555;
+  background:#eee;
+}
+@media(max-width:720px){
+  .customer-toolbar{
+    grid-template-columns:1fr;
+  }
+}
