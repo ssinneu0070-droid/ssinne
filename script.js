@@ -210,7 +210,6 @@ function openAddressSearch(){if(!window.daum||!window.daum.Postcode){alert("주�
 ========================= */
 let adminOrders = [];
 let adminProducts = [];
-let adminCustomers = [];
 let adminOrderSource = "current";
 let adminHasSearched = false;
 
@@ -288,15 +287,6 @@ function initAdminPage() {
   document.getElementById("productKeyword")
     .addEventListener("input", renderAdminProducts);
 
-  document.getElementById("reloadCustomersButton")
-    .addEventListener("click", loadAdminCustomers);
-
-  document.getElementById("customerKeyword")
-    .addEventListener("input", renderAdminCustomers);
-
-  document.getElementById("customerGradeFilter")
-    .addEventListener("change", renderAdminCustomers);
-
   resetAdminOrderDisplay();
 }
 
@@ -310,29 +300,13 @@ function showAdminTab(tabName) {
     });
 
   document.getElementById("ordersTab")
-    .classList.toggle(
-      "active",
-      tabName === "orders"
-    );
+    .classList.toggle("active", tabName === "orders");
 
   document.getElementById("productsTab")
-    .classList.toggle(
-      "active",
-      tabName === "products"
-    );
-
-  document.getElementById("customersTab")
-    .classList.toggle(
-      "active",
-      tabName === "customers"
-    );
+    .classList.toggle("active", tabName === "products");
 
   if (tabName === "products") {
     loadAdminProducts();
-  }
-
-  if (tabName === "customers") {
-    loadAdminCustomers();
   }
 }
 
@@ -914,138 +888,6 @@ async function deleteAdminProduct(rowNumber) {
   }
 }
 
-
-async function loadAdminCustomers() {
-  showLoading("전체주문이력 기준 고객정보를 계산하는 중입니다.");
-
-  try {
-    const data = await apiGet({
-      action: "adminCustomers"
-    });
-
-    adminCustomers =
-      Array.isArray(data.customers)
-        ? data.customers
-        : [];
-
-    renderAdminCustomers();
-
-  } catch (error) {
-    alert(error.message);
-
-  } finally {
-    hideLoading();
-  }
-}
-
-function renderAdminCustomers() {
-  const tbody =
-    document.getElementById("adminCustomerList");
-
-  if (!tbody) return;
-
-  const keyword =
-    document.getElementById("customerKeyword")
-      .value.trim()
-      .toLowerCase();
-
-  const grade =
-    document.getElementById("customerGradeFilter")
-      .value;
-
-  const filtered = adminCustomers.filter(
-    function(customer) {
-      const searchable = [
-        customer.nickname,
-        customer.receiverName,
-        customer.phone,
-        customer.address,
-        customer.zipcode
-      ].join(" ").toLowerCase();
-
-      const keywordMatch =
-        !keyword ||
-        searchable.indexOf(keyword) !== -1;
-
-      const gradeMatch =
-        !grade ||
-        customer.grade === grade;
-
-      return keywordMatch && gradeMatch;
-    }
-  );
-
-  updateCustomerSummary(adminCustomers);
-
-  if (!filtered.length) {
-    tbody.innerHTML =
-      '<tr><td colspan="9" class="empty-cell">' +
-      '조건에 맞는 고객이 없습니다.' +
-      '</td></tr>';
-
-    return;
-  }
-
-  tbody.innerHTML = filtered
-    .map(function(customer) {
-      return `
-        <tr>
-          <td><strong>${escapeHtml(customer.nickname)}</strong></td>
-          <td>${escapeHtml(customer.receiverName)}</td>
-          <td>${escapeHtml(customer.phone)}</td>
-          <td class="customer-address-cell">${escapeHtml(customer.address)}</td>
-          <td>${escapeHtml(customer.zipcode)}</td>
-          <td class="number-cell">${Number(customer.orderCount || 0).toLocaleString("ko-KR")}회</td>
-          <td class="number-cell">${Number(customer.totalQuantity || 0).toLocaleString("ko-KR")}개</td>
-          <td class="number-cell customer-total-amount">${money(customer.totalAmount || 0)}</td>
-          <td>
-            <span class="customer-grade-badge ${customerGradeClass(customer.grade)}">
-              ${escapeHtml(customer.grade)}
-            </span>
-          </td>
-        </tr>
-      `;
-    })
-    .join("");
-}
-
-function updateCustomerSummary(customers) {
-  const counts = {
-    total: customers.length,
-    vvip: 0,
-    vip: 0,
-    first: 0
-  };
-
-  customers.forEach(function(customer) {
-    if (customer.grade === "VVIP") {
-      counts.vvip += 1;
-    } else if (customer.grade === "VIP") {
-      counts.vip += 1;
-    } else if (customer.grade === "1등급") {
-      counts.first += 1;
-    }
-  });
-
-  document.getElementById("customerTotalCount")
-    .textContent = counts.total.toLocaleString("ko-KR");
-
-  document.getElementById("customerVvipCount")
-    .textContent = counts.vvip.toLocaleString("ko-KR");
-
-  document.getElementById("customerVipCount")
-    .textContent = counts.vip.toLocaleString("ko-KR");
-
-  document.getElementById("customerFirstCount")
-    .textContent = counts.first.toLocaleString("ko-KR");
-}
-
-function customerGradeClass(grade) {
-  if (grade === "VVIP") return "grade-vvip";
-  if (grade === "VIP") return "grade-vip";
-  if (grade === "1등급") return "grade-first";
-  return "grade-normal";
-}
 
 /* =========================
    고객 주문조회
