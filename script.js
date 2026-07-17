@@ -3,7 +3,7 @@
   아래 3개 주소만 실제 주소로 바꾸세요.
 */
 const CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzuzzeoKHd1iwOacNYRVlY8rVD_2p-2HPD3CZ3hgikCdMi2wnOE70wfrNXBknsUmNWlpA/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwXGI1AbY2lcbUoYYAYdEBZwrw166DATtTB9HZm9uCKHPYhrf3WNPY2WnA8v4061izW4g/exec",
   BAND_URL: "https://www.band.us/band/102398891/post",
   CHANNEL_URL: "https://pf.kakao.com/_YVncn"
 };
@@ -106,14 +106,30 @@ async function apiGet(params) {
   const query = new URLSearchParams(params);
   query.set("_t", String(Date.now()));
 
-  const response = await fetch(CONFIG.SCRIPT_URL + "?" + query.toString(), {
-    method: "GET",
-    cache: "no-store",
-    redirect: "follow"
-  });
+  let response;
+
+  try {
+    response = await fetch(
+      CONFIG.SCRIPT_URL + "?" + query.toString(),
+      {
+        method: "GET",
+        cache: "no-store",
+        redirect: "follow"
+      }
+    );
+  } catch (error) {
+    throw new Error(
+      "주문 서버에 연결하지 못했습니다. " +
+      "script.js의 SCRIPT_URL, Apps Script 새 버전 배포, " +
+      "웹 앱 접근 권한(모든 사용자)을 확인해주세요."
+    );
+  }
 
   if (!response.ok) {
-    throw new Error("서버 요청 실패: " + response.status);
+    throw new Error(
+      "주문 서버 응답 오류(" + response.status + "). " +
+      "Apps Script 배포 설정과 /exec 주소를 확인해주세요."
+    );
   }
 
   const data = await response.json();
@@ -130,14 +146,27 @@ async function apiPost(payload) {
     throw new Error("script.js의 CONFIG.SCRIPT_URL에 Apps Script /exec 주소를 넣어주세요.");
   }
 
-  const response = await fetch(CONFIG.SCRIPT_URL, {
-    method: "POST",
-    body: JSON.stringify(payload),
-    redirect: "follow"
-  });
+  let response;
+
+  try {
+    response = await fetch(CONFIG.SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      redirect: "follow"
+    });
+  } catch (error) {
+    throw new Error(
+      "주문 서버에 연결하지 못했습니다. " +
+      "script.js의 SCRIPT_URL, Apps Script 새 버전 배포, " +
+      "웹 앱 접근 권한(모든 사용자)을 확인해주세요."
+    );
+  }
 
   if (!response.ok) {
-    throw new Error("서버 요청 실패: " + response.status);
+    throw new Error(
+      "주문 서버 응답 오류(" + response.status + "). " +
+      "Apps Script 배포 설정과 /exec 주소를 확인해주세요."
+    );
   }
 
   const data = await response.json();
