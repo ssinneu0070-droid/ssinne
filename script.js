@@ -3,9 +3,9 @@
   아래 3개 주소만 실제 주소로 바꾸세요.
 */
 const CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxFSUhaajQqECFLTyEkYBhIr0qgAeggKPb6tVRWEvHykAVEtXqdWX43K9-PUzW7ij0j/exec",
-  BAND_URL: "https://www.band.us/band/102398891/post",
-  CHANNEL_URL: "https://pf.kakao.com/_YVncn"
+  SCRIPT_URL: "여기에_Apps_Script_웹앱_exec_주소",
+  BAND_URL: "여기에_씬느샵_밴드_주소",
+  CHANNEL_URL: "여기에_채널톡_주소"
 };
 
 const CUSTOMER_STORAGE_KEY = "ssinne_customer_info_v2";
