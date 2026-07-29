@@ -3,7 +3,7 @@
   아래 3개 주소만 실제 주소로 바꾸세요.
 */
 const CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwXGI1AbY2lcbUoYYAYdEBZwrw166DATtTB9HZm9uCKHPYhrf3WNPY2WnA8v4061izW4g/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxFSUhaajQqECFLTyEkYBhIr0qgAeggKPb6tVRWEvHykAVEtXqdWX43K9-PUzW7ij0j/exec",
   BAND_URL: "https://www.band.us/band/102398891/post",
   CHANNEL_URL: "https://pf.kakao.com/_YVncn"
 };
@@ -972,3 +972,36 @@ function renderCustomerOrders(orders) {
     `;
   }).join("");
 }
+
+
+/* ========================= V2 UI ========================= */
+let lastCustomerLookup={name:"",phoneLast:""};
+function renderCustomerOrders(orders){
+  document.getElementById("lookupCount").textContent=orders.length+"건";const c=document.getElementById("customerOrderList");
+  if(!orders.length){c.innerHTML='<div class="empty-state">일치하는 주문내역이 없습니다.<br>이름과 연락처 뒤 4자리를 다시 확인해주세요.</div>';return;}
+  c.innerHTML=orders.map(function(o){const tr=o.trackingNumber||"",numeric=String(tr).replace(/[^0-9]/g,"");return `<article class="order-result-card v2-order-card">
+    <div class="v2-card-head"><div><span>${escapeHtml(o.orderDate||"보관 주문")}</span><h3>주문번호 ${escapeHtml(o.orderNumber||"-")}</h3></div><b class="status-pill ${o.paymentStatus==='미입금'?'unpaid':'paid'}">${escapeHtml(o.paymentStatus)}</b></div>
+    <div class="order-result-items">${escapeHtml(o.orderItems)}</div><div class="v2-total"><span>총 주문금액</span><strong>${money(o.paymentAmount)}</strong></div>
+    ${tr?`<div class="customer-delivery-box"><div><span>CJ대한통운</span><strong>${escapeHtml(tr)}</strong></div><a class="delivery-button" target="_blank" rel="noopener" href="https://trace.cjlogistics.com/next/tracking.html?wblNo=${encodeURIComponent(numeric)}">배송조회</a></div>`:''}
+    ${o.canEdit||o.canCancel?`<div class="v2-actions">${o.canEdit?`<button class="btn btn-outline customer-edit-btn" data-order="${escapeHtml(o.orderNumber)}">주문 수정</button>`:''}${o.canCancel?`<button class="btn btn-danger customer-cancel-btn" data-order="${escapeHtml(o.orderNumber)}">주문 취소</button>`:''}</div>`:`<div class="locked-note">입금완료 이후 수정·취소는 채널톡으로 문의해주세요.</div>`}
+  </article>`;}).join("");
+  c.querySelectorAll('.customer-edit-btn').forEach(b=>b.onclick=()=>openCustomerEdit(orders.find(o=>o.orderNumber===b.dataset.order)));
+  c.querySelectorAll('.customer-cancel-btn').forEach(b=>b.onclick=()=>cancelCustomerOrder(b.dataset.order));
+}
+
+const originalLookupCustomerOrders=lookupCustomerOrders;
+lookupCustomerOrders=async function(){const name=lookupName.value.trim(),phoneLast=lookupPhoneLast.value.trim();if(!name||phoneLast.length!==4){alert("수령인 성함과 연락처 뒤 4자리를 입력해주세요.");return;}lastCustomerLookup={name,phoneLast};showLoading("주문내역을 조회하는 중입니다.");try{const d=await apiGet({action:"customerOrders",name,phoneLast});renderCustomerOrders(Array.isArray(d.orders)?d.orders:[]);}catch(e){alert(e.message)}finally{hideLoading()}};
+
+function openCustomerEdit(o){if(!o)return;editOrderNumber.value=o.orderNumber||"";editNickname.value=o.nickname||"";editReceiverName.value=o.receiverName||lastCustomerLookup.name;editPhone.value=o.phone||"";editZipcode.value=o.zipcode||"";editAddress.value=o.address||"";editShippingMemo.value=o.shippingMemo||"";customerEditModal.classList.add('show');customerEditModal.setAttribute('aria-hidden','false');}
+async function saveCustomerEditV2(){showLoading("주문정보를 수정하고 있습니다.");try{await apiPost({action:"customerUpdateOrder",orderNumber:editOrderNumber.value,name:lastCustomerLookup.name,phoneLast:lastCustomerLookup.phoneLast,nickname:editNickname.value,receiverName:editReceiverName.value,phone:editPhone.value,zipcode:editZipcode.value,address:editAddress.value,shippingMemo:editShippingMemo.value});customerEditModal.classList.remove('show');await lookupCustomerOrders();alert("주문정보가 수정되었습니다.");}catch(e){alert(e.message)}finally{hideLoading()}}
+async function cancelCustomerOrder(orderNumber){const reasons=["실수로 주문","색상 변경","사이즈 변경","중복 주문","기타"];const reason=prompt("취소 사유를 입력해주세요.\n"+reasons.join(" / "),"실수로 주문");if(reason===null)return;if(!confirm("정말 주문을 취소하시겠습니까?\n취소 후 복구는 관리자만 가능합니다."))return;showLoading("주문을 취소하고 있습니다.");try{await apiPost({action:"customerCancelOrder",orderNumber,name:lastCustomerLookup.name,phoneLast:lastCustomerLookup.phoneLast,reason});await lookupCustomerOrders();alert("주문이 취소되었습니다.");}catch(e){alert(e.message)}finally{hideLoading()}}
+
+document.addEventListener('DOMContentLoaded',function(){if(document.body.dataset.page==='customer'){closeCustomerEdit.onclick=()=>customerEditModal.classList.remove('show');saveCustomerEdit.onclick=saveCustomerEditV2;customerEditModal.onclick=e=>{if(e.target===customerEditModal)customerEditModal.classList.remove('show');};}if(document.body.dataset.page==='admin')initCancelledV2();});
+
+function initCancelledV2(){const btn=document.getElementById('cancelledSideButton');if(btn)btn.addEventListener('click',function(){document.querySelectorAll('.tab-section').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.side-link').forEach(x=>x.classList.remove('active'));document.getElementById('cancelledTab').classList.add('active');btn.classList.add('active');loadCancelledOrders();});const search=document.getElementById('searchCancelledButton');if(search)search.onclick=loadCancelledOrders;}
+async function loadCancelledOrders(){showLoading("취소주문을 조회하는 중입니다.");try{const d=await apiGet({action:"cancelledOrders",search:(document.getElementById('cancelKeyword')||{}).value||""});renderCancelledOrders(d.orders||[]);}catch(e){alert(e.message)}finally{hideLoading()}}
+function renderCancelledOrders(orders){document.getElementById('cancelledCount').textContent=orders.length;const c=document.getElementById('cancelledOrderList');if(!orders.length){c.innerHTML='<div class="empty-state">취소된 주문이 없습니다.</div>';return;}c.innerHTML=orders.map(o=>`<article class="cancel-card"><div class="v2-card-head"><div><span>취소일 ${escapeHtml(o.cancelDate)}</span><h3>${escapeHtml(o.nickname)} · ${escapeHtml(o.receiverName)}</h3></div><b class="status-pill cancelled">고객취소</b></div><p>${escapeHtml(o.phone)} · ${money(o.paymentAmount)}</p><div class="order-result-items">${escapeHtml(o.orderItems)}</div><div class="cancel-reason">취소사유: ${escapeHtml(o.reason||'-')}</div><button class="btn btn-success restore-btn" data-row="${o.rowNumber}">복구</button></article>`).join('');c.querySelectorAll('.restore-btn').forEach(b=>b.onclick=()=>restoreCancelled(Number(b.dataset.row)));}
+async function restoreCancelled(rowNumber){if(!confirm("이 주문을 고객주문으로 복구할까요?\n복구 후 입금상태는 미입금으로 설정됩니다."))return;showLoading("주문을 복구하고 있습니다.");try{await apiPost({action:"restoreCancelledOrder",rowNumber});await loadCancelledOrders();alert("주문이 복구되었습니다.");}catch(e){alert(e.message)}finally{hideLoading()}}
+
+const originalRenderAdminOrders=renderAdminOrders;
+renderAdminOrders=function(){originalRenderAdminOrders();const el=document.getElementById('summaryUnpaidCount');if(el)el.textContent=adminOrders.filter(o=>o.paymentStatus==='미입금').length;};

@@ -1,89 +1,274 @@
-<!doctype html>
-<html lang="ko"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>씬느샵 V3 Pro 관리자</title><link rel="stylesheet" href="style.css"></head>
-<body>
-<div class="layout">
-<aside class="sidebar">
-  <div class="brand">♥ 씬느샵 V3 Pro</div>
-  <button class="nav-btn active" onclick="openTab('dashboard',this)">대시보드</button>
-  <button class="nav-btn" onclick="openTab('orders',this)">주문관리</button>
-  <button class="nav-btn" onclick="openTab('products',this)">상품관리</button>
-  <button class="nav-btn" onclick="openTab('vendor',this)">거래처발주</button>
-  <button class="nav-btn" onclick="openTab('shipping',this)">3PL출고</button>
-  <button class="nav-btn" onclick="openTab('cancel',this)">취소주문</button>
-  <button class="nav-btn" onclick="openTab('history',this)">전체주문이력</button>
-</aside>
-<main class="main">
-  <div class="admin-head"><div><h1 style="margin:0">씬느샵 관리자</h1><small>실시간 주문 관리 시스템</small></div><button class="btn btn-outline" onclick="refreshCurrent()">새로고침</button></div>
-  <section id="dashboard" class="tab"></section>
-  <section id="orders" class="tab hidden"></section>
-  <section id="products" class="tab hidden"></section>
-  <section id="vendor" class="tab hidden"></section>
-  <section id="shipping" class="tab hidden"></section>
-  <section id="cancel" class="tab hidden"></section>
-  <section id="history" class="tab hidden"></section>
-</main></div>
-<script src="config.js"></script><script src="common.js"></script>
-<script>
-let current="dashboard";
-function openTab(id,btn){
-  current=id;document.querySelectorAll(".tab").forEach(x=>x.classList.add("hidden"));
-  document.querySelector("#"+id).classList.remove("hidden");
-  document.querySelectorAll(".nav-btn").forEach(x=>x.classList.remove("active"));btn.classList.add("active");
-  load(id);
-}
-function refreshCurrent(){load(current)}
-async function load(id){
-  try{
-    if(id==="dashboard")return loadDashboard();
-    if(id==="orders")return loadList("고객주문","orders");
-    if(id==="shipping")return loadList("3PL출고","shipping");
-    if(id==="history")return loadList("전체주문이력","history");
-    if(id==="cancel")return loadCanceled();
-    if(id==="vendor")return loadVendor();
-    if(id==="products")return loadProducts();
-  }catch(e){toast(e.message,"error")}
-}
-async function loadDashboard(){
-  const r=await api("dashboard",{});
-  document.querySelector("#dashboard").innerHTML=`
-  <div class="grid grid-4">
-   <div class="metric"><div class="label">오늘 주문</div><div class="value">${r.todayCount}건</div></div>
-   <div class="metric"><div class="label">미입금</div><div class="value">${r.unpaidCount}건</div></div>
-   <div class="metric"><div class="label">출고대기</div><div class="value">${r.shippingCount}건</div></div>
-   <div class="metric"><div class="label">오늘 매출</div><div class="value">${money(r.todaySales)}</div></div>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111827">
+  <title>씬느샵 관리자</title>
+  <link rel="stylesheet" href="style.css?v=20260730-v2-upgrade">
+  <script src="script.js?v=20260730-v2-upgrade" defer></script>
+</head>
+<body data-page="admin" class="page-admin">
+  <div class="admin-app">
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <div class="brand-mark small">S</div>
+        <div>
+          <strong>씬느샵</strong>
+          <span>관리자</span>
+        </div>
+      </div>
+
+      <nav class="side-nav">
+        <button class="side-link active" data-tab="orders">
+          <span>▣</span> 주문 관리
+        </button>
+        <button class="side-link" data-tab="cancelled" id="cancelledSideButton"><span>↶</span> 취소 주문</button>
+        <button class="side-link" data-tab="products">
+          <span>◇</span> 상품 관리
+        </button>
+        <a class="side-link" href="customer.html">
+          <span>⌕</span> 고객 조회
+        </a>
+        <a class="side-link" href="index.html">
+          <span>＋</span> 주문서
+        </a>
+      </nav>
+
+      <div class="side-foot">
+        씬느샵 Live Commerce
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div>
+          <span class="eyebrow dark">SSINNEU ADMIN</span>
+          <h1>통합 관리자</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-dark" type="button" id="rebuildButton">
+            거래처발주·3PL 다시 만들기
+          </button>
+        </div>
+      </header>
+
+      <section id="ordersTab" class="tab-section active">
+        <section class="admin-panel">
+          <div class="panel-title-row">
+            <div>
+              <h2>주문 조회 구분</h2>
+              <p>오늘 운영 주문과 전체 보관 주문을 나누어 확인할 수 있습니다.</p>
+            </div>
+          </div>
+
+          <div class="order-source-tabs">
+            <button type="button" class="source-tab active" id="currentOrdersSourceButton">
+              오늘 주문
+            </button>
+            <button type="button" class="source-tab" id="historyOrdersSourceButton">
+              전체 주문이력
+            </button>
+          </div>
+        </section>
+
+        <div class="summary-grid premium v2-summary">
+          <div class="metric-card">
+            <span>조회 주문건</span>
+            <strong id="summaryOrderCount">0</strong>
+            <small>선택 기간 주문 수</small>
+          </div>
+          <div class="metric-card">
+            <span>입금완료</span>
+            <strong id="summaryPaidCount">0</strong>
+            <small>입금 확인된 주문</small>
+          </div>
+          <div class="metric-card warning"><span>미입금</span><strong id="summaryUnpaidCount">0</strong><small>3PL 하단 정렬</small></div>
+          <button type="button" class="metric-card accent clickable-metric" id="summaryPaymentCard">
+            <span>조회 금액</span>
+            <strong id="summaryPaymentTotal">0원</strong>
+            <small>눌러서 금액만 보기</small>
+          </button>
+        </div>
+
+        <section class="admin-panel">
+          <div class="panel-title-row">
+            <div>
+              <h2>주문 검색</h2>
+              <p>날짜 또는 고객정보로 주문을 조회하세요.</p>
+            </div>
+          </div>
+
+          <div class="search-toolbar">
+            <div class="field compact">
+              <label for="startDate">시작일</label>
+              <input type="date" id="startDate">
+            </div>
+
+            <div class="field compact">
+              <label for="endDate">종료일</label>
+              <input type="date" id="endDate">
+            </div>
+
+            <div class="field compact grow">
+              <label for="orderKeyword">닉네임·수령인·연락처</label>
+              <input type="text" id="orderKeyword" placeholder="검색어 입력">
+            </div>
+
+            <button class="btn btn-primary" type="button" id="searchOrdersButton">조회하기</button>
+            <button class="btn btn-subtle" type="button" id="todayOrdersButton">오늘 주문</button>
+            <button class="btn btn-subtle" type="button" id="allOrdersButton">전체 보기</button>
+          </div>
+        </section>
+
+        <section class="amount-only-panel" id="amountOnlyPanel">
+          <span>선택 날짜 주문금액 합계</span>
+          <div id="amountOnlyValue">0원</div>
+          <button type="button" class="btn btn-subtle" id="backToOrderListButton">
+            주문 목록으로 돌아가기
+          </button>
+        </section>
+
+        <section class="admin-panel" id="orderListPanel">
+          <div class="panel-title-row">
+            <div>
+              <h2>주문 목록</h2>
+              <p>입금상태를 바로 변경할 수 있습니다.</p>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="data-table order-table">
+              <thead>
+                <tr>
+                  <th>주문일</th>
+                  <th>입금금액</th>
+                  <th>입금상태</th>
+                  <th>입금내역</th>
+                  <th>닉네임</th>
+                  <th>수령인</th>
+                  <th>주소</th>
+                  <th>연락처</th>
+                  <th>배송메모</th>
+                  <th>우편번호</th>
+                  <th>구매내역</th>
+                  <th>내품수량</th>
+                  <th>택배사</th>
+                  <th>송장번호</th>
+                </tr>
+              </thead>
+              <tbody id="adminOrderList">
+                <tr>
+                  <td colspan="14" class="empty-cell">
+                    날짜 또는 검색 조건을 선택한 뒤 조회하기를 눌러주세요.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+
+      <section id="cancelledTab" class="tab-section">
+        <section class="admin-panel">
+          <div class="panel-title-row"><div><h2>취소주문</h2><p>취소된 주문을 확인하고 고객주문으로 복구할 수 있습니다.</p></div></div>
+          <div class="search-toolbar"><div class="field compact grow"><label for="cancelKeyword">닉네임·수령인·연락처·취소사유</label><input id="cancelKeyword" placeholder="검색어 입력"></div><button class="btn btn-primary" id="searchCancelledButton" type="button">조회</button></div>
+        </section>
+        <section class="admin-panel"><div class="summary-grid"><div class="metric-card"><span>취소 주문</span><strong id="cancelledCount">0</strong><small>복구 가능</small></div></div><div id="cancelledOrderList" class="mobile-card-list"><div class="empty-state">조회 버튼을 눌러주세요.</div></div></section>
+      </section>
+
+      <section id="productsTab" class="tab-section">
+        <section class="admin-panel">
+          <div class="panel-title-row">
+            <div>
+              <h2 id="productFormTitle">상품정보 추가</h2>
+              <p>방송 전 상품번호·옵션·금액을 등록하세요.</p>
+            </div>
+          </div>
+
+          <input type="hidden" id="productRowNumber">
+
+          <div class="form-grid three">
+            <div class="field">
+              <label for="adminProductNo">상품번호</label>
+              <input id="adminProductNo" type="text" inputmode="numeric" maxlength="3" placeholder="숫자만 입력">
+            </div>
+            <div class="field">
+              <label for="adminProductName">상품명</label>
+              <input id="adminProductName" type="text">
+            </div>
+            <div class="field">
+              <label for="adminProductColor">칼라</label>
+              <input id="adminProductColor" type="text">
+            </div>
+            <div class="field">
+              <label for="adminProductSize">사이즈</label>
+              <input id="adminProductSize" type="text">
+            </div>
+            <div class="field">
+              <label for="adminSalePrice">판매가</label>
+              <input id="adminSalePrice" type="number" min="0">
+            </div>
+            <div class="field">
+              <label for="adminDepositPrice">입금가</label>
+              <input id="adminDepositPrice" type="number" min="0">
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button type="button" class="btn btn-primary" id="saveProductButton">저장하기</button>
+            <button type="button" class="btn btn-subtle" id="resetProductButton">새 상품 입력</button>
+          </div>
+        </section>
+
+        <section class="admin-panel">
+          <div class="panel-title-row">
+            <div>
+              <h2>상품정보 목록</h2>
+              <p>상품번호·상품명·칼라·사이즈로 검색하세요.</p>
+            </div>
+          </div>
+
+          <div class="search-toolbar product-toolbar">
+            <div class="field compact grow">
+              <label for="productKeyword">상품 검색</label>
+              <input id="productKeyword" type="text" placeholder="상품번호·상품명·칼라·사이즈">
+            </div>
+            <button type="button" class="btn btn-subtle" id="reloadProductsButton">새로고침</button>
+          </div>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>상품번호</th>
+                  <th>상품명</th>
+                  <th>칼라</th>
+                  <th>사이즈</th>
+                  <th>판매가</th>
+                  <th>입금가</th>
+                  <th>관리</th>
+                </tr>
+              </thead>
+              <tbody id="adminProductList">
+                <tr><td colspan="7" class="empty-cell">상품정보를 불러오는 중입니다.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+
+      
+    </main>
   </div>
-  <div class="card"><h2>최근 주문</h2>${cards(r.recentOrders||[])}</div>`;
-}
-function cards(rows){
- return rows.map(o=>`<div class="order-card"><div class="row"><strong>${escapeHtml(o.nickname)} · ${escapeHtml(o.receiver)}</strong><span>${escapeHtml(o.paymentStatus)}</span></div><div>${escapeHtml(o.orderDate)} · ${money(o.amount)}</div><div style="white-space:pre-line">${escapeHtml(o.purchaseText)}</div></div>`).join("")||"자료가 없습니다.";
-}
-async function loadList(sheet,target){
- const r=await api("adminList",{sheet,limit:300});
- document.querySelector("#"+target).innerHTML=`<div class="card"><h2>${sheet}</h2>${table(r.rows||[])}</div>`;
-}
-function table(rows){
- if(!rows.length)return "자료가 없습니다.";
- const keys=Object.keys(rows[0]).filter(k=>!["rowNumber"].includes(k));
- return `<div class="table-wrap"><table><thead><tr>${keys.map(k=>`<th>${escapeHtml(k)}</th>`).join("")}<th>관리</th></tr></thead><tbody>${rows.map(r=>`<tr>${keys.map(k=>`<td style="white-space:pre-line">${escapeHtml(r[k])}</td>`).join("")}<td>${r["입금상태"]?`<select onchange="changeStatus('${escapeHtml(r["주문ID"])}',this.value)"><option>${escapeHtml(r["입금상태"])}</option><option>미입금</option><option>입금완료</option><option>카드결제</option></select>`:""}</td></tr>`).join("")}</tbody></table></div>`;
-}
-async function changeStatus(orderId,status){
- try{await api("changePaymentStatus",{orderId,status});toast("변경되었습니다.");refreshCurrent()}catch(e){toast(e.message,"error")}
-}
-async function loadCanceled(){
- const r=await api("adminList",{sheet:"취소주문",limit:300});
- const rows=r.rows||[];
- document.querySelector("#cancel").innerHTML=`<div class="card"><h2>취소주문 관리</h2><div class="table-wrap"><table><thead><tr><th>취소일</th><th>주문ID</th><th>닉네임</th><th>수령인</th><th>연락처</th><th>구매내역</th><th>금액</th><th>사유</th><th>관리</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${escapeHtml(x["취소일"])}</td><td>${escapeHtml(x["주문ID"])}</td><td>${escapeHtml(x["닉네임"])}</td><td>${escapeHtml(x["수령인"])}</td><td>${escapeHtml(x["연락처"])}</td><td style="white-space:pre-line">${escapeHtml(x["구매내역"])}</td><td>${escapeHtml(x["입금금액"])}</td><td>${escapeHtml(x["취소사유"])}</td><td><button class="btn btn-green btn-sm" onclick="restore('${escapeHtml(x["주문ID"])}')">복구</button></td></tr>`).join("")}</tbody></table></div></div>`;
-}
-async function restore(orderId){if(!confirm("이 주문을 복구하시겠습니까?"))return;try{await api("restoreOrder",{orderId});toast("복구되었습니다.");loadCanceled()}catch(e){toast(e.message,"error")}}
-async function loadVendor(){
- const r=await api("vendorSummary",{});
- document.querySelector("#vendor").innerHTML=`<div class="card"><h2>거래처발주</h2>${table(r.rows||[])}</div>`;
-}
-async function loadProducts(){
- const r=await api("adminList",{sheet:"상품정보",limit:500});
- document.querySelector("#products").innerHTML=`<div class="card"><h2>상품관리</h2><p>상품 등록과 수정은 현재 시트에서 직접 관리하도록 구성했습니다.</p>${table(r.rows||[])}</div>`;
-}
-load("dashboard");
-</script></body></html>
+
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-card">
+      <div class="spinner"></div>
+      <p id="loadingText">처리 중입니다.</p>
+    </div>
+  </div>
+</body>
+</html>
