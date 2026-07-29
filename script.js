@@ -962,11 +962,332 @@ function renderCustomerOrders(orders){
 const originalLookupCustomerOrders=lookupCustomerOrders;
 lookupCustomerOrders=async function(){const name=lookupName.value.trim(),phoneLast=lookupPhoneLast.value.trim();if(!name||phoneLast.length!==4){alert("수령인 성함과 연락처 뒤 4자리를 입력해주세요.");return;}lastCustomerLookup={name,phoneLast};showLoading("주문내역을 조회하는 중입니다.");try{const d=await apiGet({action:"customerOrders",name,phoneLast});renderCustomerOrders(Array.isArray(d.orders)?d.orders:[]);}catch(e){alert(e.message)}finally{hideLoading()}};
 
-function openCustomerEdit(o){if(!o)return;editOrderNumber.value=o.orderNumber||"";editNickname.value=o.nickname||"";editReceiverName.value=o.receiverName||lastCustomerLookup.name;editPhone.value=o.phone||"";editZipcode.value=o.zipcode||"";editAddress.value=o.address||"";editShippingMemo.value=o.shippingMemo||"";customerEditModal.classList.add('show');customerEditModal.setAttribute('aria-hidden','false');}
-async function saveCustomerEditV2(){showLoading("주문정보를 수정하고 있습니다.");try{await apiPost({action:"customerUpdateOrder",orderNumber:editOrderNumber.value,name:lastCustomerLookup.name,phoneLast:lastCustomerLookup.phoneLast,nickname:editNickname.value,receiverName:editReceiverName.value,phone:editPhone.value,zipcode:editZipcode.value,address:editAddress.value,shippingMemo:editShippingMemo.value});customerEditModal.classList.remove('show');await lookupCustomerOrders();alert("주문정보가 수정되었습니다.");}catch(e){alert(e.message)}finally{hideLoading()}}
-async function cancelCustomerOrder(orderNumber){const reasons=["실수로 주문","색상 변경","사이즈 변경","중복 주문","기타"];const reason=prompt("취소 사유를 입력해주세요.\n"+reasons.join(" / "),"실수로 주문");if(reason===null)return;if(!confirm("정말 주문을 취소하시겠습니까?\n취소 후 복구는 관리자만 가능합니다."))return;showLoading("주문을 취소하고 있습니다.");try{await apiPost({action:"customerCancelOrder",orderNumber,name:lastCustomerLookup.name,phoneLast:lastCustomerLookup.phoneLast,reason});await lookupCustomerOrders();alert("주문이 취소되었습니다.");}catch(e){alert(e.message)}finally{hideLoading()}}
 
-document.addEventListener('DOMContentLoaded',function(){if(document.body.dataset.page==='customer'){closeCustomerEdit.onclick=()=>customerEditModal.classList.remove('show');saveCustomerEdit.onclick=saveCustomerEditV2;customerEditModal.onclick=e=>{if(e.target===customerEditModal)customerEditModal.classList.remove('show');};}if(document.body.dataset.page==='admin')initCancelledV2();});
+let editOrderProducts = [];
+let editProductCatalog = [];
+let editSelectedAddProduct = null;
+
+function parseEditableOrderItems(orderItems) {
+  return String(orderItems || "")
+    .split(/\r?\n/)
+    .map(function(line) { return line.trim(); })
+    .filter(function(line) { return line && line.indexOf("[사은품]") !== 0; })
+    .map(function(line) {
+      const parts = line.split("/").map(function(part) { return part.trim(); });
+      const productNo = String(parts[0] || "").replace(/[^0-9]/g, "");
+      const hasName = parts.length >= 5;
+      const color = parts[hasName ? 2 : 1] || "";
+      const size = parts[hasName ? 3 : 2] || "";
+      const quantity = Math.max(1, Number(String(parts[hasName ? 4 : 3] || "1").replace(/[^0-9]/g, "")) || 1);
+      return { productNo: productNo, color: color, size: size, quantity: quantity };
+    })
+    .filter(function(item) { return item.productNo && item.color && item.size; });
+}
+
+async function ensureEditProductCatalog() {
+  if (editProductCatalog.length) return;
+  const data = await apiGet({ action: "products" });
+  editProductCatalog = Array.isArray(data.products) ? data.products : [];
+  if (!editProductCatalog.length) {
+    throw new Error("상품정보 시트에 등록된 상품이 없습니다.");
+  }
+}
+
+function getEditCatalogProduct(productNo) {
+  return editProductCatalog.find(function(product) {
+    return String(product.productNo) === String(productNo);
+  }) || null;
+}
+
+function getEditItemPrice(item) {
+  const product = getEditCatalogProduct(item.productNo);
+  return product ? Number(product.price || 0) : 0;
+}
+
+function renderEditOrderProducts() {
+  const list = document.getElementById("editProductList");
+  const totalLabel = document.getElementById("editProductsTotal");
+  if (!list || !totalLabel) return;
+
+  if (!editOrderProducts.length) {
+    list.innerHTML = '<div class="edit-products-empty">주문 상품이 없습니다. 아래에서 상품을 추가해주세요.</div>';
+    totalLabel.textContent = "0원";
+    return;
+  }
+
+  list.innerHTML = editOrderProducts.map(function(item, index) {
+    const product = getEditCatalogProduct(item.productNo);
+    const productName = product ? product.productName : "상품정보 없음";
+    const colors = product ? Object.keys(product.colors || {}) : [item.color];
+    const sizes = product && product.colors && product.colors[item.color]
+      ? product.colors[item.color]
+      : [item.size];
+    const lineTotal = getEditItemPrice(item) * item.quantity;
+
+    return `
+      <article class="edit-product-card" data-index="${index}">
+        <div class="edit-product-title">
+          <div>
+            <span>${escapeHtml(item.productNo)}번</span>
+            <strong>${escapeHtml(productName)}</strong>
+          </div>
+          <button type="button" class="edit-product-delete" data-action="delete" data-index="${index}">삭제</button>
+        </div>
+        <div class="edit-product-grid">
+          <div class="field">
+            <label>칼라</label>
+            <select data-action="color" data-index="${index}">
+              ${colors.map(function(color) {
+                return `<option value="${escapeHtml(color)}" ${color === item.color ? "selected" : ""}>${escapeHtml(color)}</option>`;
+              }).join("")}
+            </select>
+          </div>
+          <div class="field">
+            <label>사이즈</label>
+            <select data-action="size" data-index="${index}">
+              ${sizes.map(function(size) {
+                return `<option value="${escapeHtml(size)}" ${size === item.size ? "selected" : ""}>${escapeHtml(size)}</option>`;
+              }).join("")}
+            </select>
+          </div>
+          <div class="field">
+            <label>수량</label>
+            <div class="edit-quantity-row">
+              <button type="button" data-action="minus" data-index="${index}">−</button>
+              <input type="number" min="1" max="99" value="${item.quantity}" data-action="quantity" data-index="${index}">
+              <button type="button" data-action="plus" data-index="${index}">＋</button>
+            </div>
+          </div>
+          <div class="edit-line-total">
+            <span>상품금액</span>
+            <strong>${money(lineTotal)}</strong>
+          </div>
+        </div>
+      </article>
+    `;
+  }).join("");
+
+  list.querySelectorAll("[data-action]").forEach(function(element) {
+    element.addEventListener("change", handleEditProductAction);
+    if (element.tagName === "BUTTON") {
+      element.addEventListener("click", handleEditProductAction);
+    }
+  });
+
+  const total = editOrderProducts.reduce(function(sum, item) {
+    return sum + getEditItemPrice(item) * item.quantity;
+  }, 0);
+  totalLabel.textContent = money(total);
+}
+
+function handleEditProductAction(event) {
+  const target = event.currentTarget;
+  const action = target.dataset.action;
+  const index = Number(target.dataset.index);
+  const item = editOrderProducts[index];
+  if (!item) return;
+
+  if (action === "delete") {
+    if (!confirm("이 상품을 주문에서 삭제할까요?")) return;
+    editOrderProducts.splice(index, 1);
+  } else if (action === "color") {
+    item.color = target.value;
+    const product = getEditCatalogProduct(item.productNo);
+    const sizes = product && product.colors ? (product.colors[item.color] || []) : [];
+    item.size = sizes[0] || "";
+  } else if (action === "size") {
+    item.size = target.value;
+  } else if (action === "minus") {
+    item.quantity = Math.max(1, item.quantity - 1);
+  } else if (action === "plus") {
+    item.quantity = Math.min(99, item.quantity + 1);
+  } else if (action === "quantity") {
+    item.quantity = Math.min(99, Math.max(1, Number(target.value || 1)));
+  }
+
+  renderEditOrderProducts();
+}
+
+function resetEditAddProduct() {
+  editSelectedAddProduct = null;
+  editAddProductName.value = "";
+  editAddColor.innerHTML = '<option value="">칼라 선택</option>';
+  editAddSize.innerHTML = '<option value="">사이즈 선택</option>';
+  editAddColor.disabled = true;
+  editAddSize.disabled = true;
+  editAddQuantity.value = "1";
+  editAddMessage.textContent = "상품번호를 검색해주세요.";
+  editAddMessage.className = "edit-product-message";
+}
+
+function searchEditAddProduct() {
+  const productNo = editAddProductNo.value.replace(/[^0-9]/g, "");
+  editAddProductNo.value = productNo;
+  const product = getEditCatalogProduct(productNo);
+
+  if (!product) {
+    resetEditAddProduct();
+    editAddProductNo.value = productNo;
+    editAddMessage.textContent = "등록되지 않은 상품번호입니다.";
+    editAddMessage.className = "edit-product-message error";
+    return;
+  }
+
+  editSelectedAddProduct = product;
+  editAddProductName.value = product.productName || "";
+  editAddColor.innerHTML = '<option value="">칼라 선택</option>' +
+    Object.keys(product.colors || {}).map(function(color) {
+      return `<option value="${escapeHtml(color)}">${escapeHtml(color)}</option>`;
+    }).join("");
+  editAddColor.disabled = false;
+  editAddSize.disabled = true;
+  editAddSize.innerHTML = '<option value="">사이즈 선택</option>';
+  editAddMessage.textContent = "상품이 확인되었습니다.";
+  editAddMessage.className = "edit-product-message success";
+}
+
+function updateEditAddSizes() {
+  const color = editAddColor.value;
+  const sizes = editSelectedAddProduct && editSelectedAddProduct.colors
+    ? (editSelectedAddProduct.colors[color] || [])
+    : [];
+
+  editAddSize.innerHTML = '<option value="">사이즈 선택</option>' +
+    sizes.map(function(size) {
+      return `<option value="${escapeHtml(size)}">${escapeHtml(size)}</option>`;
+    }).join("");
+  editAddSize.disabled = !color || !sizes.length;
+}
+
+function addEditOrderProduct() {
+  if (!editSelectedAddProduct) {
+    alert("상품번호를 검색해주세요.");
+    return;
+  }
+  if (!editAddColor.value || !editAddSize.value) {
+    alert("칼라와 사이즈를 선택해주세요.");
+    return;
+  }
+
+  const quantity = Math.min(99, Math.max(1, Number(editAddQuantity.value || 1)));
+  const existing = editOrderProducts.find(function(item) {
+    return item.productNo === String(editSelectedAddProduct.productNo) &&
+      item.color === editAddColor.value &&
+      item.size === editAddSize.value;
+  });
+
+  if (existing) {
+    existing.quantity = Math.min(99, existing.quantity + quantity);
+  } else {
+    editOrderProducts.push({
+      productNo: String(editSelectedAddProduct.productNo),
+      color: editAddColor.value,
+      size: editAddSize.value,
+      quantity: quantity
+    });
+  }
+
+  editAddProductNo.value = "";
+  resetEditAddProduct();
+  renderEditOrderProducts();
+}
+
+async function openCustomerEdit(o) {
+  if (!o) return;
+
+  showLoading("주문 상품정보를 불러오는 중입니다.");
+  try {
+    await ensureEditProductCatalog();
+
+    editOrderNumber.value = o.orderNumber || "";
+    editNickname.value = o.nickname || "";
+    editReceiverName.value = o.receiverName || lastCustomerLookup.name;
+    editPhone.value = o.phone || "";
+    editZipcode.value = o.zipcode || "";
+    editAddress.value = o.address || "";
+    editShippingMemo.value = o.shippingMemo || "";
+    editOrderProducts = parseEditableOrderItems(o.orderItems);
+
+    resetEditAddProduct();
+    renderEditOrderProducts();
+
+    customerEditModal.classList.add("show");
+    customerEditModal.setAttribute("aria-hidden", "false");
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    hideLoading();
+  }
+}
+
+async function saveCustomerEditV2() {
+  if (!editOrderProducts.length) {
+    alert("주문 상품을 모두 삭제할 수 없습니다. 주문 전체를 취소하려면 주문 취소 버튼을 이용해주세요.");
+    return;
+  }
+
+  showLoading("주문정보와 상품을 수정하고 있습니다.");
+  try {
+    await apiPost({
+      action: "customerUpdateOrder",
+      orderNumber: editOrderNumber.value,
+      name: lastCustomerLookup.name,
+      phoneLast: lastCustomerLookup.phoneLast,
+      nickname: editNickname.value,
+      receiverName: editReceiverName.value,
+      phone: editPhone.value,
+      zipcode: editZipcode.value,
+      address: editAddress.value,
+      shippingMemo: editShippingMemo.value,
+      products: editOrderProducts.map(function(item) {
+        return {
+          productNo: item.productNo,
+          color: item.color,
+          size: item.size,
+          quantity: item.quantity
+        };
+      })
+    });
+
+    customerEditModal.classList.remove("show");
+    await lookupCustomerOrders();
+    alert("주문정보와 주문 상품이 수정되었습니다.");
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    hideLoading();
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  if (document.body.dataset.page === "customer") {
+    closeCustomerEdit.onclick = function() {
+      customerEditModal.classList.remove("show");
+    };
+    saveCustomerEdit.onclick = saveCustomerEditV2;
+    customerEditModal.onclick = function(event) {
+      if (event.target === customerEditModal) customerEditModal.classList.remove("show");
+    };
+
+    editAddProductNo.addEventListener("input", function(event) {
+      event.target.value = event.target.value.replace(/[^0-9]/g, "");
+      resetEditAddProduct();
+      editAddProductNo.value = event.target.value;
+    });
+    editAddProductNo.addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        searchEditAddProduct();
+      }
+    });
+    editAddSearchButton.onclick = searchEditAddProduct;
+    editAddColor.onchange = updateEditAddSizes;
+    editAddProductButton.onclick = addEditOrderProduct;
+  }
+
+  if (document.body.dataset.page === "admin") initCancelledV2();
+});
+
 
 function initCancelledV2(){const btn=document.getElementById('cancelledSideButton');if(btn)btn.addEventListener('click',function(){document.querySelectorAll('.tab-section').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.side-link').forEach(x=>x.classList.remove('active'));document.getElementById('cancelledTab').classList.add('active');btn.classList.add('active');loadCancelledOrders();});const search=document.getElementById('searchCancelledButton');if(search)search.onclick=loadCancelledOrders;}
 async function loadCancelledOrders(){showLoading("취소주문을 조회하는 중입니다.");try{const d=await apiGet({action:"cancelledOrders",search:(document.getElementById('cancelKeyword')||{}).value||""});renderCancelledOrders(d.orders||[]);}catch(e){alert(e.message)}finally{hideLoading()}}

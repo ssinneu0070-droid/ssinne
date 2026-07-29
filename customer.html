@@ -78,6 +78,38 @@
         <div class="field full"><label>주소</label><input id="editAddress"></div>
         <div class="field full"><label>배송메모</label><input id="editShippingMemo"></div>
       </div>
+
+      <section class="edit-products-section">
+        <div class="edit-section-head">
+          <div>
+            <h3>주문 상품 수정</h3>
+            <p>수량·칼라·사이즈를 바꾸거나 상품을 삭제할 수 있습니다.</p>
+          </div>
+          <strong id="editProductsTotal">0원</strong>
+        </div>
+
+        <div id="editProductList" class="edit-product-list"></div>
+
+        <div class="edit-product-add">
+          <h4>상품 추가</h4>
+          <div class="edit-add-grid">
+            <div class="field">
+              <label for="editAddProductNo">상품번호</label>
+              <div class="edit-search-row">
+                <input id="editAddProductNo" type="text" inputmode="numeric" maxlength="3" placeholder="상품번호">
+                <button type="button" class="btn btn-subtle" id="editAddSearchButton">검색</button>
+              </div>
+            </div>
+            <div class="field"><label>상품명</label><input id="editAddProductName" readonly></div>
+            <div class="field"><label>칼라</label><select id="editAddColor" disabled><option value="">칼라 선택</option></select></div>
+            <div class="field"><label>사이즈</label><select id="editAddSize" disabled><option value="">사이즈 선택</option></select></div>
+            <div class="field"><label>수량</label><input id="editAddQuantity" type="number" min="1" max="99" value="1"></div>
+          </div>
+          <button type="button" class="btn btn-outline full-width" id="editAddProductButton">＋ 주문 상품 추가</button>
+          <p class="edit-product-message" id="editAddMessage">상품번호를 검색해주세요.</p>
+        </div>
+      </section>
+
       <button class="btn btn-primary full-width" type="button" id="saveCustomerEdit">수정 내용 저장</button>
     </div>
   </div>
