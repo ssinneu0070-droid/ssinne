@@ -1,100 +1,232 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="theme-color" content="#ff4f97">
-<title>씬느샵 주문서 입력</title><link rel="stylesheet" href="style.css?v=20260717-new-sheet-fresh-final">
-<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script><script src="script.js?v=20260717-new-sheet-fresh-final" defer></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>씬느샵 주문서</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </head>
-<body data-page="order" class="page-order final-order-page">
-<header class="final-order-header"><div class="final-brand">💗 씬느샵 💗</div><h1>주문서 입력</h1></header>
-<section class="notice-gate" id="noticeGate">
-<div class="notice-gate-card">
-<div class="notice-alert-icon">!</div>
-<div class="notice-kicker">주문 전 반드시 확인해주세요</div>
-<h2 class="notice-main-title">교환 · 환불 · 반품 절대 불가</h2>
+<body>
+<header class="topbar"><h1>♥ 씬느샵 주문서</h1><p>라이브 주문을 빠르고 정확하게 접수해 주세요.</p></header>
+<main class="container">
+  <section class="card notice">
+    <strong>주문 전 안내</strong><br>
+    단순변심, 사이즈미스, 미세불량 및 세일·특가상품은 교환·환불이 어렵습니다.<br>
+    배송비 4,000원 / 제주 및 도서산간 7,000원
+  </section>
 
-<div class="notice-warning-list">
-<div>단순변심</div>
-<div>사이즈 미스</div>
-<div>미세불량 <span>(실밥·미세기스)</span></div>
-<div>세일 및 특가제품</div>
-</div>
+  <form id="orderForm">
+    <section class="card">
+      <h2>주문자 정보</h2>
+      <div class="grid grid-2">
+        <div><label>닉네임</label><input name="nickname" required></div>
+        <div><label>수령인 성함</label><input name="receiver" required></div>
+        <div><label>연락처</label><input name="phone" id="phone" inputmode="numeric" required></div>
+        <div><label>결제방법</label>
+          <select name="paymentMethod"><option value="무통장입금">무통장입금</option><option value="카드결제">카드결제</option></select>
+        </div>
+        <div><label>결제금액</label><input name="amount" inputmode="numeric" placeholder="숫자만 입력"></div>
+        <div><label>우편번호</label><div class="actions"><input name="postcode" id="postcode" readonly><button type="button" class="btn btn-outline" onclick="findAddress()">주소찾기</button></div></div>
+        <div class="wide"><label>주소</label><input name="address" id="address" readonly required></div>
+        <div class="wide"><label>상세주소</label><input name="addressDetail" id="addressDetail"></div>
+        <div class="wide"><label>배송메모</label><input name="memo"></div>
+      </div>
+    </section>
 
-<div class="notice-sensitive">예민하신 분들은 오프라인 구매를 권장합니다.</div>
+    <section class="card">
+      <div class="actions" style="justify-content:space-between;align-items:center">
+        <h2 style="margin:0">구매내역</h2>
+        <button type="button" class="btn btn-outline" onclick="addProduct()">+ 상품 추가</button>
+      </div>
+      <div id="products"></div>
+    </section>
 
-<div class="notice-shipping">
-<div class="notice-shipping-title">배송비 안내</div>
-<div class="notice-shipping-grid">
-<div><span>기본 배송비</span><strong>4,000원</strong></div>
-<div><span>제주 및 도서산간</span><strong>7,000원</strong></div>
-</div>
-</div>
+    <section class="card">
+      <label><input type="checkbox" id="agree" style="width:auto" required> 안내사항을 확인했습니다.</label>
+      <button id="submitBtn" class="btn btn-primary" style="width:100%;margin-top:14px">주문서 제출</button>
+    </section>
+  </form>
 
-<label class="notice-confirm-row">
-<input type="checkbox" id="noticeConfirmCheckbox">
-<span>위 내용을 모두 확인했습니다.</span>
-</label>
+  <section id="done" class="hidden">
+    <div class="card complete-card">
+      <div class="complete-check">✓</div>
+      <h2>주문이 정상적으로 접수되었습니다! 💖</h2>
+      <p class="complete-sub">씬느샵을 이용해주셔서 감사합니다.</p>
 
-<button type="button" class="notice-start-button" id="noticeStartButton" disabled>
-주문서 작성하기
-</button>
-</div>
-</section>
-<main class="final-order-shell order-content-hidden" id="orderContent">
-<form id="orderForm" class="final-order-grid">
-<section class="final-column">
-<div class="final-card"><div class="final-section-title">🎁 상품 입력</div>
-<div class="field"><label for="singleProductNo">상품번호</label><div class="product-search-row"><input id="singleProductNo" type="text" inputmode="numeric" maxlength="3" placeholder="상품번호를 입력하세요"><button type="button" class="final-btn search" id="singleProductSearchButton">검색</button></div><div class="product-message" id="singleProductMessage">상품번호 입력 후 검색을 눌러주세요.</div></div>
-<div class="field"><label for="singleProductName">상품명</label><input id="singleProductName" type="text" placeholder="상품 검색 후 자동 표시됩니다" readonly></div>
-<div class="field"><label for="singleProductColor">칼라</label><select id="singleProductColor" disabled><option value="">칼라를 선택하세요</option></select></div>
-<div class="field"><label for="singleProductSize">사이즈</label><select id="singleProductSize" disabled><option value="">사이즈를 선택하세요</option></select></div>
-<div class="field"><label>수량</label><div class="final-quantity"><button type="button" id="singleMinusButton">−</button><input id="singleProductQuantity" type="number" value="1" min="1" max="99"><button type="button" id="singlePlusButton">＋</button></div></div>
-<button type="button" class="final-btn primary full-width" id="addToCartButton">🛒 담기</button></div>
-<div class="final-card"><div class="final-section-title">🛒 주문 목록</div><div id="cartList" class="cart-list"><div class="cart-empty">담긴 상품이 없습니다.</div></div><button type="button" class="final-btn dashed full-width" id="focusProductButton">＋ 상품 추가</button></div>
-<div class="final-summary-card"><div><span>총 상품 수</span><strong id="totalItemCount">0개</strong></div><div><span>총 결제 금액</span><strong id="grandTotal">0원</strong></div></div>
-</section>
-<section class="final-column">
-<div class="final-card"><div class="final-section-title">👤 주문자 정보</div><div class="saved-notice" id="savedNotice">저장된 고객정보를 불러왔습니다. 추가 주문은 상품만 담으면 됩니다.</div>
-<div class="field"><label for="nickname">닉네임</label><input id="nickname" type="text" placeholder="닉네임을 입력해주세요" required></div>
-<div class="field"><label for="receiverName">수령인 성함</label><input id="receiverName" type="text" placeholder="수령인 성함을 입력해주세요" required></div>
-<div class="field"><label for="phone">연락처</label><input id="phone" type="tel" inputmode="numeric" maxlength="13" placeholder="010-0000-0000" required></div>
-<div class="field"><label for="zipcode">우편번호</label><div class="product-search-row"><input id="zipcode" type="text" readonly required><button type="button" class="final-btn search" id="addressSearchButton">주소 검색</button></div></div>
-<div class="field"><label for="address">주소</label><input id="address" type="text" placeholder="주소를 입력해주세요" readonly required></div>
-<div class="field"><label for="detailAddress">상세주소</label><input id="detailAddress" type="text" placeholder="상세주소를 입력해주세요" required></div>
-<div class="field"><label for="shippingMemo">배송메모 <span class="muted">(선택)</span></label><textarea id="shippingMemo" placeholder="배송 시 요청사항이 있으면 입력해주세요"></textarea></div></div>
-<div class="final-card"><div class="final-section-title">💳 결제 정보</div><div class="field"><label>입금 금액</label><input id="displayPaymentAmount" type="text" value="0원" readonly></div><div class="field"><label>입금 방법</label><select id="paymentMethod"><option value="무통장입금">무통장입금</option><option value="카드결제">카드결제</option></select></div></div>
-<div class="final-card"><div class="final-section-title">🧾 구매 내역 <span class="muted">(자동)</span></div><div id="purchaseSummary" class="purchase-summary">상품을 담으면 구매내역이 자동으로 표시됩니다.</div></div>
-<button type="submit" class="final-btn primary order-submit" id="submitButton">✈ 주문하기</button><button type="button" class="final-btn subtle full-width" id="clearCustomerButton">↻ 저장된 고객정보 지우기</button>
-</section></form>
-<section class="complete-card" id="completeScreen"><div class="complete-check">✓</div><h2>주문이 완료되었습니다</h2><p>씬느샵 주문이 정상적으로 접수되었습니다.</p><div class="complete-amount"><span>이번 주문 입금금액</span><strong id="completePaymentAmount">0원</strong></div><div class="complete-actions"><a id="bandLink" class="final-btn band full-width" target="_blank" rel="noopener">씬느샵 밴드 가기</a><a id="channelLink" class="final-btn channel full-width" target="_blank" rel="noopener">채널톡 바로가기</a><button type="button" class="final-btn primary full-width" id="finishOrderButton">추가 주문하기</button></div></section>
-</main><div class="loading-overlay" id="loadingOverlay"><div class="loading-card"><div class="spinner"></div><p id="loadingText">처리 중입니다.</p></div></div>
+      <div class="complete-info">
+        <div><span>주문번호</span><strong id="doneOrderId">-</strong>
+          <button type="button" class="btn btn-outline btn-sm" onclick="copyText(document.querySelector('#doneOrderId').textContent,'주문번호')">복사</button>
+        </div>
+        <div><span>주문일시</span><strong id="doneDate">-</strong></div>
+        <div><span>결제상태</span><strong id="doneStatus" class="badge badge-unpaid">미입금</strong></div>
+        <div><span>총 결제금액</span><strong id="doneAmount">0원</strong></div>
+      </div>
+
+      <div id="bankBox" class="bank-box">
+        <div class="bank-title">💰 입금 계좌 안내</div>
+        <div class="bank-help">입금 시 주문자명과 동일하게 입금해 주세요.</div>
+        <div class="bank-account-line">
+          <div>
+            <strong id="bankName"></strong>
+            <div><span id="bankAccount"></span> <small>(예금주: <span id="bankHolder"></span>)</small></div>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" onclick="copyBankAccount()">계좌번호 복사</button>
+        </div>
+      </div>
+
+      <div class="complete-products">
+        <h3>주문 상품 정보</h3>
+        <div id="doneProducts"></div>
+        <div class="complete-total"><span>총 상품금액</span><strong id="doneTotal">0원</strong></div>
+      </div>
+
+      <div class="complete-actions">
+        <a class="btn btn-primary" href="customer.html">주문조회</a>
+        <button type="button" class="btn btn-outline" onclick="location.reload()">추가 주문하기</button>
+        <a id="channelBtn" class="btn btn-channel" href="#" target="_blank" rel="noopener">채널톡 문의</a>
+        <a id="bandBtn" class="btn btn-band" href="#" target="_blank" rel="noopener">밴드 바로가기</a>
+      </div>
+
+      <div class="notice complete-notice">
+        <strong>안내사항</strong><br>
+        입금 확인 후 순차적으로 상품이 준비되어 발송됩니다.<br>
+        주문 수정·취소는 <b>미입금</b> 상태에서만 가능합니다.<br>
+        배송비는 4,000원이며 제주·도서산간은 7,000원입니다.
+      </div>
+    </div>
+  </section>
+</main>
+<script src="config.js"></script><script src="common.js"></script>
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-  const checkbox = document.getElementById("noticeConfirmCheckbox");
-  const button = document.getElementById("noticeStartButton");
-  const gate = document.getElementById("noticeGate");
-  const content = document.getElementById("orderContent");
+let productCount=0;
+function addProduct(data={}){
+  productCount++;
+  const row=document.createElement("div");
+  row.className="product-row";
+  row.innerHTML=`
+    <div><label>상품번호</label><input class="p-no" value="${escapeHtml(data.no||"")}" required></div>
+    <div><label>상품명</label><input class="p-name" value="${escapeHtml(data.name||"")}" required></div>
+    <div><label>칼라</label><input class="p-color" value="${escapeHtml(data.color||"")}"></div>
+    <div><label>사이즈</label><input class="p-size" value="${escapeHtml(data.size||"")}"></div>
+    <div><label>수량</label><input class="p-qty" inputmode="numeric" value="${data.qty||1}" required></div>
+    <button type="button" class="btn btn-red btn-sm" onclick="this.parentElement.remove()">삭제</button>`;
+  document.querySelector("#products").appendChild(row);
+}
+addProduct();
 
-  if (!checkbox || !button || !gate || !content) return;
+document.querySelector("#phone").addEventListener("input",e=>e.target.value=phoneFormat(e.target.value));
 
-  const sync = function () {
-    button.disabled = !checkbox.checked;
-  };
+function findAddress(){
+  new daum.Postcode({oncomplete:function(data){
+    document.querySelector("#postcode").value=data.zonecode;
+    document.querySelector("#address").value=data.roadAddress||data.jibunAddress;
+    document.querySelector("#addressDetail").focus();
+  }}).open();
+}
 
-  checkbox.addEventListener("change", sync);
+document.querySelector("#orderForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const btn=document.querySelector("#submitBtn");
+  btn.disabled=true; btn.textContent="저장 중...";
+  try{
+    const fd=new FormData(e.target);
+    const products=[...document.querySelectorAll(".product-row")].map(r=>({
+      no:r.querySelector(".p-no").value.trim(),
+      name:r.querySelector(".p-name").value.trim(),
+      color:r.querySelector(".p-color").value.trim(),
+      size:r.querySelector(".p-size").value.trim(),
+      qty:Number(r.querySelector(".p-qty").value||1)
+    })).filter(p=>p.no&&p.name);
+    if(!products.length) throw new Error("상품을 한 개 이상 입력해 주세요.");
+    const amount=Number(String(fd.get("amount")).replace(/\D/g,"")||0);
+    const paymentMethod=fd.get("paymentMethod");
+    const result=await api("submitOrder",{
+      nickname:fd.get("nickname"),receiver:fd.get("receiver"),phone:fd.get("phone"),
+      paymentMethod,amount,
+      postcode:fd.get("postcode"),address:fd.get("address"),addressDetail:fd.get("addressDetail"),
+      memo:fd.get("memo"),products
+    });
 
-  button.addEventListener("click", function () {
-    if (!checkbox.checked) return;
-
-    gate.style.display = "none";
-    content.classList.remove("order-content-hidden");
-    content.classList.add("order-content-visible");
-    content.style.display = "block";
-    window.scrollTo(0, 0);
-  });
-
-  sync();
+    showCompleteScreen({
+      orderId:result.orderId,
+      amount,
+      paymentMethod,
+      products
+    });
+  }catch(err){toast(err.message,"error");}
+  finally{btn.disabled=false;btn.textContent="주문서 제출";}
 });
-</script>
 
+function validLink(value){
+  return value && !String(value).includes("여기에_");
+}
+
+function setExternalLink(id,url,label){
+  const el=document.querySelector(id);
+  if(validLink(url)){
+    el.href=url;
+    el.classList.remove("disabled-link");
+  }else{
+    el.href="#";
+    el.classList.add("disabled-link");
+    el.onclick=(event)=>{
+      event.preventDefault();
+      toast(`config.js에 ${label} 주소를 입력해 주세요.`,"error");
+    };
+  }
+}
+
+async function copyText(text,label="내용"){
+  try{
+    await navigator.clipboard.writeText(String(text||"").trim());
+    toast(`${label}가 복사되었습니다.`);
+  }catch(_){
+    const input=document.createElement("textarea");
+    input.value=String(text||"").trim();
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand("copy");
+    input.remove();
+    toast(`${label}가 복사되었습니다.`);
+  }
+}
+
+function copyBankAccount(){
+  copyText(BANK_ACCOUNT,"계좌번호");
+}
+
+function showCompleteScreen(order){
+  document.querySelector("#orderForm").classList.add("hidden");
+  document.querySelector("#done").classList.remove("hidden");
+
+  const now=new Date();
+  document.querySelector("#doneOrderId").textContent=order.orderId;
+  document.querySelector("#doneDate").textContent=now.toLocaleString("ko-KR");
+  document.querySelector("#doneAmount").textContent=money(order.amount);
+  document.querySelector("#doneTotal").textContent=money(order.amount);
+
+  const isCard=order.paymentMethod==="카드결제";
+  const status=document.querySelector("#doneStatus");
+  status.textContent=isCard?"카드결제":"미입금";
+  status.className=`badge ${isCard?"badge-card":"badge-unpaid"}`;
+  document.querySelector("#bankBox").classList.toggle("hidden",isCard);
+
+  document.querySelector("#bankName").textContent=BANK_NAME;
+  document.querySelector("#bankAccount").textContent=BANK_ACCOUNT;
+  document.querySelector("#bankHolder").textContent=BANK_HOLDER;
+
+  document.querySelector("#doneProducts").innerHTML=order.products.map(p=>`
+    <div class="complete-product-row">
+      <div>
+        <strong>${escapeHtml(p.no)}번 ${escapeHtml(p.name)}</strong>
+        <small>${escapeHtml(p.color||"-")} / ${escapeHtml(p.size||"-")} / ${Number(p.qty||1)}개</small>
+      </div>
+    </div>`).join("");
+
+  setExternalLink("#channelBtn",CHANNELTALK_URL,"채널톡");
+  setExternalLink("#bandBtn",BAND_URL,"밴드");
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+</script>
 </body></html>
