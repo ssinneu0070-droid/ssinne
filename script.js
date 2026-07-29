@@ -3,9 +3,9 @@
   아래 3개 주소만 실제 주소로 바꾸세요.
 */
 const CONFIG = {
-  SCRIPT_URL: "여기에_Apps_Script_웹앱_exec_주소",
-  BAND_URL: "여기에_씬느샵_밴드_주소",
-  CHANNEL_URL: "여기에_채널톡_주소"
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwUEc7W9XJgCbxZsqa3K2gEWpOOblrtfAD-LK53zfNHaP4dliCoOvyKjsiw1YcP9bh-/exec",
+  BAND_URL: "https://www.band.us/band/102398891/post",
+  CHANNEL_URL: "https://pf.kakao.com/_YVncn"
 };
 
 const CUSTOMER_STORAGE_KEY = "ssinne_customer_info_v2";
@@ -132,7 +132,13 @@ async function apiGet(params) {
     );
   }
 
-  const data = await response.json();
+  const responseText = await response.text();
+  let data;
+  try {
+    data = JSON.parse(responseText);
+  } catch (error) {
+    throw new Error("주문 서버가 JSON이 아닌 응답을 보냈습니다. Apps Script 웹앱을 새 버전으로 배포하고 접근 권한을 '모든 사용자'로 설정해주세요.");
+  }
 
   if (data.success === false) {
     throw new Error(data.message || "요청 처리 중 오류가 발생했습니다.");
@@ -169,7 +175,13 @@ async function apiPost(payload) {
     );
   }
 
-  const data = await response.json();
+  const responseText = await response.text();
+  let data;
+  try {
+    data = JSON.parse(responseText);
+  } catch (error) {
+    throw new Error("주문 서버가 JSON이 아닌 응답을 보냈습니다. Apps Script 웹앱을 새 버전으로 배포하고 접근 권한을 '모든 사용자'로 설정해주세요.");
+  }
 
   if (data.success === false) {
     throw new Error(data.message || "요청 처리 중 오류가 발생했습니다.");
@@ -344,8 +356,6 @@ function setAdminOrderSource(source) {
 
   resetAdminOrderDisplay();
 }
-
-async 
 
 function resetAdminOrderDisplay() {
   adminOrders = [];
@@ -649,7 +659,9 @@ function renderAdminOrders() {
   }).join("");
 
   tbody.querySelectorAll(".status-select").forEach(function (select) {
+    applyStatusSelectColor(select);
     select.addEventListener("change", function () {
+      applyStatusSelectColor(select);
       updateAdminPaymentStatus(
         Number(select.dataset.row),
         select.value,
@@ -666,6 +678,15 @@ function renderAdminOrders() {
       );
     });
   });
+}
+
+
+function applyStatusSelectColor(select) {
+  if (!select) return;
+  select.classList.remove("status-unpaid", "status-paid", "status-card");
+  if (select.value === "미입금") select.classList.add("status-unpaid");
+  if (select.value === "입금완료") select.classList.add("status-paid");
+  if (select.value === "카드결제") select.classList.add("status-card");
 }
 
 async function updateAdminPaymentStatus(rowNumber, paymentStatus, source) {
@@ -922,57 +943,6 @@ async function lookupCustomerOrders() {
     hideLoading();
   }
 }
-
-function renderCustomerOrders(orders) {
-  document.getElementById("lookupCount").textContent = orders.length + "건";
-  const container = document.getElementById("customerOrderList");
-
-  if (!orders.length) {
-    container.innerHTML =
-      '<div class="empty-state">일치하는 주문내역이 없습니다.<br>이름과 연락처 뒤 4자리를 다시 확인해주세요.</div>';
-    return;
-  }
-
-  container.innerHTML = orders.map(function (order) {
-    const trackingNumber = order.trackingNumber || "";
-    const courier = order.courier || "CJ대한통운";
-    const numericTracking = String(trackingNumber).replace(/[^0-9]/g, "");
-
-    return `
-      <article class="order-result-card">
-        <h3>${escapeHtml(order.orderDate || "보관 주문")}</h3>
-
-        <div class="order-result-meta">
-          <div><strong>입금금액</strong><br>${money(order.paymentAmount)}</div>
-          <div><strong>입금상태</strong><br>${escapeHtml(order.paymentStatus)}</div>
-          <div><strong>닉네임</strong><br>${escapeHtml(order.nickname)}</div>
-          <div><strong>내품수량</strong><br>${escapeHtml(order.itemQuantity)}개</div>
-        </div>
-
-        <div class="order-result-items">${escapeHtml(order.orderItems)}</div>
-
-        <div class="customer-delivery-box">
-          ${trackingNumber ? `
-            <div>
-              <span>${escapeHtml(courier)}</span>
-              <strong>${escapeHtml(trackingNumber)}</strong>
-            </div>
-            <a class="delivery-button" target="_blank" rel="noopener"
-               href="https://trace.cjlogistics.com/next/tracking.html?wblNo=${encodeURIComponent(numericTracking)}">
-              배송조회
-            </a>
-          ` : `
-            <div>
-              <span>배송상태</span>
-              <strong>배송 준비 중</strong>
-            </div>
-          `}
-        </div>
-      </article>
-    `;
-  }).join("");
-}
-
 
 /* ========================= V2 UI ========================= */
 let lastCustomerLookup={name:"",phoneLast:""};
