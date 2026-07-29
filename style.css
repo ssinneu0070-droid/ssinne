@@ -117,3 +117,23 @@ th{background:#fff5f9;white-space:nowrap}
   .bank-account-line .btn{width:100%;margin-top:13px}
   .complete-actions{grid-template-columns:1fr}
 }
+
+
+/* 관리자 대시보드 간격 개선 */
+#dashboard > .grid {
+  margin-bottom: 22px;
+}
+
+#dashboard > .card {
+  margin-top: 0;
+}
+
+#dashboard .metric {
+  min-height: 98px;
+}
+
+@media (max-width: 800px) {
+  #dashboard > .grid {
+    margin-bottom: 18px;
+  }
+}
