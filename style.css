@@ -832,3 +832,26 @@ textarea{min-height:92px;resize:vertical}
 /* V3.2 고객 주문상품 수정·삭제 */
 .edit-products-section{margin:22px 0;padding-top:20px;border-top:1px solid #eceff4}.edit-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}.edit-section-head h3{margin:0 0 4px;font-size:18px}.edit-section-head p{margin:0;color:#7a8292;font-size:12px}.edit-section-head>strong{color:#e33578;font-size:20px;white-space:nowrap}.edit-product-list{display:grid;gap:12px}.edit-product-card{padding:15px;border:1px solid #ece6ed;border-radius:16px;background:#fffafd}.edit-product-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.edit-product-title div{display:flex;align-items:center;gap:8px}.edit-product-title span{display:inline-flex;padding:4px 8px;border-radius:999px;background:#ffe7f0;color:#d92f73;font-size:11px;font-weight:900}.edit-product-title strong{font-size:14px}.edit-product-delete{border:none;border-radius:10px;padding:7px 10px;color:#fff;background:#ef4444;font-weight:900}.edit-product-grid{display:grid;grid-template-columns:1fr 1fr 1.2fr auto;gap:10px;align-items:end}.edit-quantity-row{display:grid;grid-template-columns:38px minmax(55px,1fr) 38px;gap:6px}.edit-quantity-row button{border:none;border-radius:10px;background:#fff0f6;color:#e33578;font-size:18px;font-weight:900}.edit-quantity-row input{text-align:center}.edit-line-total{min-width:105px;padding:11px 12px;border-radius:12px;background:#fff}.edit-line-total span{display:block;color:#7a8292;font-size:11px}.edit-line-total strong{display:block;margin-top:4px;color:#e33578;font-size:15px}.edit-product-add{margin-top:14px;padding:15px;border:1px dashed #ff9bc1;border-radius:16px;background:#fff}.edit-product-add h4{margin:0 0 12px}.edit-add-grid{display:grid;grid-template-columns:1.2fr 1.4fr 1fr 1fr .7fr;gap:10px}.edit-search-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.edit-product-message{margin:8px 0 0;color:#7a8292;font-size:12px}.edit-product-message.success{color:#16803b;font-weight:800}.edit-product-message.error{color:#d93025;font-weight:800}.edit-products-empty{padding:22px;text-align:center;border:1px dashed #dfe3ea;border-radius:14px;color:#8a92a1;background:#fafbfc}
 @media(max-width:760px){.edit-section-head{flex-direction:column}.edit-product-grid,.edit-add-grid{grid-template-columns:1fr}.edit-line-total{min-width:0}.edit-product-title{align-items:flex-start}.edit-product-title div{align-items:flex-start;flex-direction:column}}
+
+
+/* V3.4 배송비·누적 입금금액 */
+.shipping-rule-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:0 0 16px}
+.shipping-rule-strip span,.shipping-rule-strip strong{padding:9px 8px;border-radius:11px;text-align:center;font-size:11px;line-height:1.45;background:#f7f9fc;border:1px solid #e7ebf2}
+.shipping-rule-strip strong{color:#e83378;background:#fff0f6;border-color:#ffd4e5}
+.card-vat-notice{display:none;margin:10px 0;padding:12px 14px;border:1px solid #ffc5da;border-radius:12px;background:#fff1f6;color:#e12c70;font-size:13px;font-weight:900}
+.card-vat-notice.show{display:block}
+.payment-breakdown-v34{margin-top:15px;border:1px solid #ffd5e5;border-radius:16px;overflow:hidden;background:#fff}
+.payment-breakdown-v34>div{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 14px;border-bottom:1px solid #f0f2f5;font-size:13px}
+.payment-breakdown-v34>div:last-child{border-bottom:0}
+.payment-breakdown-v34 strong{font-size:15px}
+.payment-breakdown-v34 .optional-row{display:none;background:#f8fbff}
+.payment-breakdown-v34 .optional-row.show{display:flex}
+.payment-breakdown-v34 .grand{padding:15px 14px;background:linear-gradient(135deg,#fff1f6,#fff8fb)}
+.payment-breakdown-v34 .grand span{font-weight:900}
+.payment-breakdown-v34 .grand strong{color:#ef2f78;font-size:24px}
+.payment-breakdown-v34 small{color:#8891a0;font-size:10px}
+.shipping-message-v34{margin-top:10px;padding:11px 13px;border-radius:12px;background:#fff8de;color:#665b31;font-size:12px;line-height:1.55}
+.payment-confirm-v34{margin-top:14px;display:flex;align-items:center;gap:9px;padding:13px;border-radius:12px;background:#f6f8fb;font-size:13px;font-weight:900;cursor:pointer}
+.payment-confirm-v34 input{width:20px;min-height:20px;margin:0;accent-color:#ff4f97}
+.complete-shipping-note{display:block;margin-top:7px;color:#7b8493;font-weight:700}
+@media(max-width:560px){.shipping-rule-strip{grid-template-columns:1fr}.payment-breakdown-v34 .grand strong{font-size:21px}}
