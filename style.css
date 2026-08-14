@@ -855,24 +855,3 @@ textarea{min-height:92px;resize:vertical}
 .payment-confirm-v34 input{width:20px;min-height:20px;margin:0;accent-color:#ff4f97}
 .complete-shipping-note{display:block;margin-top:7px;color:#7b8493;font-weight:700}
 @media(max-width:560px){.shipping-rule-strip{grid-template-columns:1fr}.payment-breakdown-v34 .grand strong{font-size:21px}}
-
-
-/* V3.4 상품/입금계좌 안내 추가 */
-.bank-account-guide,
-.complete-bank-guide{
-  margin:14px 0;
-  padding:15px 16px;
-  border:1px solid #ffd1e3;
-  border-radius:16px;
-  background:#fff7fb;
-  text-align:center;
-}
-.bank-account-guide span,
-.complete-bank-guide span{display:block;font-size:13px;font-weight:800;color:#c53f76;margin-bottom:5px}
-.bank-account-guide strong,
-.complete-bank-guide strong{display:block;font-size:19px;line-height:1.45;color:#222;letter-spacing:.2px}
-.bank-account-guide em,
-.complete-bank-guide em{display:block;margin-top:3px;font-size:13px;font-style:normal;color:#666}
-@media (max-width:600px){
-  .bank-account-guide strong,.complete-bank-guide strong{font-size:17px}
-}
