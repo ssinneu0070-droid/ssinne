@@ -9,6 +9,9 @@ const CONFIG = {
 };
 
 const CUSTOMER_STORAGE_KEY = "ssinne_customer_info_v2";
+const PRODUCT_CACHE_KEY = "ssinne_products_v35";
+const PRODUCT_CACHE_TTL_MS = 5 * 60 * 1000;
+let daumPostcodePromise = null;
 
 
 function initNoticeGate() {
@@ -257,12 +260,48 @@ async function initOrderPage(){
   loadSavedCustomer();
   renderOrderCart();
   updateCardVatNotice();
-  try{await loadOrderProducts(false)}catch(e){alert(e.message)}
+  // 상품정보는 첫 화면에서 기다리지 않습니다. 고객이 상품번호를 처음 검색할 때 불러옵니다.
+  restoreProductCache_();
 }
 
-async function loadOrderProducts(show){const d=await apiGet({action:"products"});orderProducts=Array.isArray(d.products)?d.products:[];if(!orderProducts.length)throw new Error("상품정보 시트에 등록된 상품이 없습니다.");if(show)alert("상품정보를 새로 불러왔습니다.")}
+function restoreProductCache_(){
+  try{
+    const raw=sessionStorage.getItem(PRODUCT_CACHE_KEY);
+    if(!raw)return false;
+    const cached=JSON.parse(raw);
+    if(!cached || !Array.isArray(cached.products) || Date.now()-Number(cached.savedAt||0)>PRODUCT_CACHE_TTL_MS)return false;
+    orderProducts=cached.products;
+    return orderProducts.length>0;
+  }catch(e){return false}
+}
+
+async function loadOrderProducts(show, force){
+  if(!force && orderProducts.length)return orderProducts;
+  if(!force && restoreProductCache_())return orderProducts;
+  const d=await apiGet({action:"products"});
+  orderProducts=Array.isArray(d.products)?d.products:[];
+  if(!orderProducts.length)throw new Error("상품정보 시트에 등록된 상품이 없습니다.");
+  try{sessionStorage.setItem(PRODUCT_CACHE_KEY,JSON.stringify({savedAt:Date.now(),products:orderProducts}))}catch(e){}
+  if(show)alert("상품정보를 새로 불러왔습니다.");
+  return orderProducts;
+}
 function resetSingleProductSelection(){selectedOrderProduct=null;singleProductName.value="";singleProductColor.innerHTML='<option value="">칼라를 선택하세요</option>';singleProductSize.innerHTML='<option value="">사이즈를 선택하세요</option>';singleProductColor.disabled=true;singleProductSize.disabled=true;singleProductMessage.className="product-message";singleProductMessage.textContent="상품번호 입력 후 검색을 눌러주세요."}
-function searchSingleProduct(){const no=singleProductNo.value.trim();if(!no){singleProductMessage.className="product-message error";singleProductMessage.textContent="상품번호를 입력해주세요.";return}const p=orderProducts.find(x=>String(x.productNo)===no);if(!p){resetSingleProductSelection();singleProductMessage.className="product-message error";singleProductMessage.textContent="등록되지 않은 상품번호입니다.";return}selectedOrderProduct=p;singleProductName.value=p.productName||"";singleProductColor.innerHTML='<option value="">칼라를 선택하세요</option>';Object.keys(p.colors||{}).forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;singleProductColor.appendChild(o)});singleProductColor.disabled=false;singleProductMessage.className="product-message success";singleProductMessage.textContent="상품이 확인되었습니다."}
+async function searchSingleProduct(){
+  const no=singleProductNo.value.trim();
+  if(!no){singleProductMessage.className="product-message error";singleProductMessage.textContent="상품번호를 입력해주세요.";return}
+  try{
+    if(!orderProducts.length){
+      singleProductMessage.className="product-message";
+      singleProductMessage.textContent="상품정보를 확인하고 있습니다...";
+      await loadOrderProducts(false);
+    }
+    const p=orderProducts.find(x=>String(x.productNo)===no);
+    if(!p){resetSingleProductSelection();singleProductMessage.className="product-message error";singleProductMessage.textContent="등록되지 않은 상품번호입니다.";return}
+    selectedOrderProduct=p;singleProductName.value=p.productName||"";singleProductColor.innerHTML='<option value="">칼라를 선택하세요</option>';
+    Object.keys(p.colors||{}).forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;singleProductColor.appendChild(o)});
+    singleProductColor.disabled=false;singleProductMessage.className="product-message success";singleProductMessage.textContent="상품이 확인되었습니다.";
+  }catch(e){singleProductMessage.className="product-message error";singleProductMessage.textContent=e.message||"상품정보를 불러오지 못했습니다."}
+}
 function updateSingleSizes(){const c=singleProductColor.value;singleProductSize.innerHTML='<option value="">사이즈를 선택하세요</option>';if(!selectedOrderProduct||!c||!selectedOrderProduct.colors[c]){singleProductSize.disabled=true;return}selectedOrderProduct.colors[c].forEach(s=>{const o=document.createElement("option");o.value=s;o.textContent=s;singleProductSize.appendChild(o)});singleProductSize.disabled=false}
 function changeSingleQuantity(n){singleProductQuantity.value=Math.min(99,Math.max(1,Number(singleProductQuantity.value||1)+n))}
 function addSelectedProductToCart(){const no=singleProductNo.value.trim(),c=singleProductColor.value,s=singleProductSize.value,q=Math.min(99,Math.max(1,Number(singleProductQuantity.value||1)));if(!selectedOrderProduct||String(selectedOrderProduct.productNo)!==no){alert("상품번호를 검색해주세요.");return}if(!c){alert("칼라를 선택해주세요.");return}if(!s){alert("사이즈를 선택해주세요.");return}orderCart.push({productNo:no,productName:selectedOrderProduct.productName||"",color:c,size:s,quantity:q,price:Number(selectedOrderProduct.price||0)});renderOrderCart();singleProductNo.value="";singleProductQuantity.value="1";resetSingleProductSelection();singleProductNo.focus()}
@@ -286,7 +325,7 @@ function updateCardVatNotice(){
 
 function schedulePaymentPreview(){
   clearTimeout(orderPreviewTimer);
-  orderPreviewTimer=setTimeout(refreshPaymentPreview,250);
+  orderPreviewTimer=setTimeout(refreshPaymentPreview,700);
 }
 
 async function refreshPaymentPreview(){
@@ -344,7 +383,50 @@ function loadSavedCustomer(){try{const raw=localStorage.getItem(CUSTOMER_STORAGE
 function clearSavedCustomer(){if(!confirm("저장된 고객정보를 지울까요?"))return;localStorage.removeItem(CUSTOMER_STORAGE_KEY);["nickname","receiverName","phone","zipcode","address","detailAddress","shippingMemo"].forEach(id=>document.getElementById(id).value="");shippingRegion.value="normal";savedNotice.classList.remove("show");schedulePaymentPreview()}
 function finishOrder(){completeScreen.classList.remove("show");orderForm.style.display="grid";orderCart=[];renderOrderCart();loadSavedCustomer();window.scrollTo({top:0,behavior:"smooth"})}
 function formatPhoneInput(e){let n=e.target.value.replace(/[^0-9]/g,"").slice(0,11);e.target.value=n.length<=3?n:n.length<=7?n.slice(0,3)+"-"+n.slice(3):n.slice(0,3)+"-"+n.slice(3,7)+"-"+n.slice(7)}
-function openAddressSearch(){if(!window.daum||!window.daum.Postcode){alert("주소검색 프로그램을 불러오지 못했습니다.");return}new window.daum.Postcode({oncomplete:d=>{zipcode.value=d.zonecode||"";address.value=d.userSelectedType==="R"?(d.roadAddress||""):(d.jibunAddress||"");detailAddress.value="";if(String(address.value).indexOf("제주")!==-1)shippingRegion.value="remote";schedulePaymentPreview();detailAddress.focus()}}).open()}
+function loadDaumPostcode_(){
+  if(window.daum&&window.daum.Postcode)return Promise.resolve();
+  if(daumPostcodePromise)return daumPostcodePromise;
+  daumPostcodePromise=new Promise(function(resolve,reject){
+    const script=document.createElement("script");
+    script.src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
+    script.async=true;
+    script.onload=function(){window.daum&&window.daum.Postcode?resolve():reject(new Error("주소검색 프로그램을 실행하지 못했습니다."))};
+    script.onerror=function(){reject(new Error("주소검색 프로그램을 불러오지 못했습니다. 주소를 직접 입력해주세요."))};
+    document.head.appendChild(script);
+  });
+  return daumPostcodePromise;
+}
+
+async function openAddressSearch(){
+  const button=document.getElementById("addressSearchButton");
+  const embed=document.getElementById("addressSearchEmbed");
+  if(!embed)return;
+  if(embed.classList.contains("show")){embed.classList.remove("show");embed.innerHTML="";return}
+  try{
+    if(button){button.disabled=true;button.textContent="불러오는 중..."}
+    await loadDaumPostcode_();
+    embed.innerHTML="";
+    embed.classList.add("show");
+    new window.daum.Postcode({
+      oncomplete:function(d){
+        zipcode.value=d.zonecode||"";
+        address.value=d.userSelectedType==="R"?(d.roadAddress||""):(d.jibunAddress||"");
+        detailAddress.value="";
+        shippingRegion.value=String(address.value).indexOf("제주")!==-1?"remote":"normal";
+        embed.classList.remove("show");embed.innerHTML="";
+        schedulePaymentPreview();detailAddress.focus();
+      },
+      onresize:function(size){if(size&&size.height)embed.style.height=Math.min(Math.max(Number(size.height),420),560)+"px";},
+      width:"100%",height:"100%"
+    }).embed(embed);
+  }catch(e){
+    embed.classList.remove("show");
+    alert((e&&e.message)||"주소검색을 불러오지 못했습니다. 주소를 직접 입력해주세요.");
+    address.removeAttribute("readonly");address.focus();
+  }finally{
+    if(button){button.disabled=false;button.textContent="주소 검색"}
+  }
+}
 
 /* =========================
    관리자
