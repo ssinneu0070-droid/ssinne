@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#111827">
   <title>씬느샵 관리자</title>
-  <link rel="stylesheet" href="style.css?v=20260809-v3-6-stable">
-  <script src="script.js?v=20260809-v3-6-stable" defer></script>
+  <link rel="stylesheet" href="style.css?v=20260816-v3-8-unpaid-card">
+  <script src="script.js?v=20260816-v3-8-unpaid-card" defer></script>
 </head>
 <body data-page="admin" class="page-admin">
   <div class="admin-app">
@@ -83,7 +83,11 @@
             <strong id="summaryPaidCount">0</strong>
             <small>입금 확인된 주문</small>
           </div>
-          <div class="metric-card warning"><span>미입금</span><strong id="summaryUnpaidCount">0</strong><small>3PL 하단 정렬</small></div>
+          <button type="button" class="metric-card warning clickable-metric" id="summaryUnpaidCard">
+            <span>미입금 주문</span>
+            <strong id="summaryUnpaidCount">0</strong>
+            <small>미입금·카드결제 모아보기</small>
+          </button>
           <button type="button" class="metric-card accent clickable-metric" id="summaryPaymentCard">
             <span>조회 금액</span>
             <strong id="summaryPaymentTotal">0원</strong>

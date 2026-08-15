@@ -855,3 +855,27 @@ textarea{min-height:92px;resize:vertical}
 .payment-confirm-v34 input{width:20px;min-height:20px;margin:0;accent-color:#ff4f97}
 .complete-shipping-note{display:block;margin-top:7px;color:#7b8493;font-weight:700}
 @media(max-width:560px){.shipping-rule-strip{grid-template-columns:1fr}.payment-breakdown-v34 .grand strong{font-size:21px}}
+
+
+/* V3.8 미입금·카드결제 필터 */
+#summaryUnpaidCard {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+#summaryUnpaidCard.active-filter {
+  outline: 3px solid rgba(255, 171, 64, .38);
+  transform: translateY(-1px);
+}
+
+/* V3.9 주문서 내부 주소검색 */
+.address-search-panel{display:none;margin:10px 0 18px;border:1px solid #f0d8e4;border-radius:16px;background:#fff;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.06)}
+.address-search-panel.show{display:block}
+.address-search-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:#fff5fa;border-bottom:1px solid #f3e2ea}
+.address-search-head strong{font-size:14px}
+.address-search-close{border:0;background:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.postcode-embed{width:100%;height:430px;background:#fafafa}
+.address-search-status{padding:10px 14px;font-size:12px;line-height:1.5;color:#777;background:#fff}
+.address-manual-help{color:#c94c85;font-weight:700}
+@media(max-width:600px){.postcode-embed{height:470px}.address-search-head{position:sticky;top:0;z-index:2}}

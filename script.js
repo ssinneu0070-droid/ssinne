@@ -241,6 +241,8 @@ async function initOrderPage(){
   document.getElementById("phone").addEventListener("input",function(e){formatPhoneInput(e);schedulePaymentPreview();});
   document.getElementById("receiverName").addEventListener("input",schedulePaymentPreview);
   document.getElementById("addressSearchButton").addEventListener("click",openAddressSearch);
+  const addressCloseButton=document.getElementById("addressSearchCloseButton");
+  if(addressCloseButton)addressCloseButton.addEventListener("click",closeAddressSearch);
   document.getElementById("shippingRegion").addEventListener("change",schedulePaymentPreview);
   document.getElementById("paymentMethod").addEventListener("change",updateCardVatNotice);
   document.getElementById("singleProductNo").addEventListener("input",function(e){e.target.value=e.target.value.replace(/[^0-9]/g,"");resetSingleProductSelection()});
@@ -344,7 +346,67 @@ function loadSavedCustomer(){try{const raw=localStorage.getItem(CUSTOMER_STORAGE
 function clearSavedCustomer(){if(!confirm("저장된 고객정보를 지울까요?"))return;localStorage.removeItem(CUSTOMER_STORAGE_KEY);["nickname","receiverName","phone","zipcode","address","detailAddress","shippingMemo"].forEach(id=>document.getElementById(id).value="");shippingRegion.value="normal";savedNotice.classList.remove("show");schedulePaymentPreview()}
 function finishOrder(){completeScreen.classList.remove("show");orderForm.style.display="grid";orderCart=[];renderOrderCart();loadSavedCustomer();window.scrollTo({top:0,behavior:"smooth"})}
 function formatPhoneInput(e){let n=e.target.value.replace(/[^0-9]/g,"").slice(0,11);e.target.value=n.length<=3?n:n.length<=7?n.slice(0,3)+"-"+n.slice(3):n.slice(0,3)+"-"+n.slice(3,7)+"-"+n.slice(7)}
-function openAddressSearch(){if(!window.daum||!window.daum.Postcode){alert("주소검색 프로그램을 불러오지 못했습니다.");return}new window.daum.Postcode({oncomplete:d=>{zipcode.value=d.zonecode||"";address.value=d.userSelectedType==="R"?(d.roadAddress||""):(d.jibunAddress||"");detailAddress.value="";if(String(address.value).indexOf("제주")!==-1)shippingRegion.value="remote";schedulePaymentPreview();detailAddress.focus()}}).open()}
+let postcodeScriptPromise=null;
+let postcodeEmbedded=false;
+function loadPostcodeScript(){
+  if(window.daum&&window.daum.Postcode)return Promise.resolve();
+  if(postcodeScriptPromise)return postcodeScriptPromise;
+  postcodeScriptPromise=new Promise((resolve,reject)=>{
+    const sc=document.createElement("script");
+    sc.src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
+    sc.async=true;
+    sc.onload=()=>window.daum&&window.daum.Postcode?resolve():reject(new Error("주소검색 모듈을 초기화하지 못했습니다."));
+    sc.onerror=()=>reject(new Error("주소검색 서비스를 불러오지 못했습니다."));
+    document.head.appendChild(sc);
+  });
+  return postcodeScriptPromise;
+}
+function setAddressSearchStatus(message,isError){
+  const el=document.getElementById("addressSearchStatus");
+  if(!el)return;
+  el.textContent=message;
+  el.classList.toggle("address-manual-help",!!isError);
+}
+function enableManualAddressFallback(){
+  const zip=document.getElementById("zipcode"),addr=document.getElementById("address");
+  if(zip){zip.readOnly=false;zip.placeholder="우편번호 직접 입력";}
+  if(addr){addr.readOnly=false;addr.placeholder="주소를 직접 입력해주세요";}
+  setAddressSearchStatus("주소검색이 차단된 환경입니다. 우편번호와 주소를 직접 입력할 수 있게 전환했습니다.",true);
+}
+async function openAddressSearch(){
+  const panel=document.getElementById("addressSearchPanel");
+  const embed=document.getElementById("postcodeEmbed");
+  if(!panel||!embed)return;
+  panel.classList.add("show");panel.setAttribute("aria-hidden","false");
+  setAddressSearchStatus("주소검색을 불러오는 중입니다...",false);
+  try{
+    await loadPostcodeScript();
+    setAddressSearchStatus("도로명, 건물명 또는 지번으로 검색해주세요.",false);
+    if(!postcodeEmbedded){
+      new window.daum.Postcode({
+        width:"100%",height:"100%",
+        oncomplete:d=>{
+          zipcode.value=d.zonecode||"";
+          address.value=d.userSelectedType==="R"?(d.roadAddress||""):(d.jibunAddress||"");
+          detailAddress.value="";
+          shippingRegion.value=String(address.value).indexOf("제주")!==-1?"remote":"normal";
+          schedulePaymentPreview();
+          closeAddressSearch();
+          setTimeout(()=>detailAddress.focus(),50);
+        }
+      }).embed(embed);
+      postcodeEmbedded=true;
+    }
+    panel.scrollIntoView({behavior:"smooth",block:"center"});
+  }catch(err){
+    console.error(err);
+    enableManualAddressFallback();
+  }
+}
+function closeAddressSearch(){
+  const panel=document.getElementById("addressSearchPanel");
+  if(panel){panel.classList.remove("show");panel.setAttribute("aria-hidden","true");}
+}
 
 /* =========================
    관리자
@@ -353,6 +415,7 @@ let adminOrders = [];
 let adminProducts = [];
 let adminOrderSource = "current";
 let adminHasSearched = false;
+let adminPaymentFilter = "all";
 
 function initAdminPage() {
   document.querySelectorAll(".side-link[data-tab]").forEach(function(button) {
@@ -396,6 +459,11 @@ function initAdminPage() {
 
   document.getElementById("summaryPaymentCard")
     .addEventListener("click", showAmountOnlyView);
+
+  const summaryUnpaidCard = document.getElementById("summaryUnpaidCard");
+  if (summaryUnpaidCard) {
+    summaryUnpaidCard.addEventListener("click", showUnpaidAndCardOrders);
+  }
 
   document.getElementById("backToOrderListButton")
     .addEventListener("click", showOrderListView);
@@ -460,6 +528,9 @@ function setAdminOrderSource(source) {
 function resetAdminOrderDisplay() {
   adminOrders = [];
   adminHasSearched = false;
+  adminPaymentFilter = "all";
+  const unpaidCard = document.getElementById("summaryUnpaidCard");
+  if (unpaidCard) unpaidCard.classList.remove("active-filter");
 
   document.getElementById("summaryOrderCount")
     .textContent = "0";
@@ -613,6 +684,10 @@ function showOrderListView() {
 }
 
 async function searchAdminOrders() {
+  adminPaymentFilter = "all";
+  const unpaidCard = document.getElementById("summaryUnpaidCard");
+  if (unpaidCard) unpaidCard.classList.remove("active-filter");
+
   const startDate =
     document.getElementById("startDate").value;
 
@@ -680,6 +755,19 @@ function loadAllAdminOrders() {
   searchAdminOrders();
 }
 
+function showUnpaidAndCardOrders() {
+  if (!adminHasSearched) {
+    alert("먼저 조회하기, 오늘 주문 또는 전체 보기를 눌러 주문을 조회해주세요.");
+    return;
+  }
+
+  adminPaymentFilter = "unpaid-card";
+  const card = document.getElementById("summaryUnpaidCard");
+  if (card) card.classList.add("active-filter");
+  renderAdminOrders();
+  showOrderListView();
+}
+
 function renderAdminOrders() {
   const tbody = document.getElementById("adminOrderList");
 
@@ -698,7 +786,8 @@ function renderAdminOrders() {
   const unpaidSummary = document.getElementById("summaryUnpaidCount");
   if (unpaidSummary) {
     unpaidSummary.textContent = adminOrders.filter(function (order) {
-      return order.paymentStatus === "미입금";
+      return order.paymentStatus === "미입금" ||
+             order.paymentStatus === "카드결제";
     }).length;
   }
 
@@ -708,12 +797,23 @@ function renderAdminOrders() {
 
   document.getElementById("summaryPaymentTotal").textContent = money(total);
 
-  if (!adminOrders.length) {
-    tbody.innerHTML = '<tr><td colspan="12" class="empty-cell">조회된 주문이 없습니다.</td></tr>';
+  const displayOrders = adminPaymentFilter === "unpaid-card"
+    ? adminOrders.filter(function(order) {
+        return order.paymentStatus === "미입금" ||
+               order.paymentStatus === "카드결제";
+      })
+    : adminOrders;
+
+  if (!displayOrders.length) {
+    tbody.innerHTML = '<tr><td colspan="14" class="empty-cell">' +
+      (adminPaymentFilter === "unpaid-card"
+        ? '미입금 또는 카드결제 주문이 없습니다.'
+        : '조회된 주문이 없습니다.') +
+      '</td></tr>';
     return;
   }
 
-  tbody.innerHTML = adminOrders.map(function (order) {
+  tbody.innerHTML = displayOrders.map(function (order) {
     const isHistory = adminOrderSource === "history";
     const trackingNumber = order.trackingNumber || "";
     const courier = order.courier || (isHistory ? "CJ대한통운" : "");
