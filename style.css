@@ -855,9 +855,3 @@ textarea{min-height:92px;resize:vertical}
 .payment-confirm-v34 input{width:20px;min-height:20px;margin:0;accent-color:#ff4f97}
 .complete-shipping-note{display:block;margin-top:7px;color:#7b8493;font-weight:700}
 @media(max-width:560px){.shipping-rule-strip{grid-template-columns:1fr}.payment-breakdown-v34 .grand strong{font-size:21px}}
-
-/* V3.5 속도·주소검색 안정화 */
-.address-search-embed{display:none;width:100%;height:430px;margin-top:10px;border:1px solid #e7ebf2;border-radius:14px;overflow:hidden;background:#fff}
-.address-search-embed.show{display:block}
-.address-search-help{margin-top:8px;color:#7b8493;font-size:11px;line-height:1.5}
-@media(max-width:560px){.address-search-embed{height:470px}}

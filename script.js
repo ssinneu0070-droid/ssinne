@@ -9,9 +9,6 @@ const CONFIG = {
 };
 
 const CUSTOMER_STORAGE_KEY = "ssinne_customer_info_v2";
-const PRODUCT_CACHE_KEY = "ssinne_products_v35";
-const PRODUCT_CACHE_TTL_MS = 5 * 60 * 1000;
-let daumPostcodePromise = null;
 
 
 function initNoticeGate() {
@@ -260,48 +257,12 @@ async function initOrderPage(){
   loadSavedCustomer();
   renderOrderCart();
   updateCardVatNotice();
-  // 상품정보는 첫 화면에서 기다리지 않습니다. 고객이 상품번호를 처음 검색할 때 불러옵니다.
-  restoreProductCache_();
+  try{await loadOrderProducts(false)}catch(e){alert(e.message)}
 }
 
-function restoreProductCache_(){
-  try{
-    const raw=sessionStorage.getItem(PRODUCT_CACHE_KEY);
-    if(!raw)return false;
-    const cached=JSON.parse(raw);
-    if(!cached || !Array.isArray(cached.products) || Date.now()-Number(cached.savedAt||0)>PRODUCT_CACHE_TTL_MS)return false;
-    orderProducts=cached.products;
-    return orderProducts.length>0;
-  }catch(e){return false}
-}
-
-async function loadOrderProducts(show, force){
-  if(!force && orderProducts.length)return orderProducts;
-  if(!force && restoreProductCache_())return orderProducts;
-  const d=await apiGet({action:"products"});
-  orderProducts=Array.isArray(d.products)?d.products:[];
-  if(!orderProducts.length)throw new Error("상품정보 시트에 등록된 상품이 없습니다.");
-  try{sessionStorage.setItem(PRODUCT_CACHE_KEY,JSON.stringify({savedAt:Date.now(),products:orderProducts}))}catch(e){}
-  if(show)alert("상품정보를 새로 불러왔습니다.");
-  return orderProducts;
-}
+async function loadOrderProducts(show){const d=await apiGet({action:"products"});orderProducts=Array.isArray(d.products)?d.products:[];if(!orderProducts.length)throw new Error("상품정보 시트에 등록된 상품이 없습니다.");if(show)alert("상품정보를 새로 불러왔습니다.")}
 function resetSingleProductSelection(){selectedOrderProduct=null;singleProductName.value="";singleProductColor.innerHTML='<option value="">칼라를 선택하세요</option>';singleProductSize.innerHTML='<option value="">사이즈를 선택하세요</option>';singleProductColor.disabled=true;singleProductSize.disabled=true;singleProductMessage.className="product-message";singleProductMessage.textContent="상품번호 입력 후 검색을 눌러주세요."}
-async function searchSingleProduct(){
-  const no=singleProductNo.value.trim();
-  if(!no){singleProductMessage.className="product-message error";singleProductMessage.textContent="상품번호를 입력해주세요.";return}
-  try{
-    if(!orderProducts.length){
-      singleProductMessage.className="product-message";
-      singleProductMessage.textContent="상품정보를 확인하고 있습니다...";
-      await loadOrderProducts(false);
-    }
-    const p=orderProducts.find(x=>String(x.productNo)===no);
-    if(!p){resetSingleProductSelection();singleProductMessage.className="product-message error";singleProductMessage.textContent="등록되지 않은 상품번호입니다.";return}
-    selectedOrderProduct=p;singleProductName.value=p.productName||"";singleProductColor.innerHTML='<option value="">칼라를 선택하세요</option>';
-    Object.keys(p.colors||{}).forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;singleProductColor.appendChild(o)});
-    singleProductColor.disabled=false;singleProductMessage.className="product-message success";singleProductMessage.textContent="상품이 확인되었습니다.";
-  }catch(e){singleProductMessage.className="product-message error";singleProductMessage.textContent=e.message||"상품정보를 불러오지 못했습니다."}
-}
+function searchSingleProduct(){const no=singleProductNo.value.trim();if(!no){singleProductMessage.className="product-message error";singleProductMessage.textContent="상품번호를 입력해주세요.";return}const p=orderProducts.find(x=>String(x.productNo)===no);if(!p){resetSingleProductSelection();singleProductMessage.className="product-message error";singleProductMessage.textContent="등록되지 않은 상품번호입니다.";return}selectedOrderProduct=p;singleProductName.value=p.productName||"";singleProductColor.innerHTML='<option value="">칼라를 선택하세요</option>';Object.keys(p.colors||{}).forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;singleProductColor.appendChild(o)});singleProductColor.disabled=false;singleProductMessage.className="product-message success";singleProductMessage.textContent="상품이 확인되었습니다."}
 function updateSingleSizes(){const c=singleProductColor.value;singleProductSize.innerHTML='<option value="">사이즈를 선택하세요</option>';if(!selectedOrderProduct||!c||!selectedOrderProduct.colors[c]){singleProductSize.disabled=true;return}selectedOrderProduct.colors[c].forEach(s=>{const o=document.createElement("option");o.value=s;o.textContent=s;singleProductSize.appendChild(o)});singleProductSize.disabled=false}
 function changeSingleQuantity(n){singleProductQuantity.value=Math.min(99,Math.max(1,Number(singleProductQuantity.value||1)+n))}
 function addSelectedProductToCart(){const no=singleProductNo.value.trim(),c=singleProductColor.value,s=singleProductSize.value,q=Math.min(99,Math.max(1,Number(singleProductQuantity.value||1)));if(!selectedOrderProduct||String(selectedOrderProduct.productNo)!==no){alert("상품번호를 검색해주세요.");return}if(!c){alert("칼라를 선택해주세요.");return}if(!s){alert("사이즈를 선택해주세요.");return}orderCart.push({productNo:no,productName:selectedOrderProduct.productName||"",color:c,size:s,quantity:q,price:Number(selectedOrderProduct.price||0)});renderOrderCart();singleProductNo.value="";singleProductQuantity.value="1";resetSingleProductSelection();singleProductNo.focus()}
@@ -325,7 +286,7 @@ function updateCardVatNotice(){
 
 function schedulePaymentPreview(){
   clearTimeout(orderPreviewTimer);
-  orderPreviewTimer=setTimeout(refreshPaymentPreview,700);
+  orderPreviewTimer=setTimeout(refreshPaymentPreview,250);
 }
 
 async function refreshPaymentPreview(){
@@ -383,50 +344,7 @@ function loadSavedCustomer(){try{const raw=localStorage.getItem(CUSTOMER_STORAGE
 function clearSavedCustomer(){if(!confirm("저장된 고객정보를 지울까요?"))return;localStorage.removeItem(CUSTOMER_STORAGE_KEY);["nickname","receiverName","phone","zipcode","address","detailAddress","shippingMemo"].forEach(id=>document.getElementById(id).value="");shippingRegion.value="normal";savedNotice.classList.remove("show");schedulePaymentPreview()}
 function finishOrder(){completeScreen.classList.remove("show");orderForm.style.display="grid";orderCart=[];renderOrderCart();loadSavedCustomer();window.scrollTo({top:0,behavior:"smooth"})}
 function formatPhoneInput(e){let n=e.target.value.replace(/[^0-9]/g,"").slice(0,11);e.target.value=n.length<=3?n:n.length<=7?n.slice(0,3)+"-"+n.slice(3):n.slice(0,3)+"-"+n.slice(3,7)+"-"+n.slice(7)}
-function loadDaumPostcode_(){
-  if(window.daum&&window.daum.Postcode)return Promise.resolve();
-  if(daumPostcodePromise)return daumPostcodePromise;
-  daumPostcodePromise=new Promise(function(resolve,reject){
-    const script=document.createElement("script");
-    script.src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
-    script.async=true;
-    script.onload=function(){window.daum&&window.daum.Postcode?resolve():reject(new Error("주소검색 프로그램을 실행하지 못했습니다."))};
-    script.onerror=function(){reject(new Error("주소검색 프로그램을 불러오지 못했습니다. 주소를 직접 입력해주세요."))};
-    document.head.appendChild(script);
-  });
-  return daumPostcodePromise;
-}
-
-async function openAddressSearch(){
-  const button=document.getElementById("addressSearchButton");
-  const embed=document.getElementById("addressSearchEmbed");
-  if(!embed)return;
-  if(embed.classList.contains("show")){embed.classList.remove("show");embed.innerHTML="";return}
-  try{
-    if(button){button.disabled=true;button.textContent="불러오는 중..."}
-    await loadDaumPostcode_();
-    embed.innerHTML="";
-    embed.classList.add("show");
-    new window.daum.Postcode({
-      oncomplete:function(d){
-        zipcode.value=d.zonecode||"";
-        address.value=d.userSelectedType==="R"?(d.roadAddress||""):(d.jibunAddress||"");
-        detailAddress.value="";
-        shippingRegion.value=String(address.value).indexOf("제주")!==-1?"remote":"normal";
-        embed.classList.remove("show");embed.innerHTML="";
-        schedulePaymentPreview();detailAddress.focus();
-      },
-      onresize:function(size){if(size&&size.height)embed.style.height=Math.min(Math.max(Number(size.height),420),560)+"px";},
-      width:"100%",height:"100%"
-    }).embed(embed);
-  }catch(e){
-    embed.classList.remove("show");
-    alert((e&&e.message)||"주소검색을 불러오지 못했습니다. 주소를 직접 입력해주세요.");
-    address.removeAttribute("readonly");address.focus();
-  }finally{
-    if(button){button.disabled=false;button.textContent="주소 검색"}
-  }
-}
+function openAddressSearch(){if(!window.daum||!window.daum.Postcode){alert("주소검색 프로그램을 불러오지 못했습니다.");return}new window.daum.Postcode({oncomplete:d=>{zipcode.value=d.zonecode||"";address.value=d.userSelectedType==="R"?(d.roadAddress||""):(d.jibunAddress||"");detailAddress.value="";if(String(address.value).indexOf("제주")!==-1)shippingRegion.value="remote";schedulePaymentPreview();detailAddress.focus()}}).open()}
 
 /* =========================
    관리자
@@ -777,6 +695,13 @@ function renderAdminOrders() {
              order.paymentStatus === "카드결제";
     }).length;
 
+  const unpaidSummary = document.getElementById("summaryUnpaidCount");
+  if (unpaidSummary) {
+    unpaidSummary.textContent = adminOrders.filter(function (order) {
+      return order.paymentStatus === "미입금";
+    }).length;
+  }
+
   const total = adminOrders.reduce(function (sum, order) {
     return sum + Number(order.paymentAmount || 0);
   }, 0);
@@ -1094,6 +1019,8 @@ function initCustomerPage() {
   document.getElementById("lookupButton").addEventListener("click", lookupCustomerOrders);
 }
 
+let lastCustomerLookup = { name: "", phoneLast: "" };
+
 async function lookupCustomerOrders() {
   const name = document.getElementById("lookupName").value.trim();
   const phoneLast = document.getElementById("lookupPhoneLast").value.trim();
@@ -1108,6 +1035,7 @@ async function lookupCustomerOrders() {
     return;
   }
 
+  lastCustomerLookup = { name: name, phoneLast: phoneLast };
   showLoading("주문내역을 조회하는 중입니다.");
 
   try {
@@ -1127,12 +1055,11 @@ async function lookupCustomerOrders() {
 }
 
 /* ========================= V2 UI ========================= */
-let lastCustomerLookup={name:"",phoneLast:""};
 function renderCustomerOrders(orders){
   document.getElementById("lookupCount").textContent=orders.length+"건";const c=document.getElementById("customerOrderList");
   if(!orders.length){c.innerHTML='<div class="empty-state">일치하는 주문내역이 없습니다.<br>이름과 연락처 뒤 4자리를 다시 확인해주세요.</div>';return;}
   c.innerHTML=orders.map(function(o){const tr=o.trackingNumber||"",numeric=String(tr).replace(/[^0-9]/g,"");return `<article class="order-result-card v2-order-card">
-    <div class="v2-card-head"><div><span>${escapeHtml(o.orderDate||"보관 주문")}</span><h3>주문번호 ${escapeHtml(o.orderNumber||"-")}</h3></div><b class="status-pill ${o.paymentStatus==='미입금'?'unpaid':'paid'}">${escapeHtml(o.paymentStatus)}</b></div>
+    <div class="v2-card-head"><div><span>${escapeHtml(o.orderDate||"보관 주문")}</span><h3>주문번호 ${escapeHtml(o.orderNumber||"-")}</h3></div><b class="status-pill ${o.paymentStatus==='미입금'?'unpaid':(o.paymentStatus==='카드결제'?'card-paid':'paid')}">${escapeHtml(o.paymentStatus)}</b></div>
     <div class="order-result-items">${escapeHtml(o.orderItems)}</div><div class="v2-total"><span>총 주문금액</span><strong>${money(o.paymentAmount)}</strong></div>
     ${tr?`<div class="customer-delivery-box"><div><span>CJ대한통운</span><strong>${escapeHtml(tr)}</strong></div><a class="delivery-button" target="_blank" rel="noopener" href="https://trace.cjlogistics.com/next/tracking.html?wblNo=${encodeURIComponent(numeric)}">배송조회</a></div>`:''}
     ${o.canEdit||o.canCancel?`<div class="v2-actions">${o.canEdit?`<button class="btn btn-outline customer-edit-btn" data-order="${escapeHtml(o.orderNumber)}">주문 수정</button>`:''}${o.canCancel?`<button class="btn btn-danger customer-cancel-btn" data-order="${escapeHtml(o.orderNumber)}">주문 취소</button>`:''}</div>`:`<div class="locked-note">입금완료 주문은 수정·취소가 불가합니다. 채널톡으로 문의해주세요.</div>`}
@@ -1141,8 +1068,52 @@ function renderCustomerOrders(orders){
   c.querySelectorAll('.customer-cancel-btn').forEach(b=>b.onclick=()=>cancelCustomerOrder(b.dataset.order));
 }
 
-const originalLookupCustomerOrders=lookupCustomerOrders;
-lookupCustomerOrders=async function(){const name=lookupName.value.trim(),phoneLast=lookupPhoneLast.value.trim();if(!name||phoneLast.length!==4){alert("수령인 성함과 연락처 뒤 4자리를 입력해주세요.");return;}lastCustomerLookup={name,phoneLast};showLoading("주문내역을 조회하는 중입니다.");try{const d=await apiGet({action:"customerOrders",name,phoneLast});renderCustomerOrders(Array.isArray(d.orders)?d.orders:[]);}catch(e){alert(e.message)}finally{hideLoading()}};
+
+
+async function cancelCustomerOrder(orderNumber) {
+  if (!orderNumber) {
+    alert("취소할 주문번호를 찾을 수 없습니다.");
+    return;
+  }
+
+  if (!lastCustomerLookup.name || lastCustomerLookup.phoneLast.length !== 4) {
+    alert("주문을 다시 조회한 뒤 취소해주세요.");
+    return;
+  }
+
+  const reason = prompt(
+    "취소 사유를 입력해주세요.\n예: 실수로 주문 / 색상 변경 / 사이즈 변경 / 중복 주문 / 기타",
+    "실수로 주문"
+  );
+
+  if (reason === null) return;
+
+  if (!confirm(
+    "정말 이 주문을 취소하시겠습니까?\n\n" +
+    "취소된 주문은 관리자 취소주문 목록에 보관되며 관리자만 복구할 수 있습니다."
+  )) {
+    return;
+  }
+
+  showLoading("주문을 취소하고 있습니다.");
+
+  try {
+    const result = await apiPost({
+      action: "customerCancelOrder",
+      orderNumber: orderNumber,
+      name: lastCustomerLookup.name,
+      phoneLast: lastCustomerLookup.phoneLast,
+      reason: String(reason || "고객취소").trim() || "고객취소"
+    });
+
+    await lookupCustomerOrders();
+    alert(result.message || "주문이 취소되었습니다.");
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    hideLoading();
+  }
+}
 
 
 let editOrderProducts = [];
@@ -1476,5 +1447,3 @@ async function loadCancelledOrders(){showLoading("취소주문을 조회하는 �
 function renderCancelledOrders(orders){document.getElementById('cancelledCount').textContent=orders.length;const c=document.getElementById('cancelledOrderList');if(!orders.length){c.innerHTML='<div class="empty-state">취소된 주문이 없습니다.</div>';return;}c.innerHTML=orders.map(o=>`<article class="cancel-card"><div class="v2-card-head"><div><span>취소일 ${escapeHtml(o.cancelDate)}</span><h3>${escapeHtml(o.nickname)} · ${escapeHtml(o.receiverName)}</h3></div><b class="status-pill cancelled">고객취소</b></div><p>${escapeHtml(o.phone)} · ${money(o.paymentAmount)}</p><div class="order-result-items">${escapeHtml(o.orderItems)}</div><div class="cancel-reason">취소사유: ${escapeHtml(o.reason||'-')}</div><button class="btn btn-success restore-btn" data-row="${o.rowNumber}">복구</button></article>`).join('');c.querySelectorAll('.restore-btn').forEach(b=>b.onclick=()=>restoreCancelled(Number(b.dataset.row)));}
 async function restoreCancelled(rowNumber){if(!confirm("이 주문을 고객주문으로 복구할까요?\n복구 후 입금상태는 미입금으로 설정됩니다."))return;showLoading("주문을 복구하고 있습니다.");try{await apiPost({action:"restoreCancelledOrder",rowNumber});await loadCancelledOrders();alert("주문이 복구되었습니다.");}catch(e){alert(e.message)}finally{hideLoading()}}
 
-const originalRenderAdminOrders=renderAdminOrders;
-renderAdminOrders=function(){originalRenderAdminOrders();const el=document.getElementById('summaryUnpaidCount');if(el)el.textContent=adminOrders.filter(o=>o.paymentStatus==='미입금').length;};
