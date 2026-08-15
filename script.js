@@ -1547,3 +1547,36 @@ async function loadCancelledOrders(){showLoading("취소주문을 조회하는 �
 function renderCancelledOrders(orders){document.getElementById('cancelledCount').textContent=orders.length;const c=document.getElementById('cancelledOrderList');if(!orders.length){c.innerHTML='<div class="empty-state">취소된 주문이 없습니다.</div>';return;}c.innerHTML=orders.map(o=>`<article class="cancel-card"><div class="v2-card-head"><div><span>취소일 ${escapeHtml(o.cancelDate)}</span><h3>${escapeHtml(o.nickname)} · ${escapeHtml(o.receiverName)}</h3></div><b class="status-pill cancelled">고객취소</b></div><p>${escapeHtml(o.phone)} · ${money(o.paymentAmount)}</p><div class="order-result-items">${escapeHtml(o.orderItems)}</div><div class="cancel-reason">취소사유: ${escapeHtml(o.reason||'-')}</div><button class="btn btn-success restore-btn" data-row="${o.rowNumber}">복구</button></article>`).join('');c.querySelectorAll('.restore-btn').forEach(b=>b.onclick=()=>restoreCancelled(Number(b.dataset.row)));}
 async function restoreCancelled(rowNumber){if(!confirm("이 주문을 고객주문으로 복구할까요?\n복구 후 입금상태는 미입금으로 설정됩니다."))return;showLoading("주문을 복구하고 있습니다.");try{await apiPost({action:"restoreCancelledOrder",rowNumber});await loadCancelledOrders();alert("주문이 복구되었습니다.");}catch(e){alert(e.message)}finally{hideLoading()}}
 
+
+/* V3.11 주문 전 안내 - 계좌번호 복사 */
+(function(){
+  const ACCOUNT_NUMBER = "91491002265704";
+  async function copyAccountNumber(){
+    const button=document.getElementById("noticeCopyAccountButton");
+    const status=document.getElementById("noticeCopyStatus");
+    if(!button) return;
+    let ok=false;
+    try{
+      if(navigator.clipboard && window.isSecureContext){
+        await navigator.clipboard.writeText(ACCOUNT_NUMBER); ok=true;
+      }else{
+        const ta=document.createElement("textarea");
+        ta.value=ACCOUNT_NUMBER; ta.setAttribute("readonly","");
+        ta.style.position="fixed"; ta.style.opacity="0";
+        document.body.appendChild(ta); ta.select();
+        ok=document.execCommand("copy"); ta.remove();
+      }
+    }catch(e){ ok=false; }
+    if(ok){
+      button.textContent="✓ 복사되었습니다"; button.classList.add("copied");
+      if(status) status.textContent="계좌번호가 복사되었습니다!";
+      setTimeout(()=>{button.textContent="📋 계좌번호 복사";button.classList.remove("copied");if(status)status.textContent="";},2200);
+    }else{
+      if(status) status.textContent="복사가 안 되면 계좌번호를 길게 눌러 복사해주세요.";
+    }
+  }
+  document.addEventListener("DOMContentLoaded",()=>{
+    const b=document.getElementById("noticeCopyAccountButton");
+    if(b) b.addEventListener("click",copyAccountNumber);
+  });
+})();

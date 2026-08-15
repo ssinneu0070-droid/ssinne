@@ -879,3 +879,28 @@ textarea{min-height:92px;resize:vertical}
 .address-search-status{padding:10px 14px;font-size:12px;line-height:1.5;color:#777;background:#fff}
 .address-manual-help{color:#c94c85;font-weight:700}
 @media(max-width:600px){.postcode-embed{height:470px}.address-search-head{position:sticky;top:0;z-index:2}}
+
+/* V3.11 주문 전 안내 - 입금계좌 복사 */
+.notice-bank{margin:0 0 20px;padding:18px;border:1.5px solid #ffb9d1;border-radius:16px;background:linear-gradient(135deg,#fff9fb,#fff)}
+.notice-bank-main{display:grid;grid-template-columns:auto 1fr auto;gap:13px;align-items:center;text-align:left}
+.notice-bank-icon{width:46px;height:46px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#ff3f78;color:#fff;font-size:23px}
+.notice-bank-title{color:#e92f69;font-size:18px;font-weight:900}
+.notice-bank-name{margin-top:5px;color:#222;font-size:13px;font-weight:800}
+.notice-bank-account{margin-top:2px;color:#f23c75;font-size:25px;line-height:1.2;font-weight:900;letter-spacing:.2px}
+.notice-bank-holder{margin-top:4px;color:#222;font-size:14px}
+.notice-copy-button{min-height:48px;padding:10px 16px;border:1.5px solid #ff4f86;border-radius:11px;background:#fff;color:#ee3972;font-size:14px;font-weight:900;cursor:pointer}
+.notice-copy-button:active{transform:translateY(1px)}
+.notice-copy-button.copied{color:#fff;background:#f13c76}
+.notice-copy-status{min-height:20px;margin:5px 0 0;color:#e82f68;text-align:right;font-size:12px;font-weight:900}
+.notice-payment-time{margin-top:9px;padding-top:12px;border-top:1px solid #ffd7e4;color:#222;text-align:left;font-size:15px}
+.notice-payment-time strong{color:#f23470}
+@media(max-width:600px){
+  .notice-bank{padding:15px 13px}
+  .notice-bank-main{grid-template-columns:auto 1fr}
+  .notice-bank-icon{width:40px;height:40px;font-size:20px}
+  .notice-bank-title{font-size:17px}
+  .notice-bank-account{font-size:22px;word-break:break-all}
+  .notice-copy-button{grid-column:1 / -1;width:100%;margin-top:4px}
+  .notice-copy-status{text-align:center}
+  .notice-payment-time{text-align:center;font-size:14px}
+}
