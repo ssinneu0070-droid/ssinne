@@ -1593,7 +1593,7 @@ async function restoreCancelled(rowNumber){if(!confirm("이 주문을 고객주�
 
 
 /* =========================================================
-   V3.14 토스뱅크 + 하나은행 입금 자동대조
+   V3.17 고객주문 F열 수령인 기준 입금 자동대조 + 개별 입금확인
    - 암호 제거 XLSX/XLS 파일만 사용
    - 이름 + 금액이 유일하게 정확히 일치할 때만 자동일치
    - 자동일치 일괄 입금완료
@@ -1773,20 +1773,23 @@ function buildOutstandingGroups(orders) {
   (orders || []).forEach(function(order){
     if (String(order.paymentStatus || "") !== "미입금") return;
     const phone = String(order.phone || "").replace(/[^0-9]/g, "");
+    // V3.17: 입금 자동대조의 이름 기준은 고객주문 F열(수령인)만 사용합니다.
+    // 닉네임은 자동일치에 절대 사용하지 않습니다.
     const receiver = String(order.receiverName || "").trim();
-    if (!receiver || !phone) return;
-    const key = normalizeBankName(receiver) + "|" + phone;
+    const receiverNormalized = normalizeBankName(receiver);
+    if (!receiverNormalized || !phone) return;
+    const key = receiverNormalized + "|" + phone;
     if (!groups.has(key)) {
       groups.set(key, {
         key: key,
         receiverName: receiver,
+        receiverNormalized: receiverNormalized,
         nickname: String(order.nickname || "").trim(),
         phone: order.phone || "",
         amount: 0,
         rows: [],
         orderNumbers: [],
-        orderCount: 0,
-        names: new Set()
+        orderCount: 0
       });
     }
     const g = groups.get(key);
@@ -1794,14 +1797,15 @@ function buildOutstandingGroups(orders) {
     g.rows.push(Number(order.rowNumber));
     g.orderNumbers.push(String(order.orderNumber || ""));
     g.orderCount += 1;
-    bankNameVariants(order.receiverName).forEach(function(n){ g.names.add(n); });
-    bankNameVariants(order.nickname).forEach(function(n){ g.names.add(n); });
   });
   return Array.from(groups.values()).filter(function(g){ return g.amount > 0 && g.rows.length; });
 }
 
 function namesIntersect(group, tx) {
-  return tx.names.some(function(n){ return group.names.has(n); });
+  // V3.17: 은행 입금자명과 고객주문 F열 수령인이 공백/특수문자를 제외하고 정확히 같을 때만 이름 일치.
+  // 예: F열 '김미자' ↔ 은행 '김미자' = 일치
+  //     F열 '민지선' ↔ 은행 '민지선COCO002' = 자동일치 아님(확인필요)
+  return (tx.names || []).some(function(n){ return n === group.receiverNormalized; });
 }
 
 function reconcileBankData(groups, transactions) {
@@ -1875,7 +1879,7 @@ async function startBankReconciliation() {
     const banks = Array.from(new Set(all.map(function(tx){ return tx.bank; }))).join(" + ") || "은행";
     const notice = document.getElementById("bankMatchNotice");
     notice.className = "bankmatch-notice success";
-    notice.textContent = banks + " 입금 " + all.length + "건과 현재 미입금 고객 " + groups.length + "명을 비교했습니다. 자동일치는 이름과 금액이 모두 정확한 경우만 포함됩니다.";
+    notice.textContent = banks + " 입금 " + all.length + "건과 현재 미입금 고객 " + groups.length + "명을 비교했습니다. 자동일치는 고객주문 F열 수령인과 은행 입금자명이 정확히 같고 금액까지 일치하는 경우만 포함됩니다.";
   } catch (error) {
     const notice = document.getElementById("bankMatchNotice");
     notice.className = "bankmatch-notice warning";
@@ -1895,15 +1899,15 @@ function renderBankMatchResults() {
   document.getElementById("bankBulkPaidButton").disabled = r.matched.length === 0;
 
   const matched = document.getElementById("bankMatchedList");
-  matched.innerHTML = r.matched.length ? r.matched.map(function(x){
-    return `<tr><td>${escapeHtml(x.group.nickname)}</td><td>${escapeHtml(x.group.receiverName)}</td><td>${x.group.orderCount}건</td><td>${money(x.group.amount)}</td><td>${escapeHtml(x.tx.depositor)}</td><td>${money(x.tx.amount)}</td><td>${escapeHtml(x.tx.bank)}</td><td>${escapeHtml(x.tx.time)}</td></tr>`;
-  }).join("") : '<tr><td colspan="8" class="empty-cell">자동일치 결과가 없습니다.</td></tr>';
+  matched.innerHTML = r.matched.length ? r.matched.map(function(x, i){
+    return `<tr><td>${escapeHtml(x.group.nickname)}</td><td>${escapeHtml(x.group.receiverName)}</td><td>${x.group.orderCount}건</td><td>${money(x.group.amount)}</td><td>${escapeHtml(x.tx.depositor)}</td><td>${money(x.tx.amount)}</td><td>${escapeHtml(x.tx.bank)}</td><td>${escapeHtml(x.tx.time)}</td><td><button type="button" class="btn btn-primary bank-confirm-btn" onclick="confirmSingleBankMatch('matched', ${i})">입금확인</button></td></tr>`;
+  }).join("") : '<tr><td colspan="9" class="empty-cell">자동일치 결과가 없습니다.</td></tr>';
 
   const review = document.getElementById("bankReviewList");
-  review.innerHTML = r.review.length ? r.review.map(function(x){
+  review.innerHTML = r.review.length ? r.review.map(function(x, i){
     const diff = x.tx.amount - x.group.amount;
-    return `<tr><td>${escapeHtml(x.group.nickname)}</td><td>${escapeHtml(x.group.receiverName)}</td><td>${money(x.group.amount)}</td><td>${escapeHtml(x.tx.depositor)}</td><td>${money(x.tx.amount)}</td><td>${diff === 0 ? "0원" : (diff > 0 ? "+" : "") + money(diff)}</td><td>${escapeHtml(x.reason)}<div class="match-reason">${escapeHtml(x.tx.bank)} ${escapeHtml(x.tx.time)}</div></td></tr>`;
-  }).join("") : '<tr><td colspan="7" class="empty-cell">확인필요 결과가 없습니다.</td></tr>';
+    return `<tr><td>${escapeHtml(x.group.nickname)}</td><td>${escapeHtml(x.group.receiverName)}</td><td>${money(x.group.amount)}</td><td>${escapeHtml(x.tx.depositor)}</td><td>${money(x.tx.amount)}</td><td>${diff === 0 ? "0원" : (diff > 0 ? "+" : "") + money(diff)}</td><td>${escapeHtml(x.reason)}<div class="match-reason">${escapeHtml(x.tx.bank)} ${escapeHtml(x.tx.time)}</div></td><td><button type="button" class="btn btn-outline bank-confirm-btn" onclick="confirmSingleBankMatch('review', ${i})">직접 입금확인</button></td></tr>`;
+  }).join("") : '<tr><td colspan="8" class="empty-cell">확인필요 결과가 없습니다.</td></tr>';
 
   const unpaid = document.getElementById("bankUnpaidList");
   unpaid.innerHTML = r.unpaid.length ? r.unpaid.map(function(g){
@@ -1914,6 +1918,61 @@ function renderBankMatchResults() {
   orphan.innerHTML = r.orphan.length ? r.orphan.map(function(tx){
     return `<tr><td>${escapeHtml(tx.bank)}</td><td>${escapeHtml(tx.time)}</td><td>${escapeHtml(tx.depositor)}</td><td>${money(tx.amount)}</td></tr>`;
   }).join("") : '<tr><td colspan="4" class="empty-cell">미매칭 은행 입금이 없습니다.</td></tr>';
+}
+
+async function confirmSingleBankMatch(type, index) {
+  const list = type === "review" ? (bankMatchResult.review || []) : (bankMatchResult.matched || []);
+  const item = list[index];
+  if (!item || !item.group) return;
+
+  const g = item.group;
+  const tx = item.tx || {};
+  const isReview = type === "review";
+  const warning = isReview
+    ? "\n\n⚠ 확인필요 건입니다. 주문금액과 입금자/입금금액을 직접 확인한 경우에만 진행해주세요."
+    : "";
+  const message =
+    g.nickname + " / " + g.receiverName + "\n" +
+    "주문 " + g.orderCount + "건 · 입금예정 " + money(g.amount) + "\n" +
+    "은행입금 " + escapeTextForConfirm(tx.depositor) + " · " + money(tx.amount || 0) +
+    (tx.bank ? " · " + tx.bank : "") +
+    "\n\n이 고객의 관련 주문을 모두 입금완료로 변경할까요?" + warning;
+  if (!confirm(message)) return;
+
+  const rows = Array.from(new Set((g.rows || []).filter(function(row){ return Number(row) >= 2; })));
+  const orderNumbers = Array.from(new Set((g.orderNumbers || []).filter(Boolean)));
+  if (!rows.length && !orderNumbers.length) {
+    alert("처리할 주문을 찾지 못했습니다.");
+    return;
+  }
+
+  showLoading("입금확인 처리 중입니다.");
+  try {
+    const result = await apiPost({
+      action: "bulkUpdatePaymentStatus",
+      rowNumbers: rows,
+      orderNumbers: orderNumbers,
+      paymentStatus: "입금완료"
+    });
+    alert((result && result.message) || "입금완료 처리했습니다.");
+    await loadBankMatchOrders();
+    const groups = buildOutstandingGroups(bankMatchOrders);
+    bankMatchResult = reconcileBankData(groups, bankMatchTransactions);
+    renderBankMatchResults();
+    const notice = document.getElementById("bankMatchNotice");
+    if (notice) {
+      notice.className = "bankmatch-notice success";
+      notice.textContent = g.nickname + " 고객의 입금확인이 완료되었습니다.";
+    }
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    hideLoading();
+  }
+}
+
+function escapeTextForConfirm(value) {
+  return String(value == null ? "" : value).replace(/[\r\n]+/g, " ").trim();
 }
 
 async function bulkCompleteBankMatches() {
