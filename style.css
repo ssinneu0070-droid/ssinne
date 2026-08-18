@@ -904,3 +904,28 @@ textarea{min-height:92px;resize:vertical}
   .notice-copy-status{text-align:center}
   .notice-payment-time{text-align:center;font-size:14px}
 }
+
+
+/* V3.14 입금 자동대조 */
+.bankmatch-hero{overflow:hidden}
+.bankmatch-guide{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}
+.bankmatch-guide>div{display:flex;align-items:center;gap:10px;padding:14px;border:1px solid #e5e7eb;border-radius:14px;background:#fff}
+.bankmatch-guide b{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#111827;color:#fff}
+.bank-upload-box{padding:24px;border:2px dashed #f0a4c0;border-radius:18px;background:#fff8fb;text-align:center}
+.bank-upload-box p{margin:10px 0;color:#6b7280}
+.bank-selected-files{margin-top:12px;display:flex;flex-wrap:wrap;justify-content:center;gap:8px;color:#374151}
+.bank-file-chip{padding:7px 10px;border-radius:999px;background:#fff;border:1px solid #e5e7eb;font-size:13px}
+.bankmatch-actions{display:flex;gap:10px;margin-top:14px}
+.bankmatch-notice{padding:14px 16px;border-radius:12px;background:#f3f4f6;color:#374151;margin-bottom:18px}
+.bankmatch-notice.success{background:#ecfdf5;color:#065f46}
+.bankmatch-notice.warning{background:#fffbeb;color:#92400e}
+.bank-result-section{margin-top:26px}
+.bank-result-section h3{margin:0 0 10px;font-size:17px}
+.bankmatch-summary .metric-card.success{border-color:#bbf7d0;background:#f0fdf4}
+.match-reason{font-size:12px;color:#6b7280}
+@media(max-width:700px){
+  .bankmatch-guide{grid-template-columns:1fr}
+  .bankmatch-actions{flex-direction:column}
+  .bankmatch-actions .btn,.bank-upload-box .btn,#bankBulkPaidButton{width:100%}
+  #bankMatchResultPanel .panel-title-row{align-items:stretch;gap:12px;flex-direction:column}
+}

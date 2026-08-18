@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#111827">
   <title>씬느샵 관리자</title>
-  <link rel="stylesheet" href="style.css?v=20260816-v3-8-unpaid-card">
-  <script src="script.js?v=20260816-v3-8-unpaid-card" defer></script>
+  <link rel="stylesheet" href="style.css?v=20260818-v3-14-bankmatch">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="script.js?v=20260818-v3-14-bankmatch" defer></script>
 </head>
 <body data-page="admin" class="page-admin">
   <div class="admin-app">
@@ -24,6 +25,7 @@
           <span>▣</span> 주문 관리
         </button>
         <button class="side-link" data-tab="cancelled" id="cancelledSideButton"><span>↶</span> 취소 주문</button>
+        <button class="side-link" data-tab="bankmatch" id="bankMatchSideButton"><span>₩</span> 입금 자동대조</button>
         <button class="side-link" data-tab="products">
           <span>◇</span> 상품 관리
         </button>
@@ -173,6 +175,64 @@
         </section>
       </section>
 
+
+      <section id="bankmatchTab" class="tab-section">
+        <section class="admin-panel bankmatch-hero">
+          <div class="panel-title-row">
+            <div>
+              <span class="eyebrow dark">BANK MATCH</span>
+              <h2>입금 자동대조</h2>
+              <p>암호를 제거한 토스뱅크·하나은행 엑셀 파일을 넣으면 현재 미입금 주문과 자동으로 비교합니다.</p>
+            </div>
+          </div>
+          <div class="bankmatch-guide">
+            <div><b>1</b><span>은행 거래내역 XLSX 준비</span></div>
+            <div><b>2</b><span>아래에 파일 업로드</span></div>
+            <div><b>3</b><span>자동일치만 일괄 입금완료</span></div>
+          </div>
+          <div class="bank-upload-box">
+            <input type="file" id="bankFileInput" accept=".xlsx,.xls" multiple hidden>
+            <button type="button" class="btn btn-primary" id="bankFileButton">은행 엑셀 파일 선택</button>
+            <p>토스뱅크와 하나은행 파일을 한 번에 여러 개 선택할 수 있습니다. 비밀번호가 제거된 파일만 가능합니다.</p>
+            <div id="bankSelectedFiles" class="bank-selected-files">선택된 파일이 없습니다.</div>
+          </div>
+          <div class="bankmatch-actions">
+            <button type="button" class="btn btn-dark" id="bankMatchStartButton" disabled>자동대조 시작</button>
+            <button type="button" class="btn btn-subtle" id="bankMatchResetButton">초기화</button>
+          </div>
+        </section>
+
+        <div class="summary-grid premium bankmatch-summary">
+          <div class="metric-card success"><span>자동일치</span><strong id="bankMatchedCount">0</strong><small>이름 + 금액 정확히 일치</small></div>
+          <div class="metric-card warning"><span>확인필요</span><strong id="bankReviewCount">0</strong><small>이름 또는 금액 확인</small></div>
+          <div class="metric-card"><span>미입금</span><strong id="bankUnpaidCount">0</strong><small>입금내역을 찾지 못함</small></div>
+          <div class="metric-card accent"><span>은행 입금 미매칭</span><strong id="bankOrphanCount">0</strong><small>주문을 찾지 못한 입금</small></div>
+        </div>
+
+        <section class="admin-panel" id="bankMatchResultPanel">
+          <div class="panel-title-row">
+            <div><h2>자동대조 결과</h2><p>자동일치는 확실한 건만 표시합니다. 확인필요와 미입금은 직접 확인해주세요.</p></div>
+            <button type="button" class="btn btn-primary" id="bankBulkPaidButton" disabled>자동일치 전체 입금완료</button>
+          </div>
+          <div id="bankMatchNotice" class="bankmatch-notice">은행 파일을 선택한 뒤 자동대조 시작을 눌러주세요.</div>
+          <div class="bank-result-section">
+            <h3>🟢 자동일치</h3>
+            <div class="table-wrap"><table class="data-table"><thead><tr><th>닉네임</th><th>수령인</th><th>주문건</th><th>주문금액</th><th>입금자명</th><th>입금금액</th><th>은행</th><th>입금시간</th></tr></thead><tbody id="bankMatchedList"><tr><td colspan="8" class="empty-cell">결과가 없습니다.</td></tr></tbody></table></div>
+          </div>
+          <div class="bank-result-section">
+            <h3>🟡 확인필요</h3>
+            <div class="table-wrap"><table class="data-table"><thead><tr><th>닉네임</th><th>수령인</th><th>주문금액</th><th>후보 입금자</th><th>입금금액</th><th>차이</th><th>사유</th></tr></thead><tbody id="bankReviewList"><tr><td colspan="7" class="empty-cell">결과가 없습니다.</td></tr></tbody></table></div>
+          </div>
+          <div class="bank-result-section">
+            <h3>🔴 미입금</h3>
+            <div class="table-wrap"><table class="data-table"><thead><tr><th>닉네임</th><th>수령인</th><th>연락처</th><th>주문건</th><th>입금예정액</th></tr></thead><tbody id="bankUnpaidList"><tr><td colspan="5" class="empty-cell">결과가 없습니다.</td></tr></tbody></table></div>
+          </div>
+          <div class="bank-result-section">
+            <h3>⚪ 은행 입금은 있으나 주문을 찾지 못함</h3>
+            <div class="table-wrap"><table class="data-table"><thead><tr><th>은행</th><th>입금시간</th><th>입금자명</th><th>입금금액</th></tr></thead><tbody id="bankOrphanList"><tr><td colspan="4" class="empty-cell">결과가 없습니다.</td></tr></tbody></table></div>
+          </div>
+        </section>
+      </section>
 
       <section id="cancelledTab" class="tab-section">
         <section class="admin-panel">
