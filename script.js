@@ -1689,37 +1689,72 @@ function normalizeHeader(value) {
   return String(value == null ? "" : value).replace(/\s+/g, "").trim();
 }
 
-/* V3.18
-   은행 거래내역은 열 제목을 추측하지 않고 고정 열을 사용합니다.
-   - C열(index 2): 입금자명
-   - G열(index 6): 입금금액
-   토스뱅크/하나은행 모두 같은 기준으로 읽습니다.
-   제목/안내 행은 G열 금액이 0이므로 자동 제외됩니다.
+/* V3.20
+   은행 거래내역 자동대조 규칙
+   - 고객주문 F열 = 수령인 이름 / B열 = 입금금액
+   - 은행 엑셀 C열(index 2) = 입금자명 / G열(index 6) = 실제 입금금액
+   - 엑셀 위쪽의 계좌정보/안내문을 거래로 오인하지 않도록 실제 거래 헤더 행을 먼저 찾습니다.
+   - 토스뱅크처럼 D열에 거래유형이 있으면 '입금'만 읽고 '출금'은 제외합니다.
 */
 function detectBankFromRows(rows, fileName) {
-  const flat = (rows || []).slice(0, 15).flat().map(function(v){ return String(v || ""); }).join(" ");
+  const flat = (rows || []).slice(0, 20).flat().map(function(v){ return String(v || ""); }).join(" ");
   const name = String(fileName || "");
   if (/토스|toss/i.test(flat + " " + name)) return "토스뱅크";
   if (/하나|hana/i.test(flat + " " + name)) return "하나은행";
   return "은행";
 }
 
+function findFixedCGDataStart(rows) {
+  const list = rows || [];
+  for (let i = 0; i < Math.min(list.length, 80); i++) {
+    const row = list[i] || [];
+    const c = normalizeHeader(row[2]);
+    const d = normalizeHeader(row[3]);
+    const g = normalizeHeader(row[6]);
+    const nameHeader = /^(적요|입금자명|입금자|의뢰인\/수취인|의뢰인수취인|보낸분|보낸사람)$/.test(c);
+    const amountHeader = /^(거래금액|입금금액|입금액|금액)$/.test(g);
+    if (nameHeader && amountHeader) return i + 1;
+    // 토스뱅크 원본: C=적요, D=거래유형, G=거래금액
+    if (c === "적요" && d === "거래유형" && g === "거래금액") return i + 1;
+  }
+  // 헤더를 못 찾은 파일도 사용할 수 있도록 실제 거래처럼 보이는 첫 행을 보조 탐색
+  for (let i = 0; i < Math.min(list.length, 120); i++) {
+    const row = list[i] || [];
+    const depositor = String(row[2] == null ? "" : row[2]).trim();
+    const amount = parseBankAmount(row[6]);
+    const timeText = String(row[1] || row[0] || "").trim();
+    if (depositor && amount > 0 && (/\d{4}[.\/-]\d{1,2}[.\/-]\d{1,2}/.test(timeText) || /\d{1,2}:\d{2}/.test(timeText))) return i;
+  }
+  return 0;
+}
+
 function parseFixedCGTransactions(rows, fileName) {
   const bank = detectBankFromRows(rows, fileName);
   const txs = [];
+  const startRow = findFixedCGDataStart(rows);
+  let emptyRun = 0;
 
-  for (let r = 0; r < rows.length; r++) {
+  for (let r = startRow; r < rows.length; r++) {
     const row = rows[r] || [];
     const depositor = String(row[2] == null ? "" : row[2]).trim(); // C열
     const amount = parseBankAmount(row[6]);                         // G열
+    const typeText = String(row[3] == null ? "" : row[3]).replace(/\s+/g, "").trim(); // D열
+    const time = String(row[1] || row[0] || "").trim();
 
-    // 헤더/안내문/빈 행/출금 및 숫자가 아닌 행 자동 제외
+    if (!depositor && !amount && !time) {
+      emptyRun += 1;
+      if (emptyRun >= 30) break;
+      continue;
+    }
+    emptyRun = 0;
+
+    // 토스 원본처럼 거래유형이 명시된 경우 반드시 입금만 사용
+    if (typeText && /출금|이체출금|지급/.test(typeText)) continue;
+    if (typeText && /입금|이체입금|수취/.test(typeText) === false && bank === "토스뱅크") continue;
+
     if (!depositor || !amount || amount <= 0) continue;
     const normalized = normalizeBankName(depositor);
-    if (!normalized || normalized === "적요" || normalized === "수령인" || normalized === "입금자명") continue;
-
-    // 거래일시는 보통 B열. 다른 은행 양식에서는 A열도 보조로 사용.
-    const time = String(row[1] || row[0] || "").trim();
+    if (!normalized || ["적요","수령인","입금자명","입금자","의뢰인수취인"].includes(normalized)) continue;
 
     txs.push({
       bank: bank,
@@ -1781,7 +1816,7 @@ function buildOutstandingGroups(orders) {
   (orders || []).forEach(function(order){
     if (String(order.paymentStatus || "") !== "미입금") return;
     const phone = String(order.phone || "").replace(/[^0-9]/g, "");
-    // V3.18: 입금 자동대조 이름 기준은 고객주문 F열 수령인 ↔ 은행 엑셀 C열 입금자명입니다.
+    // V3.20: 입금 자동대조 이름 기준은 고객주문 F열 수령인 ↔ 은행 엑셀 C열 입금자명입니다.
     // 닉네임은 자동일치에 절대 사용하지 않습니다.
     const receiver = String(order.receiverName || "").trim();
     const receiverNormalized = normalizeBankName(receiver);
@@ -1810,14 +1845,26 @@ function buildOutstandingGroups(orders) {
 }
 
 function namesIntersect(group, tx) {
-  // V3.18: 은행 엑셀 C열 입금자명과 고객주문 F열 수령인이 공백/특수문자를 제외하고 정확히 같을 때만 이름 일치.
+  // V3.20: 은행 엑셀 C열 입금자명과 고객주문 F열 수령인이 공백/특수문자를 제외하고 정확히 같을 때만 이름 일치.
   // 예: F열 '김미자' ↔ 은행 '김미자' = 일치
   //     F열 '민지선' ↔ 은행 '민지선COCO002' = 자동일치 아님(확인필요)
   return (tx.names || []).some(function(n){ return n === group.receiverNormalized; });
 }
 
+function bankNameRelated(group, tx) {
+  const g = group.receiverNormalized || "";
+  if (!g) return false;
+  return (tx.names || []).some(function(n){
+    if (!n) return false;
+    if (n === g) return true;
+    // 실제 은행 적요에 이름 뒤 닉네임/문자가 붙는 경우는 자동완료하지 않고 관련 후보로만 표시
+    return (g.length >= 2 && n.indexOf(g) >= 0) || (n.length >= 2 && g.indexOf(n) >= 0);
+  });
+}
+
 function reconcileBankData(groups, transactions) {
   const usedTx = new Set();
+  const referencedTx = new Set();
   const matchedGroup = new Set();
   const matched = [];
   const review = [];
@@ -1834,6 +1881,7 @@ function reconcileBankData(groups, transactions) {
       if (competingGroups.length === 0) {
         matched.push({ group: group, tx: candidate.tx });
         usedTx.add(candidate.ti);
+        referencedTx.add(candidate.ti);
         matchedGroup.add(gi);
       }
     }
@@ -1843,27 +1891,44 @@ function reconcileBankData(groups, transactions) {
   groups.forEach(function(group, gi){
     if (matchedGroup.has(gi)) return;
     const candidates = transactions.map(function(tx, ti){ return {tx:tx, ti:ti}; })
-      .filter(function(x){ return !usedTx.has(x.ti) && (namesIntersect(group, x.tx) || x.tx.amount === group.amount); });
+      .filter(function(x){
+        if (usedTx.has(x.ti)) return false;
+        return namesIntersect(group, x.tx) || bankNameRelated(group, x.tx) || x.tx.amount === group.amount;
+      });
     if (candidates.length) {
       candidates.sort(function(a,b){
-        const an = namesIntersect(group,a.tx) ? 0 : 1;
-        const bn = namesIntersect(group,b.tx) ? 0 : 1;
-        if (an !== bn) return an-bn;
+        function score(x){
+          if (namesIntersect(group,x.tx) && x.tx.amount === group.amount) return 0;
+          if (namesIntersect(group,x.tx)) return 1;
+          if (bankNameRelated(group,x.tx) && x.tx.amount === group.amount) return 2;
+          if (bankNameRelated(group,x.tx)) return 3;
+          if (x.tx.amount === group.amount) return 4;
+          return 5;
+        }
+        const sa=score(a), sb=score(b);
+        if (sa !== sb) return sa-sb;
         return Math.abs(group.amount-a.tx.amount)-Math.abs(group.amount-b.tx.amount);
       });
       const c = candidates[0];
+      referencedTx.add(c.ti);
       let reason = "확인 필요";
       if (namesIntersect(group,c.tx) && c.tx.amount !== group.amount) reason = "이름 일치 · 금액 다름";
-      else if (!namesIntersect(group,c.tx) && c.tx.amount === group.amount) reason = "금액 일치 · 이름 다름";
-      else reason = "이름/금액 유사 후보";
+      else if (bankNameRelated(group,c.tx) && c.tx.amount === group.amount) reason = "입금자명에 수령인 포함 · 금액 일치";
+      else if (bankNameRelated(group,c.tx)) reason = "입금자명에 수령인 포함 · 금액 확인";
+      else if (c.tx.amount === group.amount) reason = "금액 일치 · 이름 다름";
       review.push({ group: group, tx: c.tx, reason: reason });
-      // 확인필요 후보는 소비하지 않아 같은 금액/이름의 다른 가능성을 숨기지 않음
     } else {
       unpaid.push(group);
     }
   });
 
-  const orphan = transactions.filter(function(tx, ti){ return !usedTx.has(ti); });
+  // 은행파일의 모든 과거/다른 고객 입금을 미매칭으로 쌓지 않습니다.
+  // 현재 미입금 주문과 이름이 관련되거나 같은 금액인 거래만 '관련 입금 미매칭'으로 보여줍니다.
+  const orphan = transactions.map(function(tx,ti){ return {tx:tx,ti:ti}; }).filter(function(x){
+    if (usedTx.has(x.ti) || referencedTx.has(x.ti)) return false;
+    return groups.some(function(group){ return bankNameRelated(group,x.tx) || x.tx.amount === group.amount; });
+  }).map(function(x){ return x.tx; });
+
   return { matched: matched, review: review, unpaid: unpaid, orphan: orphan };
 }
 
