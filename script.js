@@ -1593,7 +1593,7 @@ async function restoreCancelled(rowNumber){if(!confirm("이 주문을 고객주�
 
 
 /* =========================================================
-   V3.17 고객주문 F열 수령인 기준 입금 자동대조 + 개별 입금확인
+   V3.18 고객주문 F열 ↔ 은행 C열, 은행 G열 금액 기준 입금 자동대조 + 개별 입금확인
    - 암호 제거 XLSX/XLS 파일만 사용
    - 이름 + 금액이 유일하게 정확히 일치할 때만 자동일치
    - 자동일치 일괄 입금완료
@@ -1689,59 +1689,67 @@ function normalizeHeader(value) {
   return String(value == null ? "" : value).replace(/\s+/g, "").trim();
 }
 
+/* V3.18
+   은행 거래내역은 열 제목을 추측하지 않고 고정 열을 사용합니다.
+   - C열(index 2): 입금자명
+   - G열(index 6): 입금금액
+   토스뱅크/하나은행 모두 같은 기준으로 읽습니다.
+   제목/안내 행은 G열 금액이 0이므로 자동 제외됩니다.
+*/
+function detectBankFromRows(rows, fileName) {
+  const flat = (rows || []).slice(0, 15).flat().map(function(v){ return String(v || ""); }).join(" ");
+  const name = String(fileName || "");
+  if (/토스|toss/i.test(flat + " " + name)) return "토스뱅크";
+  if (/하나|hana/i.test(flat + " " + name)) return "하나은행";
+  return "은행";
+}
+
+function parseFixedCGTransactions(rows, fileName) {
+  const bank = detectBankFromRows(rows, fileName);
+  const txs = [];
+
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const depositor = String(row[2] == null ? "" : row[2]).trim(); // C열
+    const amount = parseBankAmount(row[6]);                         // G열
+
+    // 헤더/안내문/빈 행/출금 및 숫자가 아닌 행 자동 제외
+    if (!depositor || !amount || amount <= 0) continue;
+    const normalized = normalizeBankName(depositor);
+    if (!normalized || normalized === "적요" || normalized === "수령인" || normalized === "입금자명") continue;
+
+    // 거래일시는 보통 B열. 다른 은행 양식에서는 A열도 보조로 사용.
+    const time = String(row[1] || row[0] || "").trim();
+
+    txs.push({
+      bank: bank,
+      time: time,
+      depositor: depositor,
+      names: bankNameVariants(depositor),
+      amount: amount,
+      fileName: fileName,
+      sourceRow: r + 1
+    });
+  }
+  return txs;
+}
+
 function findBankHeader(rows) {
-  for (let i = 0; i < Math.min(rows.length, 40); i++) {
+  // V3.18 호환용: 화면/기존 코드에서 호출될 수 있으므로 남겨두되,
+  // 실제 거래 파싱은 C열/G열 고정 방식으로 수행합니다.
+  for (let i = 0; i < Math.min((rows || []).length, 40); i++) {
     const h = (rows[i] || []).map(normalizeHeader);
-    if (h.includes("거래일시") && h.includes("적요") && h.includes("거래금액") && h.includes("거래유형")) {
-      return { bank: "토스뱅크", row: i, headers: h };
-    }
-    if (h.includes("거래일시") && h.includes("적요") && h.includes("입금액") && h.some(function(x){ return x === "의뢰인/수취인" || x === "의뢰인수취인"; })) {
-      return { bank: "하나은행", row: i, headers: h };
+    if (h.some(function(x){ return x === "거래일시" || x === "거래일시"; }) || h.includes("적요")) {
+      return { bank: detectBankFromRows(rows, ""), row: i, headers: h };
     }
   }
-  return null;
+  return { bank: detectBankFromRows(rows, ""), row: -1, headers: [] };
 }
 
 function parseBankSheetRows(rows, fileName) {
-  const info = findBankHeader(rows);
-  if (!info) throw new Error(fileName + ": 토스뱅크 또는 하나은행 거래내역 형식을 찾지 못했습니다.");
-  const idx = function(name){ return info.headers.indexOf(name); };
-  const txs = [];
-
-  for (let r = info.row + 1; r < rows.length; r++) {
-    const row = rows[r] || [];
-    if (info.bank === "토스뱅크") {
-      const type = String(row[idx("거래유형")] || "").trim();
-      if (type !== "입금") continue;
-      const amount = parseBankAmount(row[idx("거래금액")]);
-      const depositor = String(row[idx("적요")] || "").trim();
-      if (!amount || !depositor) continue;
-      txs.push({
-        bank: info.bank,
-        time: String(row[idx("거래일시")] || "").trim(),
-        depositor: depositor,
-        names: bankNameVariants(depositor),
-        amount: amount,
-        fileName: fileName
-      });
-    } else {
-      const amount = parseBankAmount(row[idx("입금액")]);
-      if (!amount) continue;
-      const depositor = String(row[idx("적요")] || "").trim();
-      let personIndex = idx("의뢰인/수취인");
-      if (personIndex < 0) personIndex = idx("의뢰인수취인");
-      const person = personIndex >= 0 ? String(row[personIndex] || "").trim() : "";
-      const names = Array.from(new Set(bankNameVariants(depositor).concat(bankNameVariants(person))));
-      txs.push({
-        bank: info.bank,
-        time: String(row[idx("거래일시")] || "").trim(),
-        depositor: depositor || person,
-        secondaryName: person,
-        names: names,
-        amount: amount,
-        fileName: fileName
-      });
-    }
+  const txs = parseFixedCGTransactions(rows, fileName);
+  if (!txs.length) {
+    throw new Error(fileName + ": C열(입금자명)과 G열(입금금액)에서 입금내역을 찾지 못했습니다. 암호를 제거한 원본 엑셀인지 확인해주세요.");
   }
   return txs;
 }
@@ -1762,10 +1770,10 @@ async function readBankFile(file) {
   }
   for (const sheetName of workbook.SheetNames) {
     const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: false, defval: "" });
-    const header = findBankHeader(rows);
-    if (header) return parseBankSheetRows(rows, file.name);
+    const txs = parseFixedCGTransactions(rows, file.name);
+    if (txs.length) return txs;
   }
-  throw new Error(file.name + ": 거래내역 표를 찾지 못했습니다. 토스뱅크/하나은행 원본 양식을 확인해주세요.");
+  throw new Error(file.name + ": C열(입금자명)과 G열(입금금액)에서 입금내역을 찾지 못했습니다. 파일 구조를 확인해주세요.");
 }
 
 function buildOutstandingGroups(orders) {
@@ -1773,7 +1781,7 @@ function buildOutstandingGroups(orders) {
   (orders || []).forEach(function(order){
     if (String(order.paymentStatus || "") !== "미입금") return;
     const phone = String(order.phone || "").replace(/[^0-9]/g, "");
-    // V3.17: 입금 자동대조의 이름 기준은 고객주문 F열(수령인)만 사용합니다.
+    // V3.18: 입금 자동대조 이름 기준은 고객주문 F열 수령인 ↔ 은행 엑셀 C열 입금자명입니다.
     // 닉네임은 자동일치에 절대 사용하지 않습니다.
     const receiver = String(order.receiverName || "").trim();
     const receiverNormalized = normalizeBankName(receiver);
@@ -1802,7 +1810,7 @@ function buildOutstandingGroups(orders) {
 }
 
 function namesIntersect(group, tx) {
-  // V3.17: 은행 입금자명과 고객주문 F열 수령인이 공백/특수문자를 제외하고 정확히 같을 때만 이름 일치.
+  // V3.18: 은행 엑셀 C열 입금자명과 고객주문 F열 수령인이 공백/특수문자를 제외하고 정확히 같을 때만 이름 일치.
   // 예: F열 '김미자' ↔ 은행 '김미자' = 일치
   //     F열 '민지선' ↔ 은행 '민지선COCO002' = 자동일치 아님(확인필요)
   return (tx.names || []).some(function(n){ return n === group.receiverNormalized; });
@@ -1879,7 +1887,7 @@ async function startBankReconciliation() {
     const banks = Array.from(new Set(all.map(function(tx){ return tx.bank; }))).join(" + ") || "은행";
     const notice = document.getElementById("bankMatchNotice");
     notice.className = "bankmatch-notice success";
-    notice.textContent = banks + " 입금 " + all.length + "건과 현재 미입금 고객 " + groups.length + "명을 비교했습니다. 자동일치는 고객주문 F열 수령인과 은행 입금자명이 정확히 같고 금액까지 일치하는 경우만 포함됩니다.";
+    notice.textContent = banks + " 입금 " + all.length + "건과 현재 미입금 고객 " + groups.length + "명을 비교했습니다. 자동일치는 고객주문 F열 수령인 = 은행 C열 입금자명이고, 고객 총 입금예정액 = 은행 G열 입금금액인 경우만 포함됩니다.";
   } catch (error) {
     const notice = document.getElementById("bankMatchNotice");
     notice.className = "bankmatch-notice warning";
@@ -1910,14 +1918,59 @@ function renderBankMatchResults() {
   }).join("") : '<tr><td colspan="8" class="empty-cell">확인필요 결과가 없습니다.</td></tr>';
 
   const unpaid = document.getElementById("bankUnpaidList");
-  unpaid.innerHTML = r.unpaid.length ? r.unpaid.map(function(g){
-    return `<tr><td>${escapeHtml(g.nickname)}</td><td>${escapeHtml(g.receiverName)}</td><td>${escapeHtml(g.phone)}</td><td>${g.orderCount}건</td><td>${money(g.amount)}</td></tr>`;
-  }).join("") : '<tr><td colspan="5" class="empty-cell">미입금 결과가 없습니다.</td></tr>';
+  unpaid.innerHTML = r.unpaid.length ? r.unpaid.map(function(g, i){
+    return `<tr><td>${escapeHtml(g.nickname)}</td><td>${escapeHtml(g.receiverName)}</td><td>${escapeHtml(g.phone)}</td><td>${g.orderCount}건</td><td>${money(g.amount)}</td><td><button type="button" class="btn btn-danger bank-cancel-btn" onclick="cancelUnpaidBankGroup(${i})">주문취소</button></td></tr>`;
+  }).join("") : '<tr><td colspan="6" class="empty-cell">미입금 결과가 없습니다.</td></tr>';
 
   const orphan = document.getElementById("bankOrphanList");
   orphan.innerHTML = r.orphan.length ? r.orphan.map(function(tx){
     return `<tr><td>${escapeHtml(tx.bank)}</td><td>${escapeHtml(tx.time)}</td><td>${escapeHtml(tx.depositor)}</td><td>${money(tx.amount)}</td></tr>`;
   }).join("") : '<tr><td colspan="4" class="empty-cell">미매칭 은행 입금이 없습니다.</td></tr>';
+}
+
+async function cancelUnpaidBankGroup(index) {
+  const g = (bankMatchResult.unpaid || [])[index];
+  if (!g) return;
+
+  const detail =
+    "닉네임: " + (g.nickname || "-") + "\n" +
+    "수령인: " + (g.receiverName || "-") + "\n" +
+    "주문: " + g.orderCount + "건\n" +
+    "입금예정액: " + money(g.amount) + "\n\n" +
+    "이 미입금 주문을 취소할까요?\n" +
+    "고객주문에서는 삭제되고 취소주문 시트로 이동합니다.\n" +
+    "거래처발주와 3PL출고도 남은 주문 기준으로 다시 계산됩니다.";
+  if (!confirm(detail)) return;
+
+  const reasonInput = prompt("취소 사유를 입력해주세요.", "미입금취소");
+  if (reasonInput === null) return;
+  const reason = String(reasonInput || "미입금취소").trim() || "미입금취소";
+  const rows = Array.from(new Set((g.rows || []).filter(function(row){ return Number(row) >= 2; })));
+  const orderNumbers = Array.from(new Set((g.orderNumbers || []).filter(Boolean)));
+
+  showLoading("미입금 주문을 취소주문 시트로 이동하는 중입니다.");
+  try {
+    const result = await apiPost({
+      action: "cancelUnpaidOrders",
+      rowNumbers: rows,
+      orderNumbers: orderNumbers,
+      reason: reason
+    });
+    alert((result && result.message) || "미입금 주문을 취소했습니다.");
+    await loadBankMatchOrders();
+    const groups = buildOutstandingGroups(bankMatchOrders);
+    bankMatchResult = reconcileBankData(groups, bankMatchTransactions);
+    renderBankMatchResults();
+    const notice = document.getElementById("bankMatchNotice");
+    if (notice) {
+      notice.className = "bankmatch-notice success";
+      notice.textContent = (g.nickname || g.receiverName) + " 고객의 미입금 주문을 취소주문 시트로 이동했습니다.";
+    }
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    hideLoading();
+  }
 }
 
 async function confirmSingleBankMatch(type, index) {
