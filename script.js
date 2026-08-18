@@ -233,6 +233,9 @@ let orderCart=[];
 let selectedOrderProduct=null;
 let orderSubmitting=false;
 let orderPreviewTimer=null;
+let orderProductsPromise=null;
+let paymentPreviewCache=new Map();
+let paymentPreviewSeq=0;
 let lastPaymentPreview={existingProductAmount:0,currentProductAmount:0,cumulativeProductAmount:0,shippingFee:0,cumulativeFinalAmount:0,additionalOrder:false,remote:false};
 
 async function initOrderPage(){
@@ -259,12 +262,29 @@ async function initOrderPage(){
   loadSavedCustomer();
   renderOrderCart();
   updateCardVatNotice();
-  try{await loadOrderProducts(false)}catch(e){alert(e.message)}
+  // V3.21: 첫 화면은 서버 응답을 기다리지 않고 즉시 표시합니다.
+  // 상품목록은 브라우저가 한가할 때 미리 받아두고, 검색 시 아직 없으면 그때만 기다립니다.
+  const warm=()=>ensureOrderProductsLoaded().catch(function(e){console.warn("상품정보 사전 로딩:",e.message)});
+  if("requestIdleCallback" in window) requestIdleCallback(warm,{timeout:2500});
+  else setTimeout(warm,1200);
 }
 
-async function loadOrderProducts(show){const d=await apiGet({action:"products"});orderProducts=Array.isArray(d.products)?d.products:[];if(!orderProducts.length)throw new Error("상품정보 시트에 등록된 상품이 없습니다.");if(show)alert("상품정보를 새로 불러왔습니다.")}
+async function loadOrderProducts(show){
+  const d=await apiGet({action:"products"});
+  orderProducts=Array.isArray(d.products)?d.products:[];
+  if(!orderProducts.length)throw new Error("상품정보 시트에 등록된 상품이 없습니다.");
+  if(show)alert("상품정보를 새로 불러왔습니다.");
+  return orderProducts;
+}
+function ensureOrderProductsLoaded(){
+  if(orderProducts.length)return Promise.resolve(orderProducts);
+  if(!orderProductsPromise){
+    orderProductsPromise=loadOrderProducts(false).finally(function(){orderProductsPromise=null});
+  }
+  return orderProductsPromise;
+}
 function resetSingleProductSelection(){selectedOrderProduct=null;singleProductName.value="";singleProductColor.innerHTML='<option value="">칼라를 선택하세요</option>';singleProductSize.innerHTML='<option value="">사이즈를 선택하세요</option>';singleProductColor.disabled=true;singleProductSize.disabled=true;singleProductMessage.className="product-message";singleProductMessage.textContent="상품번호 입력 후 검색을 눌러주세요."}
-function searchSingleProduct(){const no=singleProductNo.value.trim();if(!no){singleProductMessage.className="product-message error";singleProductMessage.textContent="상품번호를 입력해주세요.";return}const p=orderProducts.find(x=>String(x.productNo)===no);if(!p){resetSingleProductSelection();singleProductMessage.className="product-message error";singleProductMessage.textContent="등록되지 않은 상품번호입니다.";return}selectedOrderProduct=p;singleProductName.value=p.productName||"";singleProductColor.innerHTML='<option value="">칼라를 선택하세요</option>';Object.keys(p.colors||{}).forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;singleProductColor.appendChild(o)});singleProductColor.disabled=false;singleProductMessage.className="product-message success";singleProductMessage.textContent="상품이 확인되었습니다."}
+async function searchSingleProduct(){const no=singleProductNo.value.trim();if(!no){singleProductMessage.className="product-message error";singleProductMessage.textContent="상품번호를 입력해주세요.";return}if(!orderProducts.length){singleProductMessage.className="product-message";singleProductMessage.textContent="상품정보를 확인하는 중입니다...";try{await ensureOrderProductsLoaded()}catch(e){singleProductMessage.className="product-message error";singleProductMessage.textContent=e.message;return}}const p=orderProducts.find(x=>String(x.productNo)===no);if(!p){resetSingleProductSelection();singleProductMessage.className="product-message error";singleProductMessage.textContent="등록되지 않은 상품번호입니다.";return}selectedOrderProduct=p;singleProductName.value=p.productName||"";singleProductColor.innerHTML='<option value="">칼라를 선택하세요</option>';Object.keys(p.colors||{}).forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;singleProductColor.appendChild(o)});singleProductColor.disabled=false;singleProductMessage.className="product-message success";singleProductMessage.textContent="상품이 확인되었습니다."}
 function updateSingleSizes(){const c=singleProductColor.value;singleProductSize.innerHTML='<option value="">사이즈를 선택하세요</option>';if(!selectedOrderProduct||!c||!selectedOrderProduct.colors[c]){singleProductSize.disabled=true;return}selectedOrderProduct.colors[c].forEach(s=>{const o=document.createElement("option");o.value=s;o.textContent=s;singleProductSize.appendChild(o)});singleProductSize.disabled=false}
 function changeSingleQuantity(n){singleProductQuantity.value=Math.min(99,Math.max(1,Number(singleProductQuantity.value||1)+n))}
 function addSelectedProductToCart(){const no=singleProductNo.value.trim(),c=singleProductColor.value,s=singleProductSize.value,q=Math.min(99,Math.max(1,Number(singleProductQuantity.value||1)));if(!selectedOrderProduct||String(selectedOrderProduct.productNo)!==no){alert("상품번호를 검색해주세요.");return}if(!c){alert("칼라를 선택해주세요.");return}if(!s){alert("사이즈를 선택해주세요.");return}orderCart.push({productNo:no,productName:selectedOrderProduct.productName||"",color:c,size:s,quantity:q,price:Number(selectedOrderProduct.price||0)});renderOrderCart();singleProductNo.value="";singleProductQuantity.value="1";resetSingleProductSelection();singleProductNo.focus()}
@@ -288,21 +308,28 @@ function updateCardVatNotice(){
 
 function schedulePaymentPreview(){
   clearTimeout(orderPreviewTimer);
-  orderPreviewTimer=setTimeout(refreshPaymentPreview,250);
+  orderPreviewTimer=setTimeout(refreshPaymentPreview,550);
 }
 
 async function refreshPaymentPreview(){
+  const seq=++paymentPreviewSeq;
   const current=getCurrentCartProductAmount();
   const receiver=(document.getElementById("receiverName")||{}).value||"";
   const phone=(document.getElementById("phone")||{}).value||"";
   const remote=(document.getElementById("shippingRegion")||{}).value==="remote";
   let preview={existingProductAmount:0,currentProductAmount:current,cumulativeProductAmount:current,shippingFee:current?((current>=200000)?0:(remote?7000:4000)):0,cumulativeFinalAmount:current?current+((current>=200000)?0:(remote?7000:4000)):0,additionalOrder:false,remote:remote};
   if(current>0&&receiver.trim()&&phone.replace(/[^0-9]/g,"").length>=10){
-    try{
-      const d=await apiGet({action:"paymentPreview",receiverName:receiver.trim(),phone:phone,currentProductAmount:String(current),remote:remote?"1":"0"});
-      if(d&&d.preview)preview=d.preview;
-    }catch(e){console.warn("배송비 미리보기:",e.message)}
+    const key=[receiver.trim(),phone.replace(/[^0-9]/g,""),current,remote?1:0].join("|");
+    if(paymentPreviewCache.has(key)){
+      preview=paymentPreviewCache.get(key);
+    }else{
+      try{
+        const d=await apiGet({action:"paymentPreview",receiverName:receiver.trim(),phone:phone,currentProductAmount:String(current),remote:remote?"1":"0"});
+        if(d&&d.preview){preview=d.preview;paymentPreviewCache.set(key,preview);if(paymentPreviewCache.size>30)paymentPreviewCache.delete(paymentPreviewCache.keys().next().value);}
+      }catch(e){console.warn("배송비 미리보기:",e.message)}
+    }
   }
+  if(seq!==paymentPreviewSeq)return;
   lastPaymentPreview=preview;
   renderPaymentPreview(preview);
 }
@@ -333,7 +360,7 @@ async function submitOrder(e){
     if(data.phone.replace(/[^0-9]/g,"").length<10)throw new Error("연락처를 정확하게 입력해주세요.");
     if(!data.zipcode||!data.address||!data.detailAddress)throw new Error("주소와 상세주소를 입력해주세요.");
     orderSubmitting=true;showLoading("주문서를 저장하고 있습니다.");submitButton.disabled=true;
-    const r=await apiPost(data);saveCustomerInfo();orderForm.style.display="none";
+    const r=await apiPost(data);paymentPreviewCache.clear();saveCustomerInfo();orderForm.style.display="none";
     completePaymentAmount.textContent=money(r.cumulativeFinalAmount||r.paymentAmount||0);
     const note=document.getElementById("completeShippingNote");
     if(note){note.textContent=(r.cumulativeProductAmount>=200000?"20만원 이상 무료배송 적용":(r.additionalOrder?"같은 방송 배송비 1회 적용":"배송비 포함 금액"));}
@@ -1593,7 +1620,7 @@ async function restoreCancelled(rowNumber){if(!confirm("이 주문을 고객주�
 
 
 /* =========================================================
-   V3.18 고객주문 F열 ↔ 은행 C열, 은행 G열 금액 기준 입금 자동대조 + 개별 입금확인
+   V3.21 은행 C열/G열 단순 파싱 + 주문서 로딩/제출 속도 개선
    - 암호 제거 XLSX/XLS 파일만 사용
    - 이름 + 금액이 유일하게 정확히 일치할 때만 자동일치
    - 자동일치 일괄 입금완료
@@ -1689,83 +1716,38 @@ function normalizeHeader(value) {
   return String(value == null ? "" : value).replace(/\s+/g, "").trim();
 }
 
-/* V3.20
+/* V3.21
    은행 거래내역 자동대조 규칙
-   - 고객주문 F열 = 수령인 이름 / B열 = 입금금액
-   - 은행 엑셀 C열(index 2) = 입금자명 / G열(index 6) = 실제 입금금액
-   - 엑셀 위쪽의 계좌정보/안내문을 거래로 오인하지 않도록 실제 거래 헤더 행을 먼저 찾습니다.
-   - 토스뱅크처럼 D열에 거래유형이 있으면 '입금'만 읽고 '출금'은 제외합니다.
+   - 고객주문 F열 = 수령인 / B열 = 입금금액
+   - 은행 엑셀 C열(index 2) = 입금자명 / G열(index 6) = 입금금액
+   - 헤더 이름이나 시작 행을 추측하지 않습니다. 전체 행 중 C열 이름 + G열 양수 금액이 있는 행만 거래로 읽습니다.
+   - D열에 '출금'이 명시된 행은 제외합니다.
 */
 function detectBankFromRows(rows, fileName) {
-  const flat = (rows || []).slice(0, 20).flat().map(function(v){ return String(v || ""); }).join(" ");
-  const name = String(fileName || "");
-  if (/토스|toss/i.test(flat + " " + name)) return "토스뱅크";
-  if (/하나|hana/i.test(flat + " " + name)) return "하나은행";
+  const flat=(rows||[]).slice(0,20).flat().map(function(v){return String(v||"")}).join(" ");
+  const name=String(fileName||"");
+  if(/토스|toss/i.test(flat+" "+name))return "토스뱅크";
+  if(/하나|hana/i.test(flat+" "+name))return "하나은행";
   return "은행";
 }
 
-function findFixedCGDataStart(rows) {
-  const list = rows || [];
-  for (let i = 0; i < Math.min(list.length, 80); i++) {
-    const row = list[i] || [];
-    const c = normalizeHeader(row[2]);
-    const d = normalizeHeader(row[3]);
-    const g = normalizeHeader(row[6]);
-    const nameHeader = /^(적요|입금자명|입금자|의뢰인\/수취인|의뢰인수취인|보낸분|보낸사람)$/.test(c);
-    const amountHeader = /^(거래금액|입금금액|입금액|금액)$/.test(g);
-    if (nameHeader && amountHeader) return i + 1;
-    // 토스뱅크 원본: C=적요, D=거래유형, G=거래금액
-    if (c === "적요" && d === "거래유형" && g === "거래금액") return i + 1;
-  }
-  // 헤더를 못 찾은 파일도 사용할 수 있도록 실제 거래처럼 보이는 첫 행을 보조 탐색
-  for (let i = 0; i < Math.min(list.length, 120); i++) {
-    const row = list[i] || [];
-    const depositor = String(row[2] == null ? "" : row[2]).trim();
-    const amount = parseBankAmount(row[6]);
-    const timeText = String(row[1] || row[0] || "").trim();
-    if (depositor && amount > 0 && (/\d{4}[.\/-]\d{1,2}[.\/-]\d{1,2}/.test(timeText) || /\d{1,2}:\d{2}/.test(timeText))) return i;
-  }
-  return 0;
-}
+function parseFixedCGTransactions(rows,fileName){
+  const bank=detectBankFromRows(rows,fileName);
+  const txs=[];
+  (rows||[]).forEach(function(row,r){
+    row=row||[];
+    const depositor=String(row[2]==null?"":row[2]).trim(); // C열
+    const amount=parseBankAmount(row[6]);                    // G열
+    const typeText=String(row[3]==null?"":row[3]).replace(/\s+/g,"").trim(); // D열(있을 때만 참고)
+    const time=String(row[1]||row[0]||"").trim();
 
-function parseFixedCGTransactions(rows, fileName) {
-  const bank = detectBankFromRows(rows, fileName);
-  const txs = [];
-  const startRow = findFixedCGDataStart(rows);
-  let emptyRun = 0;
+    if(!depositor||amount<=0)return;
+    if(/출금|이체출금|지급/.test(typeText))return;
+    const normalized=normalizeBankName(depositor);
+    if(!normalized||["적요","수령인","입금자명","입금자","의뢰인수취인","성명","계좌번호","조회기간"].includes(normalized))return;
 
-  for (let r = startRow; r < rows.length; r++) {
-    const row = rows[r] || [];
-    const depositor = String(row[2] == null ? "" : row[2]).trim(); // C열
-    const amount = parseBankAmount(row[6]);                         // G열
-    const typeText = String(row[3] == null ? "" : row[3]).replace(/\s+/g, "").trim(); // D열
-    const time = String(row[1] || row[0] || "").trim();
-
-    if (!depositor && !amount && !time) {
-      emptyRun += 1;
-      if (emptyRun >= 30) break;
-      continue;
-    }
-    emptyRun = 0;
-
-    // 토스 원본처럼 거래유형이 명시된 경우 반드시 입금만 사용
-    if (typeText && /출금|이체출금|지급/.test(typeText)) continue;
-    if (typeText && /입금|이체입금|수취/.test(typeText) === false && bank === "토스뱅크") continue;
-
-    if (!depositor || !amount || amount <= 0) continue;
-    const normalized = normalizeBankName(depositor);
-    if (!normalized || ["적요","수령인","입금자명","입금자","의뢰인수취인"].includes(normalized)) continue;
-
-    txs.push({
-      bank: bank,
-      time: time,
-      depositor: depositor,
-      names: bankNameVariants(depositor),
-      amount: amount,
-      fileName: fileName,
-      sourceRow: r + 1
-    });
-  }
+    txs.push({bank:bank,time:time,depositor:depositor,names:bankNameVariants(depositor),amount:amount,fileName:fileName,sourceRow:r+1});
+  });
   return txs;
 }
 
@@ -1784,7 +1766,7 @@ function findBankHeader(rows) {
 function parseBankSheetRows(rows, fileName) {
   const txs = parseFixedCGTransactions(rows, fileName);
   if (!txs.length) {
-    throw new Error(fileName + ": C열(입금자명)과 G열(입금금액)에서 입금내역을 찾지 못했습니다. 암호를 제거한 원본 엑셀인지 확인해주세요.");
+    throw new Error(fileName + ": C열에 입금자명, G열에 입금금액이 있는 행을 찾지 못했습니다. 암호를 제거한 엑셀인지 확인해주세요.");
   }
   return txs;
 }
@@ -1808,7 +1790,7 @@ async function readBankFile(file) {
     const txs = parseFixedCGTransactions(rows, file.name);
     if (txs.length) return txs;
   }
-  throw new Error(file.name + ": C열(입금자명)과 G열(입금금액)에서 입금내역을 찾지 못했습니다. 파일 구조를 확인해주세요.");
+  throw new Error(file.name + ": C열에 입금자명, G열에 입금금액이 있는 행을 찾지 못했습니다. 파일을 확인해주세요.");
 }
 
 function buildOutstandingGroups(orders) {
