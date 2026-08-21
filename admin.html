@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#111827">
   <title>씬느샵 관리자</title>
-  <link rel="stylesheet" href="style.css?v=20260819-v3-26">
+  <link rel="stylesheet" href="style.css?v=20260819-v3-25">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="script.js?v=20260819-v3-26" defer></script>
+  <script src="script.js?v=20260819-v3-25" defer></script>
 </head>
 <body data-page="admin" class="page-admin">
   <div class="admin-app">
@@ -180,9 +180,9 @@
         <section class="admin-panel bankmatch-hero">
           <div class="panel-title-row">
             <div>
-              <span class="eyebrow dark">BANK MATCH V3.26</span>
+              <span class="eyebrow dark">BANK MATCH V3.25</span>
               <h2>입금 자동대조</h2>
-              <p>암호를 제거한 토스뱅크·하나은행 엑셀 파일을 넣으면 현재 미입금 주문과 자동으로 비교합니다.<br><strong>자동일치 기준: 고객주문 F열 수령인 ↔ 토스 C열 또는 하나 B·C열 이름 / 토스 G열 또는 하나 D열 입금액</strong></p>
+              <p>암호를 제거한 토스뱅크·하나은행 엑셀 파일을 넣으면 현재 미입금 주문과 자동으로 비교합니다.<br><strong>자동일치 기준: 고객주문 수령인 ↔ 은행 거래내역 입금자명 + 입금액 (토스뱅크는 제목행 자동인식)</strong></p>
             </div>
           </div>
           <div class="bankmatch-guide">
@@ -203,7 +203,7 @@
         </section>
 
         <div class="summary-grid premium bankmatch-summary">
-          <div class="metric-card success"><span>자동일치</span><strong id="bankMatchedCount">0</strong><small>수령인별 주문합계 = 동일이름 입금합계</small></div>
+          <div class="metric-card success"><span>자동일치</span><strong id="bankMatchedCount">0</strong><small>수령인 이름 + 입금액 일치</small></div>
           <div class="metric-card warning"><span>확인필요</span><strong id="bankReviewCount">0</strong><small>이름 또는 금액 확인</small></div>
           <div class="metric-card"><span>미입금</span><strong id="bankUnpaidCount">0</strong><small>입금내역을 찾지 못함</small></div>
           <div class="metric-card accent"><span>관련 입금 미매칭</span><strong id="bankOrphanCount">0</strong><small>현재 미입금 주문과 관련 가능성이 있는 미매칭 입금</small></div>
