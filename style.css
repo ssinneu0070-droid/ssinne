@@ -933,3 +933,12 @@ textarea{min-height:92px;resize:vertical}
 /* V3.27 입금 자동대조 - 확인필요 선택 일괄처리 */
 .bank-review-title-row { align-items:center; }
 .bank-review-check, #bankReviewSelectAll { width:18px; height:18px; cursor:pointer; }
+
+
+/* V3.28 입금완료 2차 재검사 */
+.paid-audit-panel{margin-top:18px;border:1px solid rgba(17,24,39,.08)}
+.audit-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}
+.audit-mini{background:#f8fafc;border:1px solid #e5e7eb;border-radius:16px;padding:15px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.audit-mini span{font-size:13px;font-weight:800;color:#64748b}.audit-mini strong{font-size:24px;color:#111827}
+.audit-mini.success{background:#f0fdf4;border-color:#bbf7d0}.audit-mini.warning{background:#fffbeb;border-color:#fde68a}.audit-mini.danger{background:#fff1f2;border-color:#fecdd3}
+@media(max-width:700px){.audit-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.bankmatch-actions #bankPaidAuditButton{width:100%}}

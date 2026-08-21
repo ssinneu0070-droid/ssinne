@@ -7,7 +7,7 @@
   <title>씬느샵 관리자</title>
   <link rel="stylesheet" href="style.css?v=20260819-v3-25">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="script_v327.js?v=20260822-v3-27" defer></script>
+  <script src="script_v328.js?v=20260822-v3-28" defer></script>
 </head>
 <body data-page="admin" class="page-admin">
   <div class="admin-app">
@@ -180,7 +180,7 @@
         <section class="admin-panel bankmatch-hero">
           <div class="panel-title-row">
             <div>
-              <span class="eyebrow dark">BANK MATCH V3.25</span>
+              <span class="eyebrow dark">BANK MATCH V3.28</span>
               <h2>입금 자동대조</h2>
               <p>암호를 제거한 토스뱅크·하나은행 엑셀 파일을 넣으면 현재 미입금 주문과 자동으로 비교합니다.<br><strong>자동일치 기준: 고객주문 수령인 ↔ 은행 거래내역 입금자명 + 입금액 (토스뱅크는 제목행 자동인식)</strong></p>
             </div>
@@ -198,6 +198,7 @@
           </div>
           <div class="bankmatch-actions">
             <button type="button" class="btn btn-dark" id="bankMatchStartButton" disabled>자동대조 시작</button>
+            <button type="button" class="btn btn-primary" id="bankPaidAuditButton" disabled>✅ 입금완료 재검사</button>
             <button type="button" class="btn btn-subtle" id="bankMatchResetButton">초기화</button>
           </div>
         </section>
@@ -233,6 +234,35 @@
           <div class="bank-result-section">
             <h3>⚪ 은행 입금은 있으나 주문을 찾지 못함</h3>
             <div class="table-wrap"><table class="data-table"><thead><tr><th>은행</th><th>입금시간</th><th>입금자명</th><th>입금금액</th></tr></thead><tbody id="bankOrphanList"><tr><td colspan="4" class="empty-cell">결과가 없습니다.</td></tr></tbody></table></div>
+          </div>
+        </section>
+
+        <section class="admin-panel paid-audit-panel" id="bankPaidAuditPanel">
+          <div class="panel-title-row">
+            <div>
+              <span class="eyebrow dark">2차 검수</span>
+              <h2>✅ 입금완료 재검사</h2>
+              <p>이미 입금완료 처리한 주문도 같은 은행 엑셀과 다시 비교합니다. 재검사는 상태를 자동으로 변경하지 않고 이상 건만 표시합니다.</p>
+            </div>
+          </div>
+          <div class="audit-summary-grid">
+            <div class="audit-mini success"><span>정상</span><strong id="paidAuditOkCount">0</strong></div>
+            <div class="audit-mini warning"><span>확인필요</span><strong id="paidAuditReviewCount">0</strong></div>
+            <div class="audit-mini danger"><span>오류의심</span><strong id="paidAuditErrorCount">0</strong></div>
+            <div class="audit-mini"><span>검사대상</span><strong id="paidAuditTotalCount">0</strong></div>
+          </div>
+          <div id="paidAuditNotice" class="bankmatch-notice">은행 파일을 선택한 뒤 ‘입금완료 재검사’를 눌러주세요.</div>
+          <div class="bank-result-section">
+            <h3>🟢 정상</h3>
+            <div class="table-wrap"><table class="data-table"><thead><tr><th>닉네임</th><th>수령인</th><th>주문건</th><th>주문금액</th><th>입금자명</th><th>입금금액</th><th>은행</th><th>입금시간</th></tr></thead><tbody id="paidAuditOkList"><tr><td colspan="8" class="empty-cell">재검사 결과가 없습니다.</td></tr></tbody></table></div>
+          </div>
+          <div class="bank-result-section">
+            <h3>🟡 확인필요</h3>
+            <div class="table-wrap"><table class="data-table"><thead><tr><th>닉네임</th><th>수령인</th><th>주문금액</th><th>후보 입금자</th><th>입금금액</th><th>차이</th><th>사유</th></tr></thead><tbody id="paidAuditReviewList"><tr><td colspan="7" class="empty-cell">재검사 결과가 없습니다.</td></tr></tbody></table></div>
+          </div>
+          <div class="bank-result-section">
+            <h3>🔴 오류의심</h3>
+            <div class="table-wrap"><table class="data-table"><thead><tr><th>닉네임</th><th>수령인</th><th>연락처</th><th>주문건</th><th>주문금액</th><th>사유</th></tr></thead><tbody id="paidAuditErrorList"><tr><td colspan="6" class="empty-cell">재검사 결과가 없습니다.</td></tr></tbody></table></div>
           </div>
         </section>
       </section>
