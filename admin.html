@@ -7,7 +7,7 @@
   <title>씬느샵 관리자</title>
   <link rel="stylesheet" href="style.css?v=20260819-v3-25">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="script.js?v=20260819-v3-25" defer></script>
+  <script src="script_v327.js?v=20260822-v3-27" defer></script>
 </head>
 <body data-page="admin" class="page-admin">
   <div class="admin-app">
@@ -220,8 +220,11 @@
             <div class="table-wrap"><table class="data-table"><thead><tr><th>닉네임</th><th>수령인</th><th>주문건</th><th>주문금액</th><th>입금자명</th><th>입금금액</th><th>은행</th><th>입금시간</th><th>처리</th></tr></thead><tbody id="bankMatchedList"><tr><td colspan="9" class="empty-cell">결과가 없습니다.</td></tr></tbody></table></div>
           </div>
           <div class="bank-result-section">
-            <h3>🟡 확인필요</h3>
-            <div class="table-wrap"><table class="data-table"><thead><tr><th>닉네임</th><th>수령인</th><th>주문금액</th><th>후보 입금자</th><th>입금금액</th><th>차이</th><th>사유</th><th>처리</th></tr></thead><tbody id="bankReviewList"><tr><td colspan="8" class="empty-cell">결과가 없습니다.</td></tr></tbody></table></div>
+            <div class="panel-title-row bank-review-title-row">
+              <h3>🟡 확인필요</h3>
+              <button type="button" class="btn btn-primary" id="bankReviewBulkPaidButton" disabled>선택 입금완료</button>
+            </div>
+            <div class="table-wrap"><table class="data-table"><thead><tr><th><input type="checkbox" id="bankReviewSelectAll" aria-label="확인필요 전체 선택"></th><th>닉네임</th><th>수령인</th><th>주문금액</th><th>후보 입금자</th><th>입금금액</th><th>차이</th><th>사유</th><th>처리</th></tr></thead><tbody id="bankReviewList"><tr><td colspan="9" class="empty-cell">결과가 없습니다.</td></tr></tbody></table></div>
           </div>
           <div class="bank-result-section">
             <h3>🔴 미입금</h3>

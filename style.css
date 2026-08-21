@@ -929,3 +929,7 @@ textarea{min-height:92px;resize:vertical}
   .bankmatch-actions .btn,.bank-upload-box .btn,#bankBulkPaidButton{width:100%}
   #bankMatchResultPanel .panel-title-row{align-items:stretch;gap:12px;flex-direction:column}
 }
+
+/* V3.27 입금 자동대조 - 확인필요 선택 일괄처리 */
+.bank-review-title-row { align-items:center; }
+.bank-review-check, #bankReviewSelectAll { width:18px; height:18px; cursor:pointer; }
