@@ -7,7 +7,7 @@
   <title>씬느샵 관리자</title>
   <link rel="stylesheet" href="style.css?v=20260819-v3-25">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="script_v328.js?v=20260822-v3-28" defer></script>
+  <script src="script.js?v=20260822-v3-29" defer></script>
 </head>
 <body data-page="admin" class="page-admin">
   <div class="admin-app">
@@ -205,14 +205,14 @@
 
         <div class="summary-grid premium bankmatch-summary">
           <div class="metric-card success"><span>자동일치</span><strong id="bankMatchedCount">0</strong><small>수령인 이름 + 입금액 일치</small></div>
-          <div class="metric-card warning"><span>확인필요</span><strong id="bankReviewCount">0</strong><small>이름 또는 금액 확인</small></div>
+          <div class="metric-card warning"><span>확인필요</span><strong id="bankReviewCount">0</strong><small>수령인·닉네임 또는 금액 확인</small></div>
           <div class="metric-card"><span>미입금</span><strong id="bankUnpaidCount">0</strong><small>입금내역을 찾지 못함</small></div>
           <div class="metric-card accent"><span>관련 입금 미매칭</span><strong id="bankOrphanCount">0</strong><small>현재 미입금 주문과 관련 가능성이 있는 미매칭 입금</small></div>
         </div>
 
         <section class="admin-panel" id="bankMatchResultPanel">
           <div class="panel-title-row">
-            <div><h2>입금확인 결과</h2><p>자동일치는 바로 입금확인할 수 있고, 확인필요 항목은 은행내역을 보고 직접 확인 후 처리할 수 있습니다.</p></div>
+            <div><h2>입금확인 결과</h2><p>수령인과 닉네임을 은행 입금자명과 함께 비교합니다. 자동일치는 바로 입금확인할 수 있고, 확인필요 항목은 은행내역을 보고 직접 확인 후 처리할 수 있습니다.</p></div>
             <button type="button" class="btn btn-primary" id="bankBulkPaidButton" disabled>자동일치 전체 입금완료</button>
           </div>
           <div id="bankMatchNotice" class="bankmatch-notice">은행 파일을 선택한 뒤 자동대조 시작을 눌러주세요.</div>
