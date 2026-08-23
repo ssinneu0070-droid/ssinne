@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#111827">
-  <title>씬느샵 관리자</title>
+  <title>씬느샵 통합 관리자 V3.31</title>
   <link rel="stylesheet" href="style.css?v=20260819-v3-25">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="script.js?v=20260822-v3-29" defer></script>
+  <script src="script.js?v=20260823-v3-31" defer></script>
 </head>
 <body data-page="admin" class="page-admin">
   <div class="admin-app">
@@ -45,8 +45,8 @@
     <main class="admin-main">
       <header class="admin-topbar">
         <div>
-          <span class="eyebrow dark">SSINNEU ADMIN</span>
-          <h1>통합 관리자</h1>
+          <span class="eyebrow dark">SSINNEU ADMIN · V3.31</span>
+          <h1>통합 관리자 <small style="font-size:.48em;font-weight:800;vertical-align:middle;opacity:.72;">V3.31</small></h1>
         </div>
         <div class="topbar-actions">
           <button class="btn btn-dark" type="button" id="rebuildButton">
@@ -180,9 +180,9 @@
         <section class="admin-panel bankmatch-hero">
           <div class="panel-title-row">
             <div>
-              <span class="eyebrow dark">BANK MATCH V3.28</span>
+              <span class="eyebrow dark">BANK MATCH V3.31</span>
               <h2>입금 자동대조</h2>
-              <p>암호를 제거한 토스뱅크·하나은행 엑셀 파일을 넣으면 현재 미입금 주문과 자동으로 비교합니다.<br><strong>자동일치 기준: 고객주문 수령인 ↔ 은행 거래내역 입금자명 + 입금액 (토스뱅크는 제목행 자동인식)</strong></p>
+              <p>암호를 제거한 토스뱅크·하나은행 엑셀 파일을 넣으면 현재 미입금 주문과 자동으로 비교합니다.<br><strong>자동일치 기준: 고객주문 수령인·닉네임 ↔ 은행 거래내역 입금자명 + 입금액 · 분할입금 합산 및 중복사용 방지</strong></p>
             </div>
           </div>
           <div class="bankmatch-guide">
