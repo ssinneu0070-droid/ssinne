@@ -480,6 +480,15 @@ function initAdminPage() {
   const archiveBtn = document.getElementById("archiveHistoryButton");
   if (archiveBtn) archiveBtn.addEventListener("click", archiveCurrentOrders);
 
+  const lotteExcelBtn = document.getElementById("lotteExcelButton");
+  if (lotteExcelBtn) lotteExcelBtn.addEventListener("click", downloadLotteExcel);
+  const lotteTrackingBtn = document.getElementById("lotteTrackingButton");
+  const lotteTrackingFile = document.getElementById("lotteTrackingFile");
+  if (lotteTrackingBtn && lotteTrackingFile) {
+    lotteTrackingBtn.addEventListener("click", function(){ lotteTrackingFile.value = ""; lotteTrackingFile.click(); });
+    lotteTrackingFile.addEventListener("change", uploadLotteTrackingResult);
+  }
+
   document.getElementById("currentOrdersSourceButton")
     .addEventListener("click", function() {
       setAdminOrderSource("current");
@@ -2724,5 +2733,149 @@ async function bulkCompleteBankMatches() {
     alert(error.message);
   } finally {
     hideLoading();
+  }
+}
+
+
+/* =========================================================
+   V4.01 롯데택배 ALPS 엑셀 / 송장결과 업로드
+========================================================= */
+function chunkArrayV401(list, size) {
+  const out = [];
+  for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size));
+  return out;
+}
+
+function lotteExportHeadersV401() {
+  const headers = ["주문번호","주문자","받는사람","주소","전화번호1","고객메시지","우편번호"];
+  for (let i = 1; i <= 10; i++) {
+    headers.push("상품코드" + i, "상품명" + i, "상품상세" + i, "내품수량" + i);
+  }
+  headers.push("수량(A타입)");
+  return headers;
+}
+
+async function downloadLotteExcel() {
+  if (typeof XLSX === "undefined") {
+    alert("엑셀 기능을 불러오지 못했습니다. 인터넷 연결 후 다시 시도해주세요.");
+    return;
+  }
+  const btn = document.getElementById("lotteExcelButton");
+  if (btn) btn.disabled = true;
+  showLoading("롯데택배 ALPS용 엑셀을 만드는 중입니다.");
+  try {
+    const data = await apiGet({action:"lotteOrders"});
+    const orders = Array.isArray(data.orders) ? data.orders : [];
+    if (!orders.length) throw new Error("3PL출고에 다운로드할 주문이 없습니다. 먼저 3PL출고를 최신화해주세요.");
+
+    const rows = [];
+    orders.forEach(function(order){
+      const groups = chunkArrayV401(order.items || [], 10);
+      groups.forEach(function(items, groupIndex){
+        const row = {
+          "주문번호": String(order.orderNumber || "") + "-" + String(groupIndex + 1).padStart(2,"0"),
+          "주문자": order.nickname || "",
+          "받는사람": order.receiverName || "",
+          "주소": order.address || "",
+          "전화번호1": order.phone || "",
+          "고객메시지": order.shippingMemo || "",
+          "우편번호": order.zipcode || "",
+          "수량(A타입)": 1
+        };
+        for (let i = 1; i <= 10; i++) {
+          const item = items[i-1] || {};
+          row["상품코드"+i] = item.productNo || "";
+          row["상품명"+i] = item.productName || "";
+          // 다수상품에서 상품별 색상/사이즈가 달라도 정확히 보이도록 상세에 합쳐 저장
+          row["상품상세"+i] = [item.color || "", item.size || ""].filter(Boolean).join("/");
+          row["내품수량"+i] = item.quantity || "";
+        }
+        rows.push(row);
+      });
+    });
+
+    const headers = lotteExportHeadersV401();
+    const ws = XLSX.utils.json_to_sheet(rows, {header:headers});
+    ws["!cols"] = headers.map(function(h){
+      if (h === "주소") return {wch:42};
+      if (h === "고객메시지") return {wch:24};
+      if (h.indexOf("상품명") === 0 || h.indexOf("상품상세") === 0) return {wch:20};
+      return {wch:14};
+    });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "롯데택배출고");
+    const date = todayString().replace(/-/g, "");
+    XLSX.writeFile(wb, "씬느샵_롯데택배_ALPS_" + date + ".xlsx");
+    alert("롯데택배용 엑셀 " + rows.length + "행을 만들었습니다. 상품은 송장 1장당 최대 10개로 자동 분리했습니다.");
+  } catch (error) {
+    alert("롯데택배 엑셀 생성 오류: " + (error.message || error));
+  } finally {
+    hideLoading();
+    if (btn) btn.disabled = false;
+  }
+}
+
+function normalizeHeaderV401(value) {
+  return String(value == null ? "" : value).replace(/\s+/g, "").toLowerCase();
+}
+
+function findHeaderIndexV401(headers, candidates) {
+  const normalized = headers.map(normalizeHeaderV401);
+  for (const candidate of candidates) {
+    const target = normalizeHeaderV401(candidate);
+    const idx = normalized.indexOf(target);
+    if (idx >= 0) return idx;
+  }
+  return -1;
+}
+
+function stripLottePartSuffixV401(orderNumber) {
+  return String(orderNumber || "").trim().replace(/-\d{2}$/i, "");
+}
+
+async function uploadLotteTrackingResult(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  if (typeof XLSX === "undefined") {
+    alert("엑셀 기능을 불러오지 못했습니다.");
+    return;
+  }
+  showLoading("롯데 송장결과 엑셀에서 주문번호와 송장번호를 찾는 중입니다.");
+  try {
+    const buffer = await file.arrayBuffer();
+    const wb = XLSX.read(buffer, {type:"array"});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const matrix = XLSX.utils.sheet_to_json(ws, {header:1, defval:""});
+    if (!matrix.length) throw new Error("엑셀 파일에 데이터가 없습니다.");
+
+    let headerRow = -1, orderCol = -1, trackingCol = -1;
+    for (let r = 0; r < Math.min(matrix.length, 30); r++) {
+      const headers = matrix[r];
+      const oc = findHeaderIndexV401(headers, ["주문번호","주문번호1","고객주문번호","접수번호"]);
+      const tc = findHeaderIndexV401(headers, ["운송장번호","송장번호","운송장번호1","운송장"]);
+      if (oc >= 0 && tc >= 0) { headerRow = r; orderCol = oc; trackingCol = tc; break; }
+    }
+    if (headerRow < 0) throw new Error("주문번호와 운송장번호 열을 찾지 못했습니다. 롯데에서 다운로드한 원본 결과 엑셀을 그대로 올려주세요.");
+
+    const mappings = [];
+    for (let r = headerRow + 1; r < matrix.length; r++) {
+      const orderNumber = String(matrix[r][orderCol] || "").trim();
+      const trackingNumber = String(matrix[r][trackingCol] || "").trim().replace(/\.0$/, "");
+      if (!orderNumber || !trackingNumber) continue;
+      mappings.push({orderNumber:orderNumber, baseOrderNumber:stripLottePartSuffixV401(orderNumber), trackingNumber:trackingNumber});
+    }
+    if (!mappings.length) throw new Error("연결할 주문번호/운송장번호 데이터를 찾지 못했습니다.");
+
+    const result = await apiPost({action:"applyLotteTracking", mappings:mappings});
+    let message = result.message || "송장번호 자동연결이 완료되었습니다.";
+    if (Array.isArray(result.unmatched) && result.unmatched.length) {
+      message += "\n\n일치하지 않은 주문번호:\n" + result.unmatched.slice(0,10).join("\n");
+    }
+    alert(message);
+  } catch (error) {
+    alert("롯데 송장결과 업로드 오류: " + (error.message || error));
+  } finally {
+    hideLoading();
+    event.target.value = "";
   }
 }
