@@ -480,6 +480,9 @@ function initAdminPage() {
   const archiveBtn = document.getElementById("archiveHistoryButton");
   if (archiveBtn) archiveBtn.addEventListener("click", archiveCurrentOrders);
 
+  const fillLegacyBtn = document.getElementById("fillLegacyOrderNumbersButton");
+  if (fillLegacyBtn) fillLegacyBtn.addEventListener("click", fillLegacyOrderNumbers);
+
   const lotteExcelBtn = document.getElementById("lotteExcelButton");
   if (lotteExcelBtn) lotteExcelBtn.addEventListener("click", downloadLotteExcel);
   const lotteTrackingBtn = document.getElementById("lotteTrackingButton");
@@ -987,6 +990,29 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
   }
 }
 
+
+async function fillLegacyOrderNumbers() {
+  const btn = document.getElementById("fillLegacyOrderNumbersButton");
+  if (!confirm("주문번호가 비어 있는 기존 주문에만 자동으로 주문번호를 생성할까요?\n\n이미 주문번호가 있는 주문은 변경하지 않습니다.")) return;
+  if (btn) btn.disabled = true;
+  showLoading("기존 주문의 빈 주문번호를 확인하고 있습니다.");
+  try {
+    const result = await apiPost({ action: "fillLegacyOrderNumbers" });
+    let message = result.message || "기존 주문번호 자동생성이 완료되었습니다.";
+    if (result.bySheet) {
+      message += "\n\n고객주문: " + (result.bySheet["고객주문"] || 0) + "건" +
+                 "\n3PL출고: " + (result.bySheet["3PL출고"] || 0) + "건" +
+                 "\n전체주문이력: " + (result.bySheet["전체주문이력"] || 0) + "건";
+    }
+    alert(message);
+    try { await searchAdminOrders(); } catch (e) {}
+  } catch (error) {
+    alert("기존 주문번호 자동생성 오류: " + (error.message || error));
+  } finally {
+    hideLoading();
+    if (btn) btn.disabled = false;
+  }
+}
 
 async function archiveCurrentOrders() {
   const btn = document.getElementById("archiveHistoryButton");
@@ -2738,7 +2764,7 @@ async function bulkCompleteBankMatches() {
 
 
 /* =========================================================
-   V4.01 롯데택배 ALPS 엑셀 / 송장결과 업로드
+   V4.02 롯데택배 ALPS 엑셀 / 기존 주문번호 자동생성 / 송장결과 업로드
 ========================================================= */
 function chunkArrayV401(list, size) {
   const out = [];
