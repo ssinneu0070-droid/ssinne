@@ -2775,10 +2775,20 @@ function chunkArrayV401(list, size) {
 function lotteExportHeadersV401() {
   const headers = ["주문번호","주문자","받는사람","주소","전화번호1","고객메시지","우편번호"];
   for (let i = 1; i <= 5; i++) {
-    headers.push("상품코드" + i, "상품명" + i, "상품상세" + i, "내품수량" + i);
+    headers.push("상품코드" + i, "상품명" + i, "옵션1(색상)" + (i === 1 ? "" : i), "옵션2(사이즈)" + (i === 1 ? "" : i), "내품수량" + i);
   }
   headers.push("수량(A타입)");
   return headers;
+}
+
+function buildLotteOrderNumberV407(baseOrderNumber, groupIndex) {
+  const base = String(baseOrderNumber || "").trim().replace(/\s+/g, "");
+  if (!/^\d{6}-\d{4}$/.test(base)) {
+    throw new Error("롯데택배용 주문번호가 표준 형식이 아닙니다: " + (base || "(빈값)") + "\n관리자에서 '기존 주문번호 자동생성'을 먼저 실행한 뒤 다시 다운로드해주세요.");
+  }
+  const result = base + "-" + String(groupIndex + 1).padStart(2,"0");
+  if (result.length > 50) throw new Error("롯데택배 주문번호 50자 제한을 초과했습니다: " + result);
+  return result;
 }
 
 async function downloadLotteExcel() {
@@ -2799,7 +2809,7 @@ async function downloadLotteExcel() {
       const groups = chunkArrayV401(order.items || [], 5);
       groups.forEach(function(items, groupIndex){
         const row = {
-          "주문번호": String(order.orderNumber || "") + "-" + String(groupIndex + 1).padStart(2,"0"),
+          "주문번호": buildLotteOrderNumberV407(order.orderNumber, groupIndex),
           "주문자": order.nickname || "",
           "받는사람": order.receiverName || "",
           "주소": order.address || "",
@@ -2813,8 +2823,9 @@ async function downloadLotteExcel() {
           row["상품코드"+i] = item.productNo || "";
           row["상품명"+i] = item.productName || "";
           // 다수상품에서 상품별 색상/사이즈가 달라도 정확히 보이도록 상세에 합쳐 저장
-          row["상품상세"+i] = [item.color || "", item.size || ""].filter(Boolean).join("/");
-          row["내품수량"+i] = item.quantity || "";
+          row["옵션1(색상)" + (i === 1 ? "" : i)] = item.color || "";
+          row["옵션2(사이즈)" + (i === 1 ? "" : i)] = item.size || "";
+          row["내품수량"+i] = Number(item.quantity || 0) || "";
         }
         rows.push(row);
       });
@@ -2825,7 +2836,7 @@ async function downloadLotteExcel() {
     ws["!cols"] = headers.map(function(h){
       if (h === "주소") return {wch:42};
       if (h === "고객메시지") return {wch:24};
-      if (h.indexOf("상품명") === 0 || h.indexOf("상품상세") === 0) return {wch:20};
+      if (h.indexOf("상품명") === 0 || h.indexOf("옵션1") === 0 || h.indexOf("옵션2") === 0) return {wch:20};
       return {wch:14};
     });
     const wb = XLSX.utils.book_new();
