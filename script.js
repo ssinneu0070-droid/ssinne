@@ -993,9 +993,9 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 
 async function fillLegacyOrderNumbers() {
   const btn = document.getElementById("fillLegacyOrderNumbersButton");
-  if (!confirm("주문번호가 비어 있는 기존 주문에만 자동으로 주문번호를 생성할까요?\n\n이미 주문번호가 있는 주문은 변경하지 않습니다.")) return;
+  if (!confirm("빈 주문번호와 LEGACY-/OLD- 주문번호를 YYMMDD-0001 형식으로 통일할까요?\n\n이미 표준 형식인 주문번호는 변경하지 않습니다.")) return;
   if (btn) btn.disabled = true;
-  showLoading("기존 주문의 빈 주문번호를 확인하고 있습니다.");
+  showLoading("기존 주문번호를 표준 형식으로 확인하고 있습니다.");
   try {
     const result = await apiPost({ action: "fillLegacyOrderNumbers" });
     let message = result.message || "기존 주문번호 자동생성이 완료되었습니다.";
