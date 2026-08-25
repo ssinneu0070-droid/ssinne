@@ -2764,7 +2764,7 @@ async function bulkCompleteBankMatches() {
 
 
 /* =========================================================
-   V4.02 롯데택배 ALPS 엑셀 / 기존 주문번호 자동생성 / 송장결과 업로드
+   V4.08 롯데택배 ALPS 5품목 정확열순서 / 기존 주문번호 자동생성 / 송장결과 업로드
 ========================================================= */
 function chunkArrayV401(list, size) {
   const out = [];
@@ -2773,12 +2773,37 @@ function chunkArrayV401(list, size) {
 }
 
 function lotteExportHeadersV401() {
+  // ALPS 신규형식도 반드시 이 33개 필드를 같은 순서로 등록해야 합니다.
   const headers = ["주문번호","주문자","받는사람","주소","전화번호1","고객메시지","우편번호"];
   for (let i = 1; i <= 5; i++) {
-    headers.push("상품코드" + i, "상품명" + i, "옵션1(색상)" + (i === 1 ? "" : i), "옵션2(사이즈)" + (i === 1 ? "" : i), "내품수량" + i);
+    headers.push(
+      "상품코드" + i,
+      "상품명" + i,
+      "옵션1(색상)" + (i === 1 ? "" : i),
+      "옵션2(사이즈)" + (i === 1 ? "" : i),
+      "내품수량" + i
+    );
   }
   headers.push("수량(A타입)");
   return headers;
+}
+
+function validateLotteRowsV408(rows, headers) {
+  if (!Array.isArray(rows) || !rows.length) throw new Error("롯데택배로 내보낼 주문이 없습니다.");
+  if (rows.length > 10000) throw new Error("롯데 ALPS 업로드 한도 10,000행을 초과했습니다. 현재 " + rows.length + "행입니다.");
+  rows.forEach(function(row, idx){
+    const boxQty = row["수량(A타입)"];
+    if (!Number.isInteger(boxQty) || boxQty < 1) {
+      throw new Error((idx+2) + "행의 수량(A타입)은 정수 1이어야 합니다.");
+    }
+    for (let i=1;i<=5;i++) {
+      const q = row["내품수량"+i];
+      if (q !== "" && q != null && (!Number.isInteger(Number(q)) || Number(q) < 1)) {
+        throw new Error((idx+2) + "행 내품수량" + i + " 값이 올바르지 않습니다: " + q);
+      }
+    }
+  });
+  if (headers.length !== 33) throw new Error("롯데 엑셀 열 수가 33개가 아닙니다. 현재 " + headers.length + "개입니다.");
 }
 
 function buildLotteOrderNumberV407(baseOrderNumber, groupIndex) {
@@ -2832,6 +2857,7 @@ async function downloadLotteExcel() {
     });
 
     const headers = lotteExportHeadersV401();
+    validateLotteRowsV408(rows, headers);
     const ws = XLSX.utils.json_to_sheet(rows, {header:headers});
     ws["!cols"] = headers.map(function(h){
       if (h === "주소") return {wch:42};
@@ -2843,7 +2869,7 @@ async function downloadLotteExcel() {
     XLSX.utils.book_append_sheet(wb, ws, "롯데택배출고");
     const date = todayString().replace(/-/g, "");
     XLSX.writeFile(wb, "씬느샵_롯데택배_ALPS_" + date + ".xlsx");
-    alert("롯데택배용 엑셀 " + rows.length + "행을 만들었습니다. 상품은 송장 1장당 최대 5개로 자동 분리했습니다.");
+    alert("롯데택배용 엑셀 " + rows.length + "행을 만들었습니다.\n상품은 송장 1장당 최대 5개로 자동 분리했습니다.\n\n중요: ALPS 신규형식도 33개 필드를 이 엑셀과 같은 순서로 등록해야 합니다.");
   } catch (error) {
     alert("롯데택배 엑셀 생성 오류: " + (error.message || error));
   } finally {
