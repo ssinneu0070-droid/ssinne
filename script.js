@@ -2774,7 +2774,7 @@ function chunkArrayV401(list, size) {
 
 function lotteExportHeadersV401() {
   const headers = ["주문번호","주문자","받는사람","주소","전화번호1","고객메시지","우편번호"];
-  for (let i = 1; i <= 10; i++) {
+  for (let i = 1; i <= 5; i++) {
     headers.push("상품코드" + i, "상품명" + i, "상품상세" + i, "내품수량" + i);
   }
   headers.push("수량(A타입)");
@@ -2796,7 +2796,7 @@ async function downloadLotteExcel() {
 
     const rows = [];
     orders.forEach(function(order){
-      const groups = chunkArrayV401(order.items || [], 10);
+      const groups = chunkArrayV401(order.items || [], 5);
       groups.forEach(function(items, groupIndex){
         const row = {
           "주문번호": String(order.orderNumber || "") + "-" + String(groupIndex + 1).padStart(2,"0"),
@@ -2808,7 +2808,7 @@ async function downloadLotteExcel() {
           "우편번호": order.zipcode || "",
           "수량(A타입)": 1
         };
-        for (let i = 1; i <= 10; i++) {
+        for (let i = 1; i <= 5; i++) {
           const item = items[i-1] || {};
           row["상품코드"+i] = item.productNo || "";
           row["상품명"+i] = item.productName || "";
@@ -2832,7 +2832,7 @@ async function downloadLotteExcel() {
     XLSX.utils.book_append_sheet(wb, ws, "롯데택배출고");
     const date = todayString().replace(/-/g, "");
     XLSX.writeFile(wb, "씬느샵_롯데택배_ALPS_" + date + ".xlsx");
-    alert("롯데택배용 엑셀 " + rows.length + "행을 만들었습니다. 상품은 송장 1장당 최대 10개로 자동 분리했습니다.");
+    alert("롯데택배용 엑셀 " + rows.length + "행을 만들었습니다. 상품은 송장 1장당 최대 5개로 자동 분리했습니다.");
   } catch (error) {
     alert("롯데택배 엑셀 생성 오류: " + (error.message || error));
   } finally {
