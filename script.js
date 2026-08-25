@@ -1,4 +1,4 @@
-// V3.31 - 수령인+닉네임 포함 자동일치 / 분할입금 조합합산 / 부족·초과 / 중복입금 방지
+// V4.00 - 수령인+닉네임 포함 자동일치 / 분할입금 조합합산 / 부족·초과 / 중복입금 방지
 // V3.30 - 입금 자동대조 시 수령인 + 닉네임 함께 조회
 // V3.29 - 단일 script.js 운영 + 토스뱅크/하나은행 통합 입금대조 + 입금완료 2차 재검사
 // V3.24 - 현재 주문 새로고침 / 한글이름 포함대조 / 대조기준 표시
@@ -7,7 +7,7 @@
   아래 3개 주소만 실제 주소로 바꾸세요.
 */
 const CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwUEc7W9XJgCbxZsqa3K2gEWpOOblrtfAD-LK53zfNHaP4dliCoOvyKjsiw1YcP9bh-/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwmQ-tMxEffTtzF1zdCLJhhsDNWBz90DOKgxNPl1y8T_Te3pKHdahtcdBB-AotvxYco/exec",
   BAND_URL: "https://www.band.us/band/102398891/post",
   CHANNEL_URL: "https://pf.kakao.com/_YVncn"
 };
@@ -477,6 +477,8 @@ function initAdminPage() {
 
   document.getElementById("rebuildButton")
     .addEventListener("click", rebuildDerivedSheets);
+  const archiveBtn = document.getElementById("archiveHistoryButton");
+  if (archiveBtn) archiveBtn.addEventListener("click", archiveCurrentOrders);
 
   document.getElementById("currentOrdersSourceButton")
     .addEventListener("click", function() {
@@ -973,6 +975,23 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
     alert(error.message);
   } finally {
     hideLoading();
+  }
+}
+
+
+async function archiveCurrentOrders() {
+  const btn = document.getElementById("archiveHistoryButton");
+  if (btn) btn.disabled = true;
+  showLoading("전체주문이력에 저장 중입니다. 잠시만 기다려주세요.");
+  try {
+    const result = await apiPost({ action: "archiveCurrentOrders" });
+    hideLoading();
+    alert(result.message || "전체주문이력 저장이 완료되었습니다.");
+  } catch (error) {
+    hideLoading();
+    alert("전체주문이력 저장 중 오류: " + (error.message || error));
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -1635,7 +1654,7 @@ let bankMatchTransactions = [];
 let bankMatchResult = { matched: [], review: [], unpaid: [], orphan: [] };
 let bankPaidAuditResult = { ok: [], review: [], error: [] };
 let bankMatchInitialized = false;
-// V3.31: 현재 화면에서 이미 입금완료 처리에 사용한 은행 거래를 다시 쓰지 않도록 기억합니다.
+// V4.00: 현재 화면에서 이미 입금완료 처리에 사용한 은행 거래를 다시 쓰지 않도록 기억합니다.
 let bankConsumedTransactionKeys = new Set();
 
 function bankTransactionKey(tx) {
@@ -2156,7 +2175,7 @@ function reconcileBankData(groups, transactions) {
   const matched = [];
   const review = [];
 
-  /* V3.31 핵심 규칙
+  /* V4.00 핵심 규칙
      1) 수령인 + 닉네임을 모두 조회합니다.
      2) 입금자명에 수령인/닉네임이 포함되고 금액까지 정확하면 자동일치합니다.
      3) 같은 고객이 여러 번 나눠 입금한 경우, 관련 입금 조합의 합계가 주문금액과 같으면 자동일치합니다.
