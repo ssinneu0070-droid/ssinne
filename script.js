@@ -2764,12 +2764,12 @@ async function bulkCompleteBankMatches() {
 
 
 /* =========================================================
-   V4.10 롯데택배 ALPS 공식 13열 형식 / 상품 5개 단위 송장분할
+   V4.11 롯데택배 ALPS 공식 13열 형식 / 상품 10개 단위 송장분할
    - ALPS 공식 양식: 주문번호, 주문자, 받는사람, 주소, 전화번호1,
      고객메시지, 우편번호, 상품코드1, 상품명1, 옵션1(색상),
      옵션2(사이즈), 내품수량1, 수량(A타입)
    - 한 엑셀 행에는 상품 1개만 기록
-   - 같은 송장에 묶일 최대 5개 상품은 동일한 롯데용 주문번호(-01 등)를 사용
+   - 같은 송장에 묶일 최대 10개 상품은 동일한 롯데용 주문번호(-01 등)를 사용
 ========================================================= */
 function chunkArrayV401(list, size) {
   const out = [];
@@ -2839,12 +2839,12 @@ async function downloadLotteExcel() {
     const rows = [];
     let invoiceGroups = 0;
     orders.forEach(function(order){
-      const groups = chunkArrayV401(order.items || [], 5);
+      const groups = chunkArrayV401(order.items || [], 10);
       groups.forEach(function(items, groupIndex){
         invoiceGroups++;
         const lotteOrderNo = buildLotteOrderNumberV410(order.orderNumber, groupIndex);
         // ALPS 공식 13열 양식은 한 행에 상품 1개입니다.
-        // 같은 송장에 묶을 상품(최대 5개)은 같은 롯데 주문번호를 반복해 기록합니다.
+        // 같은 송장에 묶을 상품(최대 10개)은 같은 롯데 주문번호를 반복해 기록합니다.
         items.forEach(function(item){
           rows.push({
             "주문번호": lotteOrderNo,
@@ -2882,7 +2882,7 @@ async function downloadLotteExcel() {
     alert(
       "롯데택배 공식 13열 형식으로 엑셀을 만들었습니다.\n" +
       "상품행: " + rows.length + "행 / 예상 송장그룹: " + invoiceGroups + "개\n\n" +
-      "상품은 최대 5개씩 같은 주문번호로 묶고, 6번째 상품부터 -02처럼 다음 주문번호로 분리합니다.\n" +
+      "상품은 최대 10개씩 같은 주문번호로 묶고, 11번째 상품부터 -02처럼 다음 주문번호로 분리합니다.\n" +
       "ALPS에서는 지금 등록해둔 13열 기본형식을 선택해서 업로드해주세요."
     );
   } catch (error) {
