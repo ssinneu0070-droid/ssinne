@@ -2764,7 +2764,7 @@ async function bulkCompleteBankMatches() {
 
 
 /* =========================================================
-   V4.08 롯데택배 ALPS 5품목 정확열순서 / 기존 주문번호 자동생성 / 송장결과 업로드
+   V4.09 합배송 주문번호 지원 / 롯데택배 ALPS 5품목 자동분할 / 송장결과 업로드
 ========================================================= */
 function chunkArrayV401(list, size) {
   const out = [];
@@ -2806,11 +2806,20 @@ function validateLotteRowsV408(rows, headers) {
   if (headers.length !== 33) throw new Error("롯데 엑셀 열 수가 33개가 아닙니다. 현재 " + headers.length + "개입니다.");
 }
 
-function buildLotteOrderNumberV407(baseOrderNumber, groupIndex) {
-  const base = String(baseOrderNumber || "").trim().replace(/\s+/g, "");
-  if (!/^\d{6}-\d{4}$/.test(base)) {
-    throw new Error("롯데택배용 주문번호가 표준 형식이 아닙니다: " + (base || "(빈값)") + "\n관리자에서 '기존 주문번호 자동생성'을 먼저 실행한 뒤 다시 다운로드해주세요.");
+function getRepresentativeOrderNumberV409(orderNumber) {
+  const raw = String(orderNumber || "").trim().replace(/\s+/g, "");
+  if (!raw) return "";
+  // 합배송 주문번호(예: 260822-1075+260822-1076)는 첫 번째 주문번호를 롯데용 대표번호로 사용합니다.
+  const parts = raw.split("+").map(function(v){ return String(v || "").trim(); }).filter(Boolean);
+  const first = parts[0] || "";
+  if (!/^\d{6}-\d{4}$/.test(first)) {
+    throw new Error("롯데택배용 주문번호를 만들 수 없습니다: " + raw + "\n주문번호는 YYMMDD-0001 형식이거나, 합배송 시 YYMMDD-0001+YYMMDD-0002 형식이어야 합니다.");
   }
+  return first;
+}
+
+function buildLotteOrderNumberV407(baseOrderNumber, groupIndex) {
+  const base = getRepresentativeOrderNumberV409(baseOrderNumber);
   const result = base + "-" + String(groupIndex + 1).padStart(2,"0");
   if (result.length > 50) throw new Error("롯데택배 주문번호 50자 제한을 초과했습니다: " + result);
   return result;
@@ -2869,7 +2878,7 @@ async function downloadLotteExcel() {
     XLSX.utils.book_append_sheet(wb, ws, "롯데택배출고");
     const date = todayString().replace(/-/g, "");
     XLSX.writeFile(wb, "씬느샵_롯데택배_ALPS_" + date + ".xlsx");
-    alert("롯데택배용 엑셀 " + rows.length + "행을 만들었습니다.\n상품은 송장 1장당 최대 5개로 자동 분리했습니다.\n\n중요: ALPS 신규형식도 33개 필드를 이 엑셀과 같은 순서로 등록해야 합니다.");
+    alert("롯데택배용 엑셀 " + rows.length + "행을 만들었습니다.\n상품은 송장 1장당 최대 5개로 자동 분리했습니다.\n\n중요: ALPS 신규형식도 33개 필드를 이 엑셀과 같은 순서로 등록해야 합니다.\n합배송 주문은 첫 주문번호를 대표번호로 사용해도 전체주문이력의 합배송 주문번호에 다시 연결됩니다.");
   } catch (error) {
     alert("롯데택배 엑셀 생성 오류: " + (error.message || error));
   } finally {
