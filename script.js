@@ -7,7 +7,7 @@
   아래 3개 주소만 실제 주소로 바꾸세요.
 */
 const CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwObiO2MpJk7xOKwmSWgBevZQH5NXnoU8EA-oZ6lH4lg9Rzkf3PEj_J6MGPvTuymkae/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwUEc7W9XJgCbxZsqa3K2gEWpOOblrtfAD-LK53zfNHaP4dliCoOvyKjsiw1YcP9bh-/exec",
   BAND_URL: "https://www.band.us/band/102398891/post",
   CHANNEL_URL: "https://pf.kakao.com/_YVncn"
 };
@@ -484,7 +484,7 @@ function initAdminPage() {
   if (fillLegacyBtn) fillLegacyBtn.addEventListener("click", fillLegacyOrderNumbers);
 
   const lotteExcelBtn = document.getElementById("lotteExcelButton");
-  if (lotteExcelBtn) lotteExcelBtn.addEventListener("click", downloadLotteExcel);
+  if (lotteExcelBtn) lotteExcelBtn.addEventListener("click", downloadLotteExcelV413);
   const lotteTrackingBtn = document.getElementById("lotteTrackingButton");
   const lotteTrackingFile = document.getElementById("lotteTrackingFile");
   if (lotteTrackingBtn && lotteTrackingFile) {
@@ -2764,12 +2764,12 @@ async function bulkCompleteBankMatches() {
 
 
 /* =========================================================
-   V4.11 롯데택배 ALPS 공식 13열 형식 / 상품 10개 단위 송장분할
-   - ALPS 공식 양식: 주문번호, 주문자, 받는사람, 주소, 전화번호1,
-     고객메시지, 우편번호, 상품코드1, 상품명1, 옵션1(색상),
-     옵션2(사이즈), 내품수량1, 수량(A타입)
-   - 한 엑셀 행에는 상품 1개만 기록
-   - 같은 송장에 묶일 최대 10개 상품은 동일한 롯데용 주문번호(-01 등)를 사용
+   V4.13 롯데택배 ALPS 48열 강제 형식 / 송장 1장 = 엑셀 1행
+   - 기본정보 7열
+   - 상품1~상품10: 상품코드/상품명/상품상세/내품수량 (40열)
+   - 마지막 AV열: 수량(A타입)=1
+   - 상품 최대 10개를 한 행에 담고 11번째부터 -02, -03으로 새 행 생성
+   - 실제 ALPS 5장 출력 테스트에서 정상 동작한 구조와 동일
 ========================================================= */
 function chunkArrayV401(list, size) {
   const out = [];
@@ -2777,37 +2777,54 @@ function chunkArrayV401(list, size) {
   return out;
 }
 
-function lotteExportHeadersV410() {
-  return [
-    "주문번호","주문자","받는사람","주소","전화번호1","고객메시지","우편번호",
-    "상품코드1","상품명1","옵션1(색상)","옵션2(사이즈)","내품수량1","수량(A타입)"
-  ];
+function lotteExportHeadersV412() {
+  const headers = ["주문번호","주문자","받는사람","주소","전화번호1","고객메시지","우편번호"];
+  for (let i = 1; i <= 10; i++) {
+    headers.push("상품코드" + i, "상품명" + i, "상품상세" + i, "내품수량" + i);
+  }
+  headers.push("수량(A타입)");
+  return headers;
 }
 
-function validateLotteRowsV410(rows, headers) {
+function validateLotteRowsV412(rows, headers) {
   if (!Array.isArray(rows) || !rows.length) throw new Error("롯데택배로 내보낼 주문이 없습니다.");
   if (rows.length > 10000) throw new Error("롯데 ALPS 업로드 한도 10,000행을 초과했습니다. 현재 " + rows.length + "행입니다.");
-  if (!Array.isArray(headers) || headers.length !== 13) {
-    throw new Error("롯데 공식 기본형식은 13열이어야 합니다. 현재 " + (headers ? headers.length : 0) + "열입니다.");
+  if (!Array.isArray(headers) || headers.length !== 48) {
+    throw new Error("롯데 ALPS 형식은 48열이어야 합니다. 현재 " + (headers ? headers.length : 0) + "열입니다.");
   }
   rows.forEach(function(row, idx){
+    const rowNo = idx + 2;
+    const orderNo = String(row["주문번호"] || "").trim();
+    if (!orderNo) throw new Error(rowNo + "행 주문번호가 비어 있습니다.");
+    if (orderNo.length > 50) throw new Error(rowNo + "행 주문번호가 50자를 초과합니다: " + orderNo);
+    if (!String(row["받는사람"] || "").trim()) throw new Error(rowNo + "행 받는사람이 비어 있습니다.");
+    if (!String(row["주소"] || "").trim()) throw new Error(rowNo + "행 주소가 비어 있습니다.");
+    if (!String(row["전화번호1"] || "").trim()) throw new Error(rowNo + "행 전화번호1이 비어 있습니다.");
     const boxQty = row["수량(A타입)"];
-    if (!Number.isInteger(boxQty) || boxQty !== 1) {
-      throw new Error((idx+2) + "행의 수량(A타입)은 숫자 1이어야 합니다.");
+    if (!Number.isInteger(Number(boxQty)) || Number(boxQty) !== 1) {
+      throw new Error(rowNo + "행 수량(A타입)은 숫자 1이어야 합니다.");
     }
-    const q = row["내품수량1"];
-    if (!Number.isInteger(Number(q)) || Number(q) < 1) {
-      throw new Error((idx+2) + "행 내품수량1 값이 올바르지 않습니다: " + q);
+    let productCount = 0;
+    for (let i = 1; i <= 10; i++) {
+      const code = String(row["상품코드" + i] || "").trim();
+      const name = String(row["상품명" + i] || "").trim();
+      const detail = String(row["상품상세" + i] || "").trim();
+      const qty = row["내품수량" + i];
+      if (code || name || detail || qty !== "") {
+        if (!code && !name) continue;
+        const n = Number(qty);
+        if (!Number.isInteger(n) || n < 1) throw new Error(rowNo + "행 내품수량" + i + " 값이 올바르지 않습니다: " + qty);
+        productCount++;
+      }
     }
-    if (!String(row["주문번호"] || "").trim()) throw new Error((idx+2) + "행 주문번호가 비어 있습니다.");
-    if (String(row["주문번호"]).length > 50) throw new Error((idx+2) + "행 주문번호가 50자를 초과합니다.");
+    if (productCount < 1) throw new Error(rowNo + "행에 상품이 없습니다.");
+    if (productCount > 10) throw new Error(rowNo + "행 상품 수가 10개를 초과했습니다.");
   });
 }
 
 function getRepresentativeOrderNumberV409(orderNumber) {
   const raw = String(orderNumber || "").trim().replace(/\s+/g, "");
   if (!raw) return "";
-  // 합배송 주문번호는 첫 번째 주문번호를 롯데용 대표번호로 사용합니다.
   const parts = raw.split("+").map(function(v){ return String(v || "").trim(); }).filter(Boolean);
   const first = parts[0] || "";
   if (!/^\d{6}-\d{4}$/.test(first)) {
@@ -2823,67 +2840,81 @@ function buildLotteOrderNumberV410(baseOrderNumber, groupIndex) {
   return result;
 }
 
-async function downloadLotteExcel() {
+function buildLotte48RowV412(order, items, groupIndex) {
+  const row = {
+    "주문번호": buildLotteOrderNumberV410(order.orderNumber, groupIndex),
+    "주문자": order.nickname || "",
+    "받는사람": order.receiverName || "",
+    "주소": order.address || "",
+    "전화번호1": order.phone || "",
+    "고객메시지": order.shippingMemo || "",
+    "우편번호": order.zipcode || ""
+  };
+  for (let i = 1; i <= 10; i++) {
+    const item = items[i - 1];
+    row["상품코드" + i] = item ? (item.productNo || "") : "";
+    row["상품명" + i] = item ? (item.productName || "") : "";
+    row["상품상세" + i] = item ? [item.color || "", item.size || ""].filter(Boolean).join("/") : "";
+    row["내품수량" + i] = item ? (Number(item.quantity || 0) || 1) : "";
+  }
+  row["수량(A타입)"] = 1;
+  return row;
+}
+
+async function downloadLotteExcelV413() {
+  console.log("[SSINNEU] LOTTE EXPORT V4.13 / 48COL");
   if (typeof XLSX === "undefined") {
     alert("엑셀 기능을 불러오지 못했습니다. 인터넷 연결 후 다시 시도해주세요.");
     return;
   }
   const btn = document.getElementById("lotteExcelButton");
   if (btn) btn.disabled = true;
-  showLoading("롯데택배 ALPS 공식 13열 엑셀을 만드는 중입니다.");
+  showLoading("롯데택배 ALPS 48열 엑셀을 만드는 중입니다.");
   try {
     const data = await apiGet({action:"lotteOrders"});
     const orders = Array.isArray(data.orders) ? data.orders : [];
     if (!orders.length) throw new Error("3PL출고에 다운로드할 주문이 없습니다. 먼저 3PL출고를 최신화해주세요.");
 
     const rows = [];
-    let invoiceGroups = 0;
+    let sourceCustomers = 0;
+    let totalProducts = 0;
     orders.forEach(function(order){
-      const groups = chunkArrayV401(order.items || [], 10);
-      groups.forEach(function(items, groupIndex){
-        invoiceGroups++;
-        const lotteOrderNo = buildLotteOrderNumberV410(order.orderNumber, groupIndex);
-        // ALPS 공식 13열 양식은 한 행에 상품 1개입니다.
-        // 같은 송장에 묶을 상품(최대 10개)은 같은 롯데 주문번호를 반복해 기록합니다.
-        items.forEach(function(item){
-          rows.push({
-            "주문번호": lotteOrderNo,
-            "주문자": order.nickname || "",
-            "받는사람": order.receiverName || "",
-            "주소": order.address || "",
-            "전화번호1": order.phone || "",
-            "고객메시지": order.shippingMemo || "",
-            "우편번호": order.zipcode || "",
-            "상품코드1": item.productNo || "",
-            "상품명1": item.productName || "",
-            "옵션1(색상)": item.color || "",
-            "옵션2(사이즈)": item.size || "",
-            "내품수량1": Number(item.quantity || 0) || 1,
-            "수량(A타입)": 1
-          });
-        });
+      const items = Array.isArray(order.items) ? order.items : [];
+      if (!items.length) return;
+      sourceCustomers++;
+      totalProducts += items.length;
+      const groups = chunkArrayV401(items, 10);
+      groups.forEach(function(group, groupIndex){
+        rows.push(buildLotte48RowV412(order, group, groupIndex));
       });
     });
 
-    const headers = lotteExportHeadersV410();
-    validateLotteRowsV410(rows, headers);
-    const ws = XLSX.utils.json_to_sheet(rows, {header:headers});
+    const headers = lotteExportHeadersV412();
+    validateLotteRowsV412(rows, headers);
+
+    // json_to_sheet 사용 시 반드시 지정한 48개 헤더 순서 그대로 생성합니다.
+    const ws = XLSX.utils.json_to_sheet(rows, {header:headers, skipHeader:false});
     ws["!cols"] = headers.map(function(h){
       if (h === "주소") return {wch:42};
       if (h === "고객메시지") return {wch:24};
-      if (h === "상품명1") return {wch:24};
-      if (h === "옵션1(색상)" || h === "옵션2(사이즈)") return {wch:18};
+      if (/^상품명\d+$/.test(h)) return {wch:24};
+      if (/^상품상세\d+$/.test(h)) return {wch:20};
       return {wch:14};
     });
     const wb = XLSX.utils.book_new();
+    wb.Props = { Title: "SSINNEU V4.13 LOTTE 48COL", Subject: "48 columns / 10 products / 1 invoice row", Comments: "V4.13" };
     XLSX.utils.book_append_sheet(wb, ws, "sheet1");
     const date = todayString().replace(/-/g, "");
-    XLSX.writeFile(wb, "씬느샵_롯데택배_ALPS_13열_" + date + ".xlsx");
+    XLSX.writeFile(wb, "씬느샵_V4.13_롯데택배_ALPS_48열_" + date + ".xlsx");
+
     alert(
-      "롯데택배 공식 13열 형식으로 엑셀을 만들었습니다.\n" +
-      "상품행: " + rows.length + "행 / 예상 송장그룹: " + invoiceGroups + "개\n\n" +
-      "상품은 최대 10개씩 같은 주문번호로 묶고, 11번째 상품부터 -02처럼 다음 주문번호로 분리합니다.\n" +
-      "ALPS에서는 지금 등록해둔 13열 기본형식을 선택해서 업로드해주세요."
+      "V4.13 롯데택배 48열 파일을 만들었습니다.\n\n" +
+      "3PL 주문: " + sourceCustomers + "건\n" +
+      "상품 종류: " + totalProducts + "개\n" +
+      "예상 송장: " + rows.length + "장\n\n" +
+      "중요: 다운로드한 엑셀의 데이터 행 수도 " + rows.length + "행이어야 합니다.\n" +
+      "ALPS에서는 상품1~10 + AV 수량(A타입) 형식으로 등록한 48열 신규형식을 선택해주세요.\n" +
+      "이 파일은 테스트에서 정상 출력된 '송장 1장 = 엑셀 1행' 구조와 동일합니다."
     );
   } catch (error) {
     alert("롯데택배 엑셀 생성 오류: " + (error.message || error));
