@@ -7,7 +7,7 @@
   아래 3개 주소만 실제 주소로 바꾸세요.
 */
 const CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwUEc7W9XJgCbxZsqa3K2gEWpOOblrtfAD-LK53zfNHaP4dliCoOvyKjsiw1YcP9bh-/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwObiO2MpJk7xOKwmSWgBevZQH5NXnoU8EA-oZ6lH4lg9Rzkf3PEj_J6MGPvTuymkae/exec",
   BAND_URL: "https://www.band.us/band/102398891/post",
   CHANNEL_URL: "https://pf.kakao.com/_YVncn"
 };
@@ -484,7 +484,7 @@ function initAdminPage() {
   if (fillLegacyBtn) fillLegacyBtn.addEventListener("click", fillLegacyOrderNumbers);
 
   const lotteExcelBtn = document.getElementById("lotteExcelButton");
-  if (lotteExcelBtn) lotteExcelBtn.addEventListener("click", downloadLotteExcelV413);
+  if (lotteExcelBtn) lotteExcelBtn.addEventListener("click", downloadLotteExcelV414);
   const lotteTrackingBtn = document.getElementById("lotteTrackingButton");
   const lotteTrackingFile = document.getElementById("lotteTrackingFile");
   if (lotteTrackingBtn && lotteTrackingFile) {
@@ -991,12 +991,22 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 }
 
 
+async function ensureBackendV414() {
+  const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
+  const version = String(info && info.version || "");
+  if (version.indexOf("V4.14") !== 0) {
+    throw new Error("Apps Script 서버가 아직 V4.14가 아닙니다.\n현재 서버: " + (version || "확인불가") + "\n\n새 Code.gs로 교체한 뒤 Apps Script에서 [배포 > 배포 관리 > 수정 > 새 버전]으로 다시 배포해주세요.");
+  }
+  return info;
+}
+
 async function fillLegacyOrderNumbers() {
   const btn = document.getElementById("fillLegacyOrderNumbersButton");
   if (!confirm("빈 주문번호와 LEGACY-/OLD- 주문번호를 YYMMDD-0001 형식으로 통일할까요?\n\n이미 표준 형식인 주문번호는 변경하지 않습니다.")) return;
   if (btn) btn.disabled = true;
   showLoading("기존 주문번호를 표준 형식으로 확인하고 있습니다.");
   try {
+    await ensureBackendV414();
     const result = await apiPost({ action: "fillLegacyOrderNumbers" });
     let message = result.message || "기존 주문번호 자동생성이 완료되었습니다.";
     if (result.bySheet) {
@@ -2764,7 +2774,7 @@ async function bulkCompleteBankMatches() {
 
 
 /* =========================================================
-   V4.13 롯데택배 ALPS 48열 강제 형식 / 송장 1장 = 엑셀 1행
+   V4.14 롯데택배 ALPS 48열 강제 형식 / 송장 1장 = 엑셀 1행
    - 기본정보 7열
    - 상품1~상품10: 상품코드/상품명/상품상세/내품수량 (40열)
    - 마지막 AV열: 수량(A타입)=1
@@ -2861,8 +2871,8 @@ function buildLotte48RowV412(order, items, groupIndex) {
   return row;
 }
 
-async function downloadLotteExcelV413() {
-  console.log("[SSINNEU] LOTTE EXPORT V4.13 / 48COL");
+async function downloadLotteExcelV414() {
+  console.log("[SSINNEU] LOTTE EXPORT V4.14 / 48COL");
   if (typeof XLSX === "undefined") {
     alert("엑셀 기능을 불러오지 못했습니다. 인터넷 연결 후 다시 시도해주세요.");
     return;
@@ -2871,9 +2881,15 @@ async function downloadLotteExcelV413() {
   if (btn) btn.disabled = true;
   showLoading("롯데택배 ALPS 48열 엑셀을 만드는 중입니다.");
   try {
-    const data = await apiGet({action:"lotteOrders"});
+    await ensureBackendV414();
+    const data = await apiGet({action:"lotteOrders", _ts:Date.now()});
     const orders = Array.isArray(data.orders) ? data.orders : [];
-    if (!orders.length) throw new Error("3PL출고에 다운로드할 주문이 없습니다. 먼저 3PL출고를 최신화해주세요.");
+    if (!orders.length) {
+      const meta = data && data.meta ? data.meta : {};
+      throw new Error("3PL출고에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
+        "3PL 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
+        "시트에 주문이 보이는데 0건이면 Code.gs를 V4.14로 새 버전 배포했는지 확인해주세요.");
+    }
 
     const rows = [];
     let sourceCustomers = 0;
@@ -2902,13 +2918,13 @@ async function downloadLotteExcelV413() {
       return {wch:14};
     });
     const wb = XLSX.utils.book_new();
-    wb.Props = { Title: "SSINNEU V4.13 LOTTE 48COL", Subject: "48 columns / 10 products / 1 invoice row", Comments: "V4.13" };
+    wb.Props = { Title: "SSINNEU V4.14 LOTTE 48COL", Subject: "48 columns / 10 products / 1 invoice row", Comments: "V4.14" };
     XLSX.utils.book_append_sheet(wb, ws, "sheet1");
     const date = todayString().replace(/-/g, "");
-    XLSX.writeFile(wb, "씬느샵_V4.13_롯데택배_ALPS_48열_" + date + ".xlsx");
+    XLSX.writeFile(wb, "씬느샵_V4.14_롯데택배_ALPS_48열_" + date + ".xlsx");
 
     alert(
-      "V4.13 롯데택배 48열 파일을 만들었습니다.\n\n" +
+      "V4.14 롯데택배 48열 파일을 만들었습니다.\n\n" +
       "3PL 주문: " + sourceCustomers + "건\n" +
       "상품 종류: " + totalProducts + "개\n" +
       "예상 송장: " + rows.length + "장\n\n" +
