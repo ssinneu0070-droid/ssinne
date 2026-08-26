@@ -483,8 +483,8 @@ function initAdminPage() {
   const fillLegacyBtn = document.getElementById("fillLegacyOrderNumbersButton");
   if (fillLegacyBtn) fillLegacyBtn.addEventListener("click", fillLegacyOrderNumbers);
 
-  const lotteExcelBtn = document.getElementById("lotteExcelButtonV415");
-  if (lotteExcelBtn) lotteExcelBtn.addEventListener("click", downloadLotteExcelV415);
+  const lotteExcelBtn = document.getElementById("lotteExcelButtonV417");
+  if (lotteExcelBtn) lotteExcelBtn.addEventListener("click", downloadLotteExcelV417);
   const lotteTrackingBtn = document.getElementById("lotteTrackingButton");
   const lotteTrackingFile = document.getElementById("lotteTrackingFile");
   if (lotteTrackingBtn && lotteTrackingFile) {
@@ -994,8 +994,8 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
-  if (version.indexOf("V4.15") !== 0) {
-    throw new Error("Apps Script 서버가 아직 V4.15가 아닙니다.\n현재 서버: " + (version || "확인불가") + "\n\n새 Code.gs로 교체한 뒤 Apps Script에서 [배포 > 배포 관리 > 수정 > 새 버전]으로 다시 배포해주세요.");
+  if (version.indexOf("V4.17") !== 0) {
+    throw new Error("Apps Script 서버가 아직 V4.17이 아닙니다.\n현재 서버: " + (version || "확인불가") + "\n\n새 Code.gs로 교체한 뒤 Apps Script에서 [배포 > 배포 관리 > 수정 > 새 버전]으로 다시 배포해주세요.");
   }
   return info;
 }
@@ -2774,7 +2774,7 @@ async function bulkCompleteBankMatches() {
 
 
 /* =========================================================
-   V4.15 롯데택배 ALPS 48열 전용 엔진 / 송장 1장 = 엑셀 1행
+   V4.17 롯데택배 ALPS 48열 통합 전용 엔진 / 송장 1장 = 엑셀 1행
    - 기본정보 7열
    - 상품1~상품10: 상품코드/상품명/상품상세/내품수량 (40열)
    - 마지막 AV열: 수량(A타입)=1
@@ -2871,13 +2871,13 @@ function buildLotte48RowV412(order, items, groupIndex) {
   return row;
 }
 
-async function downloadLotteExcelV415() {
-  console.log("[SSINNEU] LOTTE EXPORT V4.15 / 48COL ONLY");
+async function downloadLotteExcelV417() {
+  console.log("[SSINNEU] LOTTE EXPORT V4.17 / 48COL ONLY");
   if (typeof XLSX === "undefined") {
     alert("엑셀 기능을 불러오지 못했습니다. 인터넷 연결 후 다시 시도해주세요.");
     return;
   }
-  const btn = document.getElementById("lotteExcelButtonV415");
+  const btn = document.getElementById("lotteExcelButtonV417");
   if (btn) btn.disabled = true;
   showLoading("롯데택배 ALPS 48열 엑셀을 만드는 중입니다.");
   try {
@@ -2888,7 +2888,7 @@ async function downloadLotteExcelV415() {
       const meta = data && data.meta ? data.meta : {};
       throw new Error("3PL출고에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
         "3PL 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
-        "시트에 주문이 보이는데 0건이면 Code.gs를 V4.15로 새 버전 배포했는지 확인해주세요.");
+        "시트에 주문이 보이는데 0건이면 Code.gs를 V4.17로 새 버전 배포했는지 확인해주세요.");
     }
 
     const rows = [];
@@ -2914,7 +2914,7 @@ async function downloadLotteExcelV415() {
     const decoded = XLSX.utils.decode_range(ref);
     const actualCols = decoded.e.c - decoded.s.c + 1;
     if (actualCols !== 48 || XLSX.utils.encode_col(decoded.e.c) !== "AV") {
-      throw new Error("V4.15 48열 생성 검증 실패: 실제 " + actualCols + "열 / 마지막열 " + XLSX.utils.encode_col(decoded.e.c));
+      throw new Error("V4.17 48열 생성 검증 실패: 실제 " + actualCols + "열 / 마지막열 " + XLSX.utils.encode_col(decoded.e.c));
     }
     ws["!cols"] = headers.map(function(h){
       if (h === "주소") return {wch:42};
@@ -2924,13 +2924,13 @@ async function downloadLotteExcelV415() {
       return {wch:14};
     });
     const wb = XLSX.utils.book_new();
-    wb.Props = { Title: "SSINNEU V4.15 LOTTE 48COL ONLY", Subject: "48 columns / 10 products / 1 invoice row", Comments: "V4.15-48COL-ONLY" };
+    wb.Props = { Title: "SSINNEU V4.17 LOTTE 48COL ONLY", Subject: "48 columns / 10 products / 1 invoice row", Comments: "V4.17-48COL-ONLY" };
     XLSX.utils.book_append_sheet(wb, ws, "sheet1");
     const date = todayString().replace(/-/g, "");
-    XLSX.writeFile(wb, "씬느샵_V4.15_롯데택배_ALPS_48열_" + date + ".xlsx");
+    XLSX.writeFile(wb, "씬느샵_V4.17_롯데택배_ALPS_48열_" + date + ".xlsx");
 
     alert(
-      "V4.15 롯데택배 48열 전용 파일을 만들었습니다.\n\n" +
+      "V4.17 롯데택배 48열 전용 파일을 만들었습니다.\n\n" +
       "3PL 주문: " + sourceCustomers + "건\n" +
       "상품 종류: " + totalProducts + "개\n" +
       "예상 송장: " + rows.length + "장\n\n" +
