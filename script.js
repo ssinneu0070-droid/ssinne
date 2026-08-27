@@ -483,8 +483,8 @@ function initAdminPage() {
   const fillLegacyBtn = document.getElementById("fillLegacyOrderNumbersButton");
   if (fillLegacyBtn) fillLegacyBtn.addEventListener("click", fillLegacyOrderNumbers);
 
-  const lotteExcelBtn = document.getElementById("lotteExcelButtonV417");
-  if (lotteExcelBtn) lotteExcelBtn.addEventListener("click", downloadLotteExcelV417);
+  const lotteExcelBtn = document.getElementById("lotteExcelButtonV418");
+  if (lotteExcelBtn) lotteExcelBtn.addEventListener("click", downloadLotteExcelV418);
   const lotteTrackingBtn = document.getElementById("lotteTrackingButton");
   const lotteTrackingFile = document.getElementById("lotteTrackingFile");
   if (lotteTrackingBtn && lotteTrackingFile) {
@@ -994,8 +994,8 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
-  if (version.indexOf("V4.17") !== 0) {
-    throw new Error("Apps Script 서버가 아직 V4.17이 아닙니다.\n현재 서버: " + (version || "확인불가") + "\n\n새 Code.gs로 교체한 뒤 Apps Script에서 [배포 > 배포 관리 > 수정 > 새 버전]으로 다시 배포해주세요.");
+  if (version.indexOf("V4.18") !== 0) {
+    throw new Error("Apps Script 서버가 아직 V4.18이 아닙니다.\n현재 서버: " + (version || "확인불가") + "\n\n새 Code.gs로 교체한 뒤 Apps Script에서 [배포 > 배포 관리 > 수정 > 새 버전]으로 다시 배포해주세요.");
   }
   return info;
 }
@@ -1263,10 +1263,10 @@ async function lookupCustomerOrders() {
 function renderCustomerOrders(orders){
   document.getElementById("lookupCount").textContent=orders.length+"건";const c=document.getElementById("customerOrderList");
   if(!orders.length){c.innerHTML='<div class="empty-state">일치하는 주문내역이 없습니다.<br>이름과 연락처 뒤 4자리를 다시 확인해주세요.</div>';return;}
-  c.innerHTML=orders.map(function(o){const tr=o.trackingNumber||"",numeric=String(tr).replace(/[^0-9]/g,"");return `<article class="order-result-card v2-order-card">
+  c.innerHTML=orders.map(function(o){const tr=o.trackingNumber||"",numeric=String(tr).replace(/[^0-9]/g,""),courier=o.courier||"롯데택배",trackingUrl=courier.indexOf("롯데")>=0?("https://www.lotteglogis.com/home/reservation/tracking/linkView?InvNo="+encodeURIComponent(numeric)):("https://trace.cjlogistics.com/next/tracking.html?wblNo="+encodeURIComponent(numeric));return `<article class="order-result-card v2-order-card">
     <div class="v2-card-head"><div><span>${escapeHtml(o.orderDate||"보관 주문")}</span><h3>주문번호 ${escapeHtml(o.orderNumber||"-")}</h3></div><b class="status-pill ${o.paymentStatus==='미입금'?'unpaid':(o.paymentStatus==='카드결제'?'card-paid':'paid')}">${escapeHtml(o.paymentStatus)}</b></div>
     <div class="order-result-items">${escapeHtml(o.orderItems)}</div><div class="v2-total"><span>총 주문금액</span><strong>${money(o.paymentAmount)}</strong></div>
-    ${tr?`<div class="customer-delivery-box"><div><span>CJ대한통운</span><strong>${escapeHtml(tr)}</strong></div><a class="delivery-button" target="_blank" rel="noopener" href="https://trace.cjlogistics.com/next/tracking.html?wblNo=${encodeURIComponent(numeric)}">배송조회</a></div>`:''}
+    ${tr?`<div class="customer-delivery-box"><div><span>${escapeHtml(courier)}</span><strong>${escapeHtml(tr)}</strong></div><a class="delivery-button" target="_blank" rel="noopener" href="${trackingUrl}">배송조회</a></div>`:''}
     ${o.canEdit||o.canCancel?`<div class="v2-actions">${o.canEdit?`<button class="btn btn-outline customer-edit-btn" data-order="${escapeHtml(o.orderNumber)}">주문 수정</button>`:''}${o.canCancel?`<button class="btn btn-danger customer-cancel-btn" data-order="${escapeHtml(o.orderNumber)}">주문 취소</button>`:''}</div>`:`<div class="locked-note">입금완료 주문은 수정·취소가 불가합니다. 채널톡으로 문의해주세요.</div>`}
   </article>`;}).join("");
   c.querySelectorAll('.customer-edit-btn').forEach(b=>b.onclick=()=>openCustomerEdit(orders.find(o=>o.orderNumber===b.dataset.order)));
@@ -2774,7 +2774,7 @@ async function bulkCompleteBankMatches() {
 
 
 /* =========================================================
-   V4.17 롯데택배 ALPS 48열 통합 전용 엔진 / 송장 1장 = 엑셀 1행
+   V4.18 롯데택배 ALPS 48열 · 구매수량 내림차순 · 송장자동매칭 엔진 / 송장 1장 = 엑셀 1행
    - 기본정보 7열
    - 상품1~상품10: 상품코드/상품명/상품상세/내품수량 (40열)
    - 마지막 AV열: 수량(A타입)=1
@@ -2871,13 +2871,30 @@ function buildLotte48RowV412(order, items, groupIndex) {
   return row;
 }
 
-async function downloadLotteExcelV417() {
-  console.log("[SSINNEU] LOTTE EXPORT V4.17 / 48COL ONLY");
+function lotteBuyerTotalQuantityV418(order) {
+  const items = Array.isArray(order && order.items) ? order.items : [];
+  return items.reduce(function(sum, item){
+    const qty = Number(item && item.quantity || 0);
+    return sum + (Number.isFinite(qty) && qty > 0 ? qty : 0);
+  }, 0);
+}
+
+function sortLotteOrdersByQuantityV418(orders) {
+  return (Array.isArray(orders) ? orders : []).map(function(order, index){
+    return {order:order, index:index, totalQuantity:lotteBuyerTotalQuantityV418(order)};
+  }).sort(function(a,b){
+    if (b.totalQuantity !== a.totalQuantity) return b.totalQuantity - a.totalQuantity;
+    return a.index - b.index;
+  }).map(function(entry){ return entry.order; });
+}
+
+async function downloadLotteExcelV418() {
+  console.log("[SSINNEU] LOTTE EXPORT V4.18 / 48COL / QTY DESC");
   if (typeof XLSX === "undefined") {
     alert("엑셀 기능을 불러오지 못했습니다. 인터넷 연결 후 다시 시도해주세요.");
     return;
   }
-  const btn = document.getElementById("lotteExcelButtonV417");
+  const btn = document.getElementById("lotteExcelButtonV418");
   if (btn) btn.disabled = true;
   showLoading("롯데택배 ALPS 48열 엑셀을 만드는 중입니다.");
   try {
@@ -2888,17 +2905,20 @@ async function downloadLotteExcelV417() {
       const meta = data && data.meta ? data.meta : {};
       throw new Error("3PL출고에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
         "3PL 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
-        "시트에 주문이 보이는데 0건이면 Code.gs를 V4.17로 새 버전 배포했는지 확인해주세요.");
+        "시트에 주문이 보이는데 0건이면 Code.gs를 V4.18로 새 버전 배포했는지 확인해주세요.");
     }
 
+    const sortedOrders = sortLotteOrdersByQuantityV418(orders);
     const rows = [];
     let sourceCustomers = 0;
     let totalProducts = 0;
-    orders.forEach(function(order){
+    let totalUnits = 0;
+    sortedOrders.forEach(function(order){
       const items = Array.isArray(order.items) ? order.items : [];
       if (!items.length) return;
       sourceCustomers++;
       totalProducts += items.length;
+      totalUnits += lotteBuyerTotalQuantityV418(order);
       const groups = chunkArrayV401(items, 10);
       groups.forEach(function(group, groupIndex){
         rows.push(buildLotte48RowV412(order, group, groupIndex));
@@ -2914,7 +2934,7 @@ async function downloadLotteExcelV417() {
     const decoded = XLSX.utils.decode_range(ref);
     const actualCols = decoded.e.c - decoded.s.c + 1;
     if (actualCols !== 48 || XLSX.utils.encode_col(decoded.e.c) !== "AV") {
-      throw new Error("V4.17 48열 생성 검증 실패: 실제 " + actualCols + "열 / 마지막열 " + XLSX.utils.encode_col(decoded.e.c));
+      throw new Error("V4.18 48열 생성 검증 실패: 실제 " + actualCols + "열 / 마지막열 " + XLSX.utils.encode_col(decoded.e.c));
     }
     ws["!cols"] = headers.map(function(h){
       if (h === "주소") return {wch:42};
@@ -2924,16 +2944,18 @@ async function downloadLotteExcelV417() {
       return {wch:14};
     });
     const wb = XLSX.utils.book_new();
-    wb.Props = { Title: "SSINNEU V4.17 LOTTE 48COL ONLY", Subject: "48 columns / 10 products / 1 invoice row", Comments: "V4.17-48COL-ONLY" };
+    wb.Props = { Title: "SSINNEU V4.18 LOTTE 48COL QTY DESC", Subject: "48 columns / 10 products / 1 invoice row", Comments: "V4.18-48COL-QTY-DESC" };
     XLSX.utils.book_append_sheet(wb, ws, "sheet1");
     const date = todayString().replace(/-/g, "");
-    XLSX.writeFile(wb, "씬느샵_V4.17_롯데택배_ALPS_48열_" + date + ".xlsx");
+    XLSX.writeFile(wb, "씬느샵_V4.18_롯데택배_ALPS_48열_수량내림차순_" + date + ".xlsx");
 
     alert(
-      "V4.17 롯데택배 48열 전용 파일을 만들었습니다.\n\n" +
+      "V4.18 롯데택배 48열 · 구매수량 내림차순 파일을 만들었습니다.\n\n" +
       "3PL 주문: " + sourceCustomers + "건\n" +
       "상품 종류: " + totalProducts + "개\n" +
-      "예상 송장: " + rows.length + "장\n\n" +
+      "총 내품수량: " + totalUnits + "개\n" +
+      "예상 송장: " + rows.length + "장\n" +
+      "정렬: 구매자 총수량 많은 순(내림차순)\n\n" +
       "중요: 다운로드한 엑셀의 데이터 행 수도 " + rows.length + "행이어야 합니다.\n" +
       "ALPS에서는 상품1~10 + AV 수량(A타입) 형식으로 등록한 48열 신규형식을 선택해주세요.\n" +
       "이 파일은 테스트에서 정상 출력된 '송장 1장 = 엑셀 1행' 구조와 동일합니다."
@@ -2997,11 +3019,44 @@ async function uploadLotteTrackingResult(event) {
     }
     if (!mappings.length) throw new Error("연결할 주문번호/운송장번호 데이터를 찾지 못했습니다.");
 
-    const result = await apiPost({action:"applyLotteTracking", mappings:mappings});
-    let message = result.message || "송장번호 자동연결이 완료되었습니다.";
-    if (Array.isArray(result.unmatched) && result.unmatched.length) {
-      message += "\n\n일치하지 않은 주문번호:\n" + result.unmatched.slice(0,10).join("\n");
+    // V4.18: Apps Script POST가 404로 막히는 환경을 피하기 위해
+    // 이미 정상 동작하는 /exec GET 경로로 작은 묶음씩 자동 매칭합니다.
+    // PIDPIC 결과파일의 주문번호(J열) + 운송장번호(G열)도 헤더명으로 자동 인식합니다.
+    const deduped = [];
+    const seen = new Set();
+    mappings.forEach(function(item){
+      const key = String(item.baseOrderNumber || "") + "|" + String(item.trackingNumber || "");
+      if (!seen.has(key)) { seen.add(key); deduped.push(item); }
+    });
+
+    const batchSize = 20;
+    let updatedRows = 0;
+    let trackingCount = 0;
+    const unmatchedSet = new Set();
+    for (let start = 0; start < deduped.length; start += batchSize) {
+      const batch = deduped.slice(start, start + batchSize);
+      showLoading("롯데 송장번호 자동매칭 중... " + Math.min(start + batch.length, deduped.length) + "/" + deduped.length);
+      const part = await apiGet({
+        action:"applyLotteTrackingGet",
+        mappings:JSON.stringify(batch),
+        _ts:Date.now()
+      });
+      updatedRows += Number(part.updatedRows || 0);
+      trackingCount += Number(part.trackingCount || 0);
+      (Array.isArray(part.unmatched) ? part.unmatched : []).forEach(function(v){ unmatchedSet.add(v); });
     }
+
+    const unmatched = Array.from(unmatchedSet);
+    let message =
+      "롯데 송장번호 자동매칭이 완료되었습니다.\n\n" +
+      "결과파일 행: " + mappings.length + "건\n" +
+      "중복제거 후 매칭: " + deduped.length + "건\n" +
+      "전체주문이력 반영: " + updatedRows + "행\n" +
+      "처리 송장번호: " + trackingCount + "개";
+    if (unmatched.length) {
+      message += "\n\n일치하지 않은 주문번호 " + unmatched.length + "개:\n" + unmatched.slice(0,10).join("\n");
+    }
+    try { await searchAdminOrders(); } catch(refreshError) {}
     alert(message);
   } catch (error) {
     alert("롯데 송장결과 업로드 오류: " + (error.message || error));
