@@ -994,8 +994,8 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
-  if (version.indexOf("V4.19") !== 0) {
-    throw new Error("Apps Script 서버가 아직 V4.19가 아닙니다.\n현재 서버: " + (version || "확인불가") + "\n\n새 Code.gs로 교체한 뒤 Apps Script에서 [배포 > 배포 관리 > 수정 > 새 버전]으로 다시 배포해주세요.");
+  if (version.indexOf("V4.19") !== 0 && version.indexOf("V4.20") !== 0) {
+    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.19 또는 V4.20 Code.gs가 배포되어 있어야 합니다.");
   }
   return info;
 }
@@ -2774,7 +2774,7 @@ async function bulkCompleteBankMatches() {
 
 
 /* =========================================================
-   V4.19 롯데택배 ALPS 48열 · 구매수량 내림차순 · 송장자동매칭 엔진 / 송장 1장 = 엑셀 1행
+   V4.20 롯데택배 ALPS 48열 · 내품수량↓ + 상품번호↓ · 송장자동매칭 엔진 / 송장 1장 = 엑셀 1행
    - 기본정보 7열
    - 상품1~상품10: 상품코드/상품명/상품상세/내품수량 (40열)
    - 마지막 AV열: 수량(A타입)=1
@@ -2879,17 +2879,76 @@ function lotteBuyerTotalQuantityV418(order) {
   }, 0);
 }
 
-function sortLotteOrdersByQuantityV418(orders) {
-  return (Array.isArray(orders) ? orders : []).map(function(order, index){
-    return {order:order, index:index, totalQuantity:lotteBuyerTotalQuantityV418(order)};
+function lotteProductNoPartsV420(value) {
+  const raw = String(value == null ? "" : value).trim();
+  const match = raw.match(/\d+/);
+  return {
+    raw: raw,
+    hasNumber: !!match,
+    number: match ? Number(match[0]) : -Infinity
+  };
+}
+
+function compareLotteProductNoDescV420(a, b) {
+  const aa = lotteProductNoPartsV420(a && a.productNo);
+  const bb = lotteProductNoPartsV420(b && b.productNo);
+  if (aa.hasNumber && bb.hasNumber && aa.number !== bb.number) return bb.number - aa.number;
+  if (aa.hasNumber !== bb.hasNumber) return aa.hasNumber ? -1 : 1;
+  return bb.raw.localeCompare(aa.raw, "ko", {numeric:true, sensitivity:"base"});
+}
+
+function sortLotteItemsByProductNoV420(items) {
+  return (Array.isArray(items) ? items : []).map(function(item, index){
+    return {item:item, index:index};
   }).sort(function(a,b){
+    const byNo = compareLotteProductNoDescV420(a.item, b.item);
+    return byNo || (a.index - b.index);
+  }).map(function(entry){ return entry.item; });
+}
+
+function lotteProductNoSequenceV420(order) {
+  return sortLotteItemsByProductNoV420(order && order.items).map(function(item){
+    return lotteProductNoPartsV420(item && item.productNo);
+  });
+}
+
+function compareLotteProductSequencesDescV420(aSeq, bSeq) {
+  const maxLen = Math.max(aSeq.length, bSeq.length);
+  for (let i = 0; i < maxLen; i++) {
+    const a = aSeq[i];
+    const b = bSeq[i];
+    if (!a && b) return 1;
+    if (a && !b) return -1;
+    if (!a && !b) break;
+    if (a.hasNumber && b.hasNumber && a.number !== b.number) return b.number - a.number;
+    if (a.hasNumber !== b.hasNumber) return a.hasNumber ? -1 : 1;
+    const byText = b.raw.localeCompare(a.raw, "ko", {numeric:true, sensitivity:"base"});
+    if (byText) return byText;
+  }
+  return 0;
+}
+
+function sortLotteOrdersV420(orders) {
+  return (Array.isArray(orders) ? orders : []).map(function(order, index){
+    return {
+      order: order,
+      index: index,
+      totalQuantity: lotteBuyerTotalQuantityV418(order),
+      productSequence: lotteProductNoSequenceV420(order)
+    };
+  }).sort(function(a,b){
+    // 1순위: 구매자별 총 내품수량 많은 순
     if (b.totalQuantity !== a.totalQuantity) return b.totalQuantity - a.totalQuantity;
+    // 2순위: 내품수량이 같으면 구매내역의 상품번호 큰 순
+    const byProductNo = compareLotteProductSequencesDescV420(a.productSequence, b.productSequence);
+    if (byProductNo) return byProductNo;
+    // 완전히 같으면 3PL 원래 순서를 유지합니다.
     return a.index - b.index;
   }).map(function(entry){ return entry.order; });
 }
 
 async function downloadLotteExcelV418() {
-  console.log("[SSINNEU] LOTTE EXPORT V4.19 / 48COL / QTY DESC");
+  console.log("[SSINNEU] LOTTE EXPORT V4.20 / 48COL / QTY DESC / PRODUCT NO DESC");
   if (typeof XLSX === "undefined") {
     alert("엑셀 기능을 불러오지 못했습니다. 인터넷 연결 후 다시 시도해주세요.");
     return;
@@ -2905,16 +2964,18 @@ async function downloadLotteExcelV418() {
       const meta = data && data.meta ? data.meta : {};
       throw new Error("3PL출고에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
         "3PL 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
-        "시트에 주문이 보이는데 0건이면 Code.gs를 V4.19로 새 버전 배포했는지 확인해주세요.");
+        "시트에 주문이 보이는데 0건이면 Code.gs가 V4.19 또는 V4.20 호환 버전인지 확인해주세요.");
     }
 
-    const sortedOrders = sortLotteOrdersByQuantityV418(orders);
+    const sortedOrders = sortLotteOrdersV420(orders);
     const rows = [];
     let sourceCustomers = 0;
     let totalProducts = 0;
     let totalUnits = 0;
     sortedOrders.forEach(function(order){
-      const items = Array.isArray(order.items) ? order.items : [];
+      // 고객 한 명의 구매내역도 상품번호 큰 순으로 정렬한 뒤 상품1~10 칸에 넣습니다.
+      // 정렬만 바꾸며 상품은 삭제하지 않으므로 모든 상품명이 유지됩니다.
+      const items = sortLotteItemsByProductNoV420(order.items);
       if (!items.length) return;
       sourceCustomers++;
       totalProducts += items.length;
@@ -2934,7 +2995,7 @@ async function downloadLotteExcelV418() {
     const decoded = XLSX.utils.decode_range(ref);
     const actualCols = decoded.e.c - decoded.s.c + 1;
     if (actualCols !== 48 || XLSX.utils.encode_col(decoded.e.c) !== "AV") {
-      throw new Error("V4.19 48열 생성 검증 실패: 실제 " + actualCols + "열 / 마지막열 " + XLSX.utils.encode_col(decoded.e.c));
+      throw new Error("V4.20 48열 생성 검증 실패: 실제 " + actualCols + "열 / 마지막열 " + XLSX.utils.encode_col(decoded.e.c));
     }
     ws["!cols"] = headers.map(function(h){
       if (h === "주소") return {wch:42};
@@ -2944,18 +3005,20 @@ async function downloadLotteExcelV418() {
       return {wch:14};
     });
     const wb = XLSX.utils.book_new();
-    wb.Props = { Title: "SSINNEU V4.19 LOTTE 48COL QTY DESC", Subject: "48 columns / 10 products / 1 invoice row", Comments: "V4.19-48COL-QTY-DESC" };
+    wb.Props = { Title: "SSINNEU V4.20 LOTTE 48COL QTY+PRODUCT DESC", Subject: "48 columns / 10 products / 1 invoice row", Comments: "V4.20-48COL-QTY-PRODUCT-DESC" };
     XLSX.utils.book_append_sheet(wb, ws, "sheet1");
     const date = todayString().replace(/-/g, "");
-    XLSX.writeFile(wb, "씬느샵_V4.19_롯데택배_ALPS_48열_수량내림차순_" + date + ".xlsx");
+    XLSX.writeFile(wb, "씬느샵_V4.20_롯데택배_ALPS_48열_수량상품번호내림차순_" + date + ".xlsx");
 
     alert(
-      "V4.19 롯데택배 48열 · 구매수량 내림차순 파일을 만들었습니다.\n\n" +
+      "V4.20 롯데택배 48열 파일을 만들었습니다.\n\n" +
       "3PL 주문: " + sourceCustomers + "건\n" +
       "상품 종류: " + totalProducts + "개\n" +
       "총 내품수량: " + totalUnits + "개\n" +
       "예상 송장: " + rows.length + "장\n" +
-      "정렬: 구매자 총수량 많은 순(내림차순)\n\n" +
+      "정렬 1: 구매자 총 내품수량 많은 순(내림차순)\n" +
+      "정렬 2: 같은 내품수량끼리는 구매내역 상품번호 큰 순(내림차순)\n" +
+      "상품표시: 각 구매자의 상품도 상품번호 큰 순으로 배치되며 전 상품이 유지됩니다.\n\n" +
       "중요: 다운로드한 엑셀의 데이터 행 수도 " + rows.length + "행이어야 합니다.\n" +
       "ALPS에서는 상품1~10 + AV 수량(A타입) 형식으로 등록한 48열 신규형식을 선택해주세요.\n" +
       "이 파일은 테스트에서 정상 출력된 '송장 1장 = 엑셀 1행' 구조와 동일합니다."
