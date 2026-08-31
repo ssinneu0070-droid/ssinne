@@ -476,7 +476,20 @@ function initAdminPage() {
     });
 
   document.getElementById("rebuildButton")
-    .addEventListener("click", rebuildDerivedSheets);
+    .addEventListener("click", downloadSupplierOrderExcelV423);
+
+  const combinedShippingBtn = document.getElementById("combinedShippingButton");
+  if (combinedShippingBtn) combinedShippingBtn.addEventListener("click", openCombinedShippingModalV423);
+  const combinedShippingClose = document.getElementById("combinedShippingModalClose");
+  const combinedShippingCancel = document.getElementById("combinedShippingCancelButton");
+  const combinedShippingConfirm = document.getElementById("combinedShippingConfirmButton");
+  const combinedShippingModal = document.getElementById("combinedShippingModal");
+  if (combinedShippingClose) combinedShippingClose.addEventListener("click", closeCombinedShippingModalV423);
+  if (combinedShippingCancel) combinedShippingCancel.addEventListener("click", closeCombinedShippingModalV423);
+  if (combinedShippingConfirm) combinedShippingConfirm.addEventListener("click", downloadCombinedShippingExcelV423);
+  if (combinedShippingModal) combinedShippingModal.addEventListener("click", function(event){
+    if (event.target === combinedShippingModal) closeCombinedShippingModalV423();
+  });
   const archiveBtn = document.getElementById("archiveHistoryButton");
   if (archiveBtn) archiveBtn.addEventListener("click", archiveCurrentOrders);
 
@@ -484,7 +497,18 @@ function initAdminPage() {
   if (fillLegacyBtn) fillLegacyBtn.addEventListener("click", fillLegacyOrderNumbers);
 
   const lotteExcelBtn = document.getElementById("lotteExcelButtonV418");
-  if (lotteExcelBtn) lotteExcelBtn.addEventListener("click", downloadLotteExcelV418);
+  if (lotteExcelBtn) lotteExcelBtn.addEventListener("click", openLotteDownloadModalV421);
+
+  const lotteDownloadClose = document.getElementById("lotteDownloadModalClose");
+  const lotteDownloadCancel = document.getElementById("lotteDownloadCancelButton");
+  const lotteDownloadConfirm = document.getElementById("lotteDownloadConfirmButton");
+  const lotteDownloadModal = document.getElementById("lotteDownloadModal");
+  if (lotteDownloadClose) lotteDownloadClose.addEventListener("click", closeLotteDownloadModalV421);
+  if (lotteDownloadCancel) lotteDownloadCancel.addEventListener("click", closeLotteDownloadModalV421);
+  if (lotteDownloadConfirm) lotteDownloadConfirm.addEventListener("click", downloadLotteExcelV418);
+  if (lotteDownloadModal) lotteDownloadModal.addEventListener("click", function(event){
+    if (event.target === lotteDownloadModal) closeLotteDownloadModalV421();
+  });
   const lotteTrackingBtn = document.getElementById("lotteTrackingButton");
   const lotteTrackingFile = document.getElementById("lotteTrackingFile");
   if (lotteTrackingBtn && lotteTrackingFile) {
@@ -994,8 +1018,8 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
-  if (version.indexOf("V4.19") !== 0 && version.indexOf("V4.20") !== 0) {
-    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.19 또는 V4.20 Code.gs가 배포되어 있어야 합니다.");
+  if (version.indexOf("V4.24") !== 0) {
+    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.24 기능을 사용하려면 V4.24 Code.gs를 새 버전으로 배포해야 합니다.");
   }
   return info;
 }
@@ -1027,15 +1051,125 @@ async function fillLegacyOrderNumbers() {
 async function archiveCurrentOrders() {
   const btn = document.getElementById("archiveHistoryButton");
   if (btn) btn.disabled = true;
-  showLoading("전체주문이력에 저장 중입니다. 잠시만 기다려주세요.");
+  showLoading("전체주문이력을 저장/갱신 중입니다. 잠시만 기다려주세요.");
   try {
     const result = await apiPost({ action: "archiveCurrentOrders" });
     hideLoading();
-    alert(result.message || "전체주문이력 저장이 완료되었습니다.");
+    alert(result.message || "전체주문이력 저장/갱신이 완료되었습니다.");
   } catch (error) {
     hideLoading();
-    alert("전체주문이력 저장 중 오류: " + (error.message || error));
+    alert("전체주문이력 저장/갱신 중 오류: " + (error.message || error));
   } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function excelDateLabelV423(startDate, endDate) {
+  const a = String(startDate || "").replace(/-/g, "");
+  const b = String(endDate || "").replace(/-/g, "");
+  if (!a && !b) return todayString().replace(/-/g, "");
+  if (!b || a === b) return a || b;
+  return a + "-" + b;
+}
+
+async function downloadSupplierOrderExcelV423() {
+  if (typeof XLSX === "undefined") {
+    alert("엑셀 기능을 불러오지 못했습니다. 인터넷 연결 후 관리자페이지를 새로고침해주세요.");
+    return;
+  }
+  const btn = document.getElementById("rebuildButton");
+  if (btn) btn.disabled = true;
+  showLoading("거래처발주 엑셀을 만드는 중입니다.");
+  try {
+    await ensureBackendV414();
+    const response = await apiGet({action:"supplierOrderExport", _ts:Date.now()});
+    const data = response && response.data ? response.data : {};
+    const rows = Array.isArray(data.rows) ? data.rows : [];
+    if (!rows.length) throw new Error("거래처에 발주할 주문이 없습니다.");
+
+    const aoa = [["상품번호","상품명","칼라","사이즈","총수량","입금가","총금액","주문자(닉네임,수량)"]];
+    rows.forEach(function(row){
+      aoa.push([
+        row.productNo || "", row.productName || "", row.color || "", row.size || "",
+        Number(row.totalQuantity || 0), Number(row.depositPrice || 0), Number(row.totalAmount || 0), row.customers || ""
+      ]);
+    });
+    aoa.push(["합계","","","",Number(data.totalQuantity || 0),"",Number(data.totalAmount || 0),""]);
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [{wch:12},{wch:26},{wch:14},{wch:14},{wch:11},{wch:14},{wch:16},{wch:34}];
+    for (let r = 1; r < aoa.length; r++) {
+      const e = ws[XLSX.utils.encode_cell({r:r,c:4})]; if (e) e.z = "#,##0";
+      const f = ws[XLSX.utils.encode_cell({r:r,c:5})]; if (f) f.z = "#,##0";
+      const g = ws[XLSX.utils.encode_cell({r:r,c:6})]; if (g) g.z = "#,##0";
+    }
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "거래처발주");
+    const date = todayString().replace(/-/g, "");
+    XLSX.writeFile(wb, "씬느샵_거래처발주_" + date + ".xlsx");
+    alert("거래처발주 엑셀을 만들었습니다.\n\n총수량: " + Number(data.totalQuantity || 0).toLocaleString("ko-KR") + "개\n총금액: " + Number(data.totalAmount || 0).toLocaleString("ko-KR") + "원\n\n마지막 행에 총수량과 총금액이 자동으로 들어갑니다.");
+  } catch(error) {
+    alert("거래처발주 다운로드 오류: " + (error.message || error));
+  } finally {
+    hideLoading();
+    if (btn) btn.disabled = false;
+  }
+}
+
+function openCombinedShippingModalV423() {
+  const modal = document.getElementById("combinedShippingModal");
+  const start = document.getElementById("combinedStartDate");
+  const end = document.getElementById("combinedEndDate");
+  const adminStart = document.getElementById("startDate");
+  const adminEnd = document.getElementById("endDate");
+  const today = todayString();
+  const startValue = (adminStart && adminStart.value) || today;
+  const endValue = (adminEnd && adminEnd.value) || startValue;
+  if (start) start.value = startValue;
+  if (end) end.value = endValue;
+  if (modal) { modal.classList.add("show"); modal.setAttribute("aria-hidden","false"); }
+}
+
+function closeCombinedShippingModalV423() {
+  const modal = document.getElementById("combinedShippingModal");
+  if (modal) { modal.classList.remove("show"); modal.setAttribute("aria-hidden","true"); }
+}
+
+async function downloadCombinedShippingExcelV423() {
+  if (typeof XLSX === "undefined") {
+    alert("엑셀 기능을 불러오지 못했습니다. 인터넷 연결 후 관리자페이지를 새로고침해주세요.");
+    return;
+  }
+  const btn = document.getElementById("combinedShippingButton");
+  const startDate = (document.getElementById("combinedStartDate") || {}).value || "";
+  const endDate = (document.getElementById("combinedEndDate") || {}).value || "";
+  if (!startDate || !endDate) { alert("합배송 고객을 확인할 시작일과 종료일을 선택해주세요."); return; }
+  if (startDate > endDate) { alert("시작일이 종료일보다 늦습니다."); return; }
+  closeCombinedShippingModalV423();
+  if (btn) btn.disabled = true;
+  showLoading(startDate + " ~ " + endDate + " 합배송 가능 고객을 찾는 중입니다.");
+  try {
+    await ensureBackendV414();
+    const response = await apiGet({action:"combinedShippingCandidates", startDate:startDate, endDate:endDate, _ts:Date.now()});
+    const data = response && response.data ? response.data : {};
+    const customers = Array.isArray(data.customers) ? data.customers : [];
+    if (!customers.length) {
+      alert("선택한 기간에는 합배송 가능한 고객이 없습니다.");
+      return;
+    }
+    const aoa = [["수령인","닉네임"]];
+    customers.forEach(function(item){ aoa.push([item.receiverName || "", item.nickname || ""]); });
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [{wch:18},{wch:32}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "합배송가능고객");
+    const date = excelDateLabelV423(startDate,endDate);
+    XLSX.writeFile(wb, "씬느샵_합배송가능고객_" + date + ".xlsx");
+    alert("합배송 가능 고객 " + customers.length + "명을 엑셀로 저장했습니다.\n\n기준: 선택 기간 안에서 수령인 + 연락처가 같은 주문 2건 이상\n저장 항목: 수령인 / 닉네임");
+  } catch(error) {
+    alert("합배송 고객 다운로드 오류: " + (error.message || error));
+  } finally {
+    hideLoading();
     if (btn) btn.disabled = false;
   }
 }
@@ -2774,7 +2908,7 @@ async function bulkCompleteBankMatches() {
 
 
 /* =========================================================
-   V4.20 롯데택배 ALPS 48열 · 내품수량↓ + 상품번호↓ · 송장자동매칭 엔진 / 송장 1장 = 엑셀 1행
+   V4.24 롯데택배 ALPS 48열 · 내품수량↓ + 상품번호↓ · 송장자동매칭 엔진 / 송장 1장 = 엑셀 1행
    - 기본정보 7열
    - 상품1~상품10: 상품코드/상품명/상품상세/내품수량 (40열)
    - 마지막 AV열: 수량(A타입)=1
@@ -2947,24 +3081,69 @@ function sortLotteOrdersV420(orders) {
   }).map(function(entry){ return entry.order; });
 }
 
+function openLotteDownloadModalV421() {
+  const modal = document.getElementById("lotteDownloadModal");
+  const lotteStart = document.getElementById("lotteStartDate");
+  const lotteEnd = document.getElementById("lotteEndDate");
+  const adminStart = document.getElementById("startDate");
+  const adminEnd = document.getElementById("endDate");
+  const today = todayString();
+  const startValue = (adminStart && adminStart.value) || today;
+  const endValue = (adminEnd && adminEnd.value) || startValue;
+  if (lotteStart) lotteStart.value = startValue;
+  if (lotteEnd) lotteEnd.value = endValue;
+  if (modal) {
+    modal.classList.add("show");
+    modal.setAttribute("aria-hidden", "false");
+  }
+}
+
+function closeLotteDownloadModalV421() {
+  const modal = document.getElementById("lotteDownloadModal");
+  if (modal) {
+    modal.classList.remove("show");
+    modal.setAttribute("aria-hidden", "true");
+  }
+}
+
+function lotteDateFileLabelV421(startDate, endDate) {
+  const a = String(startDate || "").replace(/-/g, "");
+  const b = String(endDate || "").replace(/-/g, "");
+  if (!a && !b) return todayString().replace(/-/g, "");
+  if (!b || a === b) return a || b;
+  return a + "-" + b;
+}
+
 async function downloadLotteExcelV418() {
-  console.log("[SSINNEU] LOTTE EXPORT V4.20 / 48COL / QTY DESC / PRODUCT NO DESC");
+  console.log("[SSINNEU] LOTTE EXPORT V4.24 / DATE RANGE / 48COL / QTY DESC / PRODUCT NO DESC");
   if (typeof XLSX === "undefined") {
     alert("엑셀 기능을 불러오지 못했습니다. 인터넷 연결 후 다시 시도해주세요.");
     return;
   }
   const btn = document.getElementById("lotteExcelButtonV418");
+  const startDate = (document.getElementById("lotteStartDate") || {}).value || "";
+  const endDate = (document.getElementById("lotteEndDate") || {}).value || "";
+  if (!startDate || !endDate) {
+    alert("롯데택배 양식을 다운로드할 시작일과 종료일을 선택해주세요.");
+    return;
+  }
+  if (startDate > endDate) {
+    alert("시작일이 종료일보다 늦습니다. 날짜를 다시 선택해주세요.");
+    return;
+  }
+  closeLotteDownloadModalV421();
   if (btn) btn.disabled = true;
-  showLoading("롯데택배 ALPS 48열 엑셀을 만드는 중입니다.");
+  showLoading(startDate + " ~ " + endDate + " 롯데택배 양식을 만드는 중입니다.");
   try {
     await ensureBackendV414();
-    const data = await apiGet({action:"lotteOrders", _ts:Date.now()});
+    const data = await apiGet({action:"lotteOrders", startDate:startDate, endDate:endDate, _ts:Date.now()});
     const orders = Array.isArray(data.orders) ? data.orders : [];
     if (!orders.length) {
       const meta = data && data.meta ? data.meta : {};
       throw new Error("3PL출고에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
         "3PL 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
-        "시트에 주문이 보이는데 0건이면 Code.gs가 V4.19 또는 V4.20 호환 버전인지 확인해주세요.");
+        "선택 기간: " + startDate + " ~ " + endDate + "\n" +
+        "시트에 주문이 보이는데 0건이면 Code.gs가 V4.24인지 확인해주세요.");
     }
 
     const sortedOrders = sortLotteOrdersV420(orders);
@@ -2995,7 +3174,7 @@ async function downloadLotteExcelV418() {
     const decoded = XLSX.utils.decode_range(ref);
     const actualCols = decoded.e.c - decoded.s.c + 1;
     if (actualCols !== 48 || XLSX.utils.encode_col(decoded.e.c) !== "AV") {
-      throw new Error("V4.20 48열 생성 검증 실패: 실제 " + actualCols + "열 / 마지막열 " + XLSX.utils.encode_col(decoded.e.c));
+      throw new Error("V4.24 48열 생성 검증 실패: 실제 " + actualCols + "열 / 마지막열 " + XLSX.utils.encode_col(decoded.e.c));
     }
     ws["!cols"] = headers.map(function(h){
       if (h === "주소") return {wch:42};
@@ -3005,13 +3184,14 @@ async function downloadLotteExcelV418() {
       return {wch:14};
     });
     const wb = XLSX.utils.book_new();
-    wb.Props = { Title: "SSINNEU V4.20 LOTTE 48COL QTY+PRODUCT DESC", Subject: "48 columns / 10 products / 1 invoice row", Comments: "V4.20-48COL-QTY-PRODUCT-DESC" };
+    wb.Props = { Title: "SSINNEU V4.24 LOTTE DATE RANGE 48COL QTY+PRODUCT DESC", Subject: "date range / 48 columns / 10 products / 1 invoice row", Comments: "V4.24-DATE-RANGE-48COL-QTY-PRODUCT-DESC" };
     XLSX.utils.book_append_sheet(wb, ws, "sheet1");
-    const date = todayString().replace(/-/g, "");
-    XLSX.writeFile(wb, "씬느샵_V4.20_롯데택배_ALPS_48열_수량상품번호내림차순_" + date + ".xlsx");
+    const date = lotteDateFileLabelV421(startDate, endDate);
+    XLSX.writeFile(wb, "씬느샵_V4.24_롯데택배_ALPS_48열_" + date + "_수량상품번호내림차순.xlsx");
 
     alert(
-      "V4.20 롯데택배 48열 파일을 만들었습니다.\n\n" +
+      "V4.24 롯데택배 48열 파일을 만들었습니다.\n\n" +
+      "선택 기간: " + startDate + " ~ " + endDate + "\n" +
       "3PL 주문: " + sourceCustomers + "건\n" +
       "상품 종류: " + totalProducts + "개\n" +
       "총 내품수량: " + totalUnits + "개\n" +
