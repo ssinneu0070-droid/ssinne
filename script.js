@@ -1018,8 +1018,8 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
-  if (version.indexOf("V4.24") !== 0) {
-    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.24 기능을 사용하려면 V4.24 Code.gs를 새 버전으로 배포해야 합니다.");
+  if (version.indexOf("V4.25") !== 0) {
+    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.25 기능을 사용하려면 V4.25 Code.gs를 새 버전으로 배포해야 합니다.");
   }
   return info;
 }
@@ -2908,7 +2908,7 @@ async function bulkCompleteBankMatches() {
 
 
 /* =========================================================
-   V4.24 롯데택배 ALPS 48열 · 내품수량↓ + 상품번호↓ · 송장자동매칭 엔진 / 송장 1장 = 엑셀 1행
+   V4.25 롯데택배 ALPS 48열 · 금액 완전 제외 · 송장 가독성 정리 · 내품수량↓ + 상품번호↓
    - 기본정보 7열
    - 상품1~상품10: 상품코드/상품명/상품상세/내품수량 (40열)
    - 마지막 AV열: 수량(A타입)=1
@@ -2930,11 +2930,55 @@ function lotteExportHeadersV412() {
   return headers;
 }
 
+
+
+/* V4.25: 송장에 가격/금액이 섞여 보이지 않도록 상품 텍스트를 정리합니다.
+   - 상품명 끝/중간에 명시적으로 붙은 39,000원 / ₩39,000 / 판매가: 39,000원 같은 가격 표기만 제거
+   - 상품번호에 들어가는 숫자는 건드리지 않음
+   - 상품명 자체는 임의로 잘라내지 않아 전 상품명을 보존
+*/
+function sanitizeLotteLabelTextV425(value) {
+  return String(value == null ? "" : value)
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function removeLottePriceTokensV425(value) {
+  let text = sanitizeLotteLabelTextV425(value);
+  // '판매가/입금가/가격/금액/결제금액 : 39,000원' 형태 제거
+  text = text.replace(/(?:판매가|입금가|가격|금액|결제금액|상품금액)\s*[:：]?\s*(?:₩|￦)?\s*\d{1,3}(?:,\d{3})+(?:\s*원)?/gi, " ");
+  text = text.replace(/(?:판매가|입금가|가격|금액|결제금액|상품금액)\s*[:：]?\s*(?:₩|￦)?\s*\d{4,8}(?:\s*원)/gi, " ");
+  // 괄호 또는 독립 토큰으로 붙은 명확한 원화 가격만 제거. 상품명의 일반 숫자는 유지합니다.
+  text = text.replace(/[（(\[]\s*(?:₩|￦)?\s*\d{1,3}(?:,\d{3})+\s*원?\s*[）)\]]/g, " ");
+  text = text.replace(/(?:₩|￦)\s*\d{1,3}(?:,\d{3})+/g, " ");
+  text = text.replace(/\d{1,3}(?:,\d{3})+\s*원(?=\s|$|[)\]】,./])/g, " ");
+  return text.replace(/\s{2,}/g, " ").trim();
+}
+
+function lotteProductNameForLabelV425(value) {
+  return removeLottePriceTokensV425(value);
+}
+
+function lotteProductDetailForLabelV425(color, size) {
+  const cleanPart = function(value){
+    return sanitizeLotteLabelTextV425(value)
+      .replace(/^(?:색상|컬러|color)\s*[:：-]?\s*/i, "")
+      .replace(/^(?:사이즈|size)\s*[:：-]?\s*/i, "")
+      .trim();
+  };
+  return [cleanPart(color), cleanPart(size)].filter(Boolean).join("/");
+}
+
 function validateLotteRowsV412(rows, headers) {
   if (!Array.isArray(rows) || !rows.length) throw new Error("롯데택배로 내보낼 주문이 없습니다.");
   if (rows.length > 10000) throw new Error("롯데 ALPS 업로드 한도 10,000행을 초과했습니다. 현재 " + rows.length + "행입니다.");
   if (!Array.isArray(headers) || headers.length !== 48) {
     throw new Error("롯데 ALPS 형식은 48열이어야 합니다. 현재 " + (headers ? headers.length : 0) + "열입니다.");
+  }
+  const moneyHeaders = headers.filter(function(h){ return /(금액|판매가|입금가|결제금액|가격)/.test(String(h || "")); });
+  if (moneyHeaders.length) {
+    throw new Error("V4.25 롯데 양식에는 금액 관련 열을 넣을 수 없습니다: " + moneyHeaders.join(", "));
   }
   rows.forEach(function(row, idx){
     const rowNo = idx + 2;
@@ -2991,14 +3035,14 @@ function buildLotte48RowV412(order, items, groupIndex) {
     "받는사람": order.receiverName || "",
     "주소": order.address || "",
     "전화번호1": order.phone || "",
-    "고객메시지": order.shippingMemo || "",
-    "우편번호": order.zipcode || ""
+    "고객메시지": sanitizeLotteLabelTextV425(order.shippingMemo || ""),
+    "우편번호": sanitizeLotteLabelTextV425(order.zipcode || "")
   };
   for (let i = 1; i <= 10; i++) {
     const item = items[i - 1];
-    row["상품코드" + i] = item ? (item.productNo || "") : "";
-    row["상품명" + i] = item ? (item.productName || "") : "";
-    row["상품상세" + i] = item ? [item.color || "", item.size || ""].filter(Boolean).join("/") : "";
+    row["상품코드" + i] = item ? sanitizeLotteLabelTextV425(item.productNo || "") : "";
+    row["상품명" + i] = item ? lotteProductNameForLabelV425(item.productName || "") : "";
+    row["상품상세" + i] = item ? lotteProductDetailForLabelV425(item.color || "", item.size || "") : "";
     row["내품수량" + i] = item ? (Number(item.quantity || 0) || 1) : "";
   }
   row["수량(A타입)"] = 1;
@@ -3115,7 +3159,7 @@ function lotteDateFileLabelV421(startDate, endDate) {
 }
 
 async function downloadLotteExcelV418() {
-  console.log("[SSINNEU] LOTTE EXPORT V4.24 / DATE RANGE / 48COL / QTY DESC / PRODUCT NO DESC");
+  console.log("[SSINNEU] LOTTE EXPORT V4.25 / NO MONEY / LABEL CLEAN / DATE RANGE / 48COL / QTY DESC / PRODUCT NO DESC");
   if (typeof XLSX === "undefined") {
     alert("엑셀 기능을 불러오지 못했습니다. 인터넷 연결 후 다시 시도해주세요.");
     return;
@@ -3143,7 +3187,7 @@ async function downloadLotteExcelV418() {
       throw new Error("3PL출고에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
         "3PL 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
         "선택 기간: " + startDate + " ~ " + endDate + "\n" +
-        "시트에 주문이 보이는데 0건이면 Code.gs가 V4.24인지 확인해주세요.");
+        "시트에 주문이 보이는데 0건이면 Code.gs가 V4.25인지 확인해주세요.");
     }
 
     const sortedOrders = sortLotteOrdersV420(orders);
@@ -3174,7 +3218,7 @@ async function downloadLotteExcelV418() {
     const decoded = XLSX.utils.decode_range(ref);
     const actualCols = decoded.e.c - decoded.s.c + 1;
     if (actualCols !== 48 || XLSX.utils.encode_col(decoded.e.c) !== "AV") {
-      throw new Error("V4.24 48열 생성 검증 실패: 실제 " + actualCols + "열 / 마지막열 " + XLSX.utils.encode_col(decoded.e.c));
+      throw new Error("V4.25 48열 생성 검증 실패: 실제 " + actualCols + "열 / 마지막열 " + XLSX.utils.encode_col(decoded.e.c));
     }
     ws["!cols"] = headers.map(function(h){
       if (h === "주소") return {wch:42};
@@ -3184,24 +3228,27 @@ async function downloadLotteExcelV418() {
       return {wch:14};
     });
     const wb = XLSX.utils.book_new();
-    wb.Props = { Title: "SSINNEU V4.24 LOTTE DATE RANGE 48COL QTY+PRODUCT DESC", Subject: "date range / 48 columns / 10 products / 1 invoice row", Comments: "V4.24-DATE-RANGE-48COL-QTY-PRODUCT-DESC" };
+    wb.Props = { Title: "SSINNEU V4.25 LOTTE NO MONEY LABEL CLEAN 48COL QTY+PRODUCT DESC", Subject: "date range / 48 columns / 10 products / 1 invoice row", Comments: "V4.25-NO-MONEY-LABEL-CLEAN-48COL-QTY-PRODUCT-DESC" };
     XLSX.utils.book_append_sheet(wb, ws, "sheet1");
     const date = lotteDateFileLabelV421(startDate, endDate);
-    XLSX.writeFile(wb, "씬느샵_V4.24_롯데택배_ALPS_48열_" + date + "_수량상품번호내림차순.xlsx");
+    XLSX.writeFile(wb, "씬느샵_V4.25_롯데택배_ALPS_48열_금액미포함_" + date + "_수량상품번호내림차순.xlsx");
 
     alert(
-      "V4.24 롯데택배 48열 파일을 만들었습니다.\n\n" +
+      "V4.25 롯데택배 48열 파일을 만들었습니다.\n\n" +
       "선택 기간: " + startDate + " ~ " + endDate + "\n" +
       "3PL 주문: " + sourceCustomers + "건\n" +
       "상품 종류: " + totalProducts + "개\n" +
       "총 내품수량: " + totalUnits + "개\n" +
       "예상 송장: " + rows.length + "장\n" +
+      "금액 관련 열: 0개 (판매가/입금가/결제금액 미포함)\n" +
+      "상품 텍스트: 명시적인 원화 가격표기 자동 제거\n" +
       "정렬 1: 구매자 총 내품수량 많은 순(내림차순)\n" +
       "정렬 2: 같은 내품수량끼리는 구매내역 상품번호 큰 순(내림차순)\n" +
       "상품표시: 각 구매자의 상품도 상품번호 큰 순으로 배치되며 전 상품이 유지됩니다.\n\n" +
       "중요: 다운로드한 엑셀의 데이터 행 수도 " + rows.length + "행이어야 합니다.\n" +
       "ALPS에서는 상품1~10 + AV 수량(A타입) 형식으로 등록한 48열 신규형식을 선택해주세요.\n" +
-      "이 파일은 테스트에서 정상 출력된 '송장 1장 = 엑셀 1행' 구조와 동일합니다."
+      "출력설정 권장: 상품글씨 8PT / 상품출력수량 10 / 금액·판매가 관련 출력은 체크 해제.\n" +
+      "상품명·상품코드·색상·사이즈·내품수량만 보이게 설정하면 송장 상품칸이 가장 깔끔합니다."
     );
   } catch (error) {
     alert("롯데택배 엑셀 생성 오류: " + (error.message || error));
