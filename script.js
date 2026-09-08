@@ -1018,8 +1018,8 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
-  if (version.indexOf("V4.25") !== 0) {
-    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.25 기능을 사용하려면 V4.25 Code.gs를 새 버전으로 배포해야 합니다.");
+  if (version.indexOf("V4.26") !== 0) {
+    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.26 기능을 사용하려면 V4.26 Code.gs를 새 버전으로 배포해야 합니다.");
   }
   return info;
 }
@@ -3120,7 +3120,7 @@ function sortLotteOrdersV420(orders) {
     // 2순위: 내품수량이 같으면 구매내역의 상품번호 큰 순
     const byProductNo = compareLotteProductSequencesDescV420(a.productSequence, b.productSequence);
     if (byProductNo) return byProductNo;
-    // 완전히 같으면 3PL 원래 순서를 유지합니다.
+    // 완전히 같으면 전체주문이력 원래 순서를 유지합니다.
     return a.index - b.index;
   }).map(function(entry){ return entry.order; });
 }
@@ -3159,7 +3159,7 @@ function lotteDateFileLabelV421(startDate, endDate) {
 }
 
 async function downloadLotteExcelV418() {
-  console.log("[SSINNEU] LOTTE EXPORT V4.25 / NO MONEY / LABEL CLEAN / DATE RANGE / 48COL / QTY DESC / PRODUCT NO DESC");
+  console.log("[SSINNEU] LOTTE EXPORT V4.26 / HISTORY SOURCE / NO MONEY / LABEL CLEAN / DATE RANGE / 48COL / QTY DESC / PRODUCT NO DESC");
   if (typeof XLSX === "undefined") {
     alert("엑셀 기능을 불러오지 못했습니다. 인터넷 연결 후 다시 시도해주세요.");
     return;
@@ -3184,10 +3184,10 @@ async function downloadLotteExcelV418() {
     const orders = Array.isArray(data.orders) ? data.orders : [];
     if (!orders.length) {
       const meta = data && data.meta ? data.meta : {};
-      throw new Error("3PL출고에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
-        "3PL 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
+      throw new Error("전체주문이력에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
+        "전체주문이력 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
         "선택 기간: " + startDate + " ~ " + endDate + "\n" +
-        "시트에 주문이 보이는데 0건이면 Code.gs가 V4.25인지 확인해주세요.");
+        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.26인지 확인해주세요.");
     }
 
     const sortedOrders = sortLotteOrdersV420(orders);
@@ -3218,7 +3218,7 @@ async function downloadLotteExcelV418() {
     const decoded = XLSX.utils.decode_range(ref);
     const actualCols = decoded.e.c - decoded.s.c + 1;
     if (actualCols !== 48 || XLSX.utils.encode_col(decoded.e.c) !== "AV") {
-      throw new Error("V4.25 48열 생성 검증 실패: 실제 " + actualCols + "열 / 마지막열 " + XLSX.utils.encode_col(decoded.e.c));
+      throw new Error("V4.26 48열 생성 검증 실패: 실제 " + actualCols + "열 / 마지막열 " + XLSX.utils.encode_col(decoded.e.c));
     }
     ws["!cols"] = headers.map(function(h){
       if (h === "주소") return {wch:42};
@@ -3228,15 +3228,15 @@ async function downloadLotteExcelV418() {
       return {wch:14};
     });
     const wb = XLSX.utils.book_new();
-    wb.Props = { Title: "SSINNEU V4.25 LOTTE NO MONEY LABEL CLEAN 48COL QTY+PRODUCT DESC", Subject: "date range / 48 columns / 10 products / 1 invoice row", Comments: "V4.25-NO-MONEY-LABEL-CLEAN-48COL-QTY-PRODUCT-DESC" };
+    wb.Props = { Title: "SSINNEU V4.26 LOTTE HISTORY SOURCE NO MONEY LABEL CLEAN 48COL QTY+PRODUCT DESC", Subject: "date range / 48 columns / 10 products / 1 invoice row", Comments: "V4.26-HISTORY-SOURCE-NO-MONEY-LABEL-CLEAN-48COL-QTY-PRODUCT-DESC" };
     XLSX.utils.book_append_sheet(wb, ws, "sheet1");
     const date = lotteDateFileLabelV421(startDate, endDate);
-    XLSX.writeFile(wb, "씬느샵_V4.25_롯데택배_ALPS_48열_금액미포함_" + date + "_수량상품번호내림차순.xlsx");
+    XLSX.writeFile(wb, "씬느샵_V4.26_롯데택배_전체주문이력기준_ALPS_48열_금액미포함_" + date + "_수량상품번호내림차순.xlsx");
 
     alert(
-      "V4.25 롯데택배 48열 파일을 만들었습니다.\n\n" +
+      "V4.26 롯데택배 48열 파일을 만들었습니다.\n\n" +
       "선택 기간: " + startDate + " ~ " + endDate + "\n" +
-      "3PL 주문: " + sourceCustomers + "건\n" +
+      "전체주문이력 주문: " + sourceCustomers + "건\n" +
       "상품 종류: " + totalProducts + "개\n" +
       "총 내품수량: " + totalUnits + "개\n" +
       "예상 송장: " + rows.length + "장\n" +

@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#111827">
-  <title>씬느샵 통합 관리자 V4.25</title>
+  <title>씬느샵 통합 관리자 V4.26</title>
   <link rel="stylesheet" href="style.css?v=20260819-v3-25">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="script.js?v=20260901-v4-25-lotte-no-money-label-clean" defer></script>
+  <script src="script.js?v=20260909-v4-26-lotte-history-source" defer></script>
 </head>
 <body data-page="admin" class="page-admin">
   <div class="admin-app">
@@ -45,15 +45,15 @@
     <main class="admin-main">
       <header class="admin-topbar">
         <div>
-          <span class="eyebrow dark">SSINNEU ADMIN · V4.25</span>
-          <h1>통합 관리자 <small style="font-size:.48em;font-weight:800;vertical-align:middle;opacity:.72;">V4.25</small></h1>
+          <span class="eyebrow dark">SSINNEU ADMIN · V4.26</span>
+          <h1>통합 관리자 <small style="font-size:.48em;font-weight:800;vertical-align:middle;opacity:.72;">V4.26</small></h1>
         </div>
         <div class="topbar-actions">
           <button class="btn btn-dark" type="button" id="rebuildButton">📦 거래처발주 엑셀 다운로드</button>
           <button class="btn btn-dark" type="button" id="combinedShippingButton">🔗 합배송 가능 고객</button>
           <button class="btn btn-primary" type="button" id="archiveHistoryButton">전체주문이력 저장/갱신</button>
           <button class="btn btn-dark" type="button" id="fillLegacyOrderNumbersButton">🔢 기존 주문번호 자동생성</button>
-          <button class="btn btn-primary" type="button" id="lotteExcelButtonV418">🚚 롯데택배 V4.25 · 날짜선택 다운로드</button>
+          <button class="btn btn-primary" type="button" id="lotteExcelButtonV418">🚚 롯데택배 V4.26 · 전체주문이력 날짜선택</button>
           <button class="btn btn-dark" type="button" id="lotteTrackingButton">📥 롯데 송장결과 업로드</button>
           <input type="file" id="lotteTrackingFile" accept=".xlsx,.xls" hidden>
         </div>
@@ -371,7 +371,7 @@
       <div class="panel-title-row" style="margin-bottom:18px;">
         <div>
           <h2 style="margin:0 0 6px;">🚚 롯데택배 양식 다운로드</h2>
-          <p style="margin:0;">3PL출고에서 다운로드할 주문 날짜를 선택하세요.</p>
+          <p style="margin:0;">전체주문이력을 기준으로 롯데택배 양식을 만들 날짜를 선택하세요.</p>
         </div>
       </div>
       <div class="form-grid two">
@@ -385,7 +385,7 @@
         </div>
       </div>
       <div class="locked-note" style="margin-top:14px;">
-        하루치만 받으려면 시작일과 종료일을 같은 날짜로 선택하세요.<br>
+        먼저 <b>전체주문이력 저장/갱신</b>을 완료한 뒤 다운로드하세요.<br>하루치만 받으려면 시작일과 종료일을 같은 날짜로 선택하세요.<br>
         정렬은 기존과 동일하게 <b>내품수량 내림차순 → 같은 수량은 상품번호 내림차순</b>으로 적용됩니다.<br>
         <b>판매가·입금가·결제금액은 롯데 파일에 포함하지 않습니다.</b> 상품명에 명시적으로 붙은 원화 가격표기도 자동 제거합니다.<br>
         ALPS 출력설정은 <b>상품글씨 8PT / 상품출력수량 10 / 금액 관련 출력 체크 해제</b>를 권장합니다.
