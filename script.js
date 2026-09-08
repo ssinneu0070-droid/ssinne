@@ -13,6 +13,8 @@ const CONFIG = {
 };
 
 const CUSTOMER_STORAGE_KEY = "ssinne_customer_info_v2";
+const ADMIN_SESSION_STORAGE_KEY = "ssinne_admin_session_v427";
+let adminTokenV427 = "";
 
 
 function initNoticeGate() {
@@ -93,7 +95,7 @@ document.addEventListener("DOMContentLoaded", function () {
   if (page === "order") initNoticeGate();
 
   if (page === "order") initOrderPage();
-  if (page === "admin") initAdminPage();
+  if (page === "admin") initAdminProtectedPageV427();
   if (page === "customer") initCustomerPage();
 });
 
@@ -103,6 +105,10 @@ function validScriptUrl() {
 }
 
 async function apiGet(params) {
+  params = Object.assign({}, params || {});
+  if (document.body && document.body.dataset.page === "admin" && adminTokenV427 && params.action !== "adminLogin") {
+    params.adminToken = adminTokenV427;
+  }
   if (!validScriptUrl()) {
     throw new Error("script.js의 CONFIG.SCRIPT_URL에 Apps Script /exec 주소를 넣어주세요.");
   }
@@ -152,6 +158,10 @@ async function apiGet(params) {
 }
 
 async function apiPost(payload) {
+  payload = Object.assign({}, payload || {});
+  if (document.body && document.body.dataset.page === "admin" && adminTokenV427 && payload.action !== "adminLogin") {
+    payload.adminToken = adminTokenV427;
+  }
   if (!validScriptUrl()) {
     throw new Error("script.js의 CONFIG.SCRIPT_URL에 Apps Script /exec 주소를 넣어주세요.");
   }
@@ -448,7 +458,83 @@ let adminOrderSource = "current";
 let adminHasSearched = false;
 let adminPaymentFilter = "all";
 
+function initAdminProtectedPageV427() {
+  const gate = document.getElementById("adminLoginGate");
+  const app = document.getElementById("adminApp");
+  const input = document.getElementById("adminPasswordInput");
+  const loginButton = document.getElementById("adminLoginButton");
+  const errorBox = document.getElementById("adminLoginError");
+
+  function setError(message) {
+    if (errorBox) errorBox.textContent = message || "";
+  }
+
+  async function revealAdmin() {
+    if (gate) gate.style.display = "none";
+    if (app) app.style.display = "";
+    initAdminPage();
+  }
+
+  async function login() {
+    const password = input ? input.value : "";
+    if (!password) { setError("비밀번호를 입력해주세요."); return; }
+    if (loginButton) loginButton.disabled = true;
+    setError("");
+    try {
+      const result = await apiPost({action:"adminLogin", password:password});
+      adminTokenV427 = String(result && result.token || "");
+      if (!adminTokenV427) throw new Error("로그인 토큰을 받지 못했습니다.");
+      sessionStorage.setItem(ADMIN_SESSION_STORAGE_KEY, adminTokenV427);
+      if (input) input.value = "";
+      await revealAdmin();
+    } catch (error) {
+      adminTokenV427 = "";
+      sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+      setError(error.message || "관리자 로그인에 실패했습니다.");
+      if (input) { input.focus(); input.select(); }
+    } finally {
+      if (loginButton) loginButton.disabled = false;
+    }
+  }
+
+  if (loginButton) loginButton.addEventListener("click", login);
+  if (input) input.addEventListener("keydown", function(event){
+    if (event.key === "Enter") { event.preventDefault(); login(); }
+  });
+
+  adminTokenV427 = sessionStorage.getItem(ADMIN_SESSION_STORAGE_KEY) || "";
+  if (adminTokenV427) {
+    apiGet({action:"adminSessionCheck"}).then(function(result){
+      if (result && result.valid) revealAdmin();
+      else {
+        adminTokenV427 = "";
+        sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+        if (input) input.focus();
+      }
+    }).catch(function(){
+      adminTokenV427 = "";
+      sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+      if (input) input.focus();
+    });
+  } else if (input) {
+    setTimeout(function(){ input.focus(); }, 50);
+  }
+}
+
+async function logoutAdminV427() {
+  const token = adminTokenV427;
+  try {
+    if (token) await apiPost({action:"adminLogout", adminToken:token});
+  } catch (error) {}
+  adminTokenV427 = "";
+  sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+  location.reload();
+}
+
 function initAdminPage() {
+  const logoutButton = document.getElementById("adminLogoutButton");
+  if (logoutButton) logoutButton.addEventListener("click", logoutAdminV427);
+
   document.querySelectorAll(".side-link[data-tab]").forEach(function(button) {
     button.addEventListener("click", function() {
       showAdminTab(button.dataset.tab);
@@ -1018,8 +1104,8 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
-  if (version.indexOf("V4.26") !== 0) {
-    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.26 기능을 사용하려면 V4.26 Code.gs를 새 버전으로 배포해야 합니다.");
+  if (version.indexOf("V4.27") !== 0) {
+    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.27 기능을 사용하려면 V4.27 Code.gs를 새 버전으로 배포해야 합니다.");
   }
   return info;
 }
@@ -1165,7 +1251,7 @@ async function downloadCombinedShippingExcelV423() {
     XLSX.utils.book_append_sheet(wb, ws, "합배송가능고객");
     const date = excelDateLabelV423(startDate,endDate);
     XLSX.writeFile(wb, "씬느샵_합배송가능고객_" + date + ".xlsx");
-    alert("합배송 가능 고객 " + customers.length + "명을 엑셀로 저장했습니다.\n\n기준: 선택 기간 안에서 수령인 + 연락처가 같은 주문 2건 이상\n저장 항목: 수령인 / 닉네임");
+    alert("합배송 가능 고객 " + customers.length + "명을 엑셀로 저장했습니다.\n\n기준: 전체주문이력의 선택 기간 안에서 수령인 + 연락처가 같은 주문 2건 이상\n저장 항목: 수령인 / 닉네임");
   } catch(error) {
     alert("합배송 고객 다운로드 오류: " + (error.message || error));
   } finally {
@@ -3187,7 +3273,7 @@ async function downloadLotteExcelV418() {
       throw new Error("전체주문이력에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
         "전체주문이력 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
         "선택 기간: " + startDate + " ~ " + endDate + "\n" +
-        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.26인지 확인해주세요.");
+        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.27인지 확인해주세요.");
     }
 
     const sortedOrders = sortLotteOrdersV420(orders);
