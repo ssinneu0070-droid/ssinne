@@ -4,16 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#111827">
-  <title>씬느샵 통합 관리자 V4.38</title>
-  <link rel="stylesheet" href="style.css?v=20260914-v4-38-final">
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="script.js?v=20260914-v4-38-final" defer></script>
+  <title>씬느샵 통합 관리자 V4.39.2</title>
+  <link rel="stylesheet" href="style.css?v=20260915-v4-39-2-final">
+  <script src="script.js?v=20260915-v4-39-2-final" defer></script>
 </head>
 <body data-page="admin" class="page-admin">
   <div class="admin-login-gate" id="adminLoginGate">
     <div class="admin-login-card">
       <div class="admin-login-logo">S</div>
-      <span class="eyebrow dark">SSINNEU ADMIN · V4.38</span>
+      <span class="eyebrow dark">SSINNEU ADMIN · V4.39.2</span>
       <h1>관리자 로그인</h1>
       <p>대표 관리자 또는 CS 직원 비밀번호로 로그인하세요.</p>
       <label for="adminPasswordInput">로그인 비밀번호</label>
@@ -54,8 +53,8 @@
     <main class="admin-main">
       <header class="admin-topbar">
         <div>
-          <span class="eyebrow dark">SSINNEU ADMIN · V4.38</span>
-          <h1>통합 관리자 <small style="font-size:.48em;font-weight:800;vertical-align:middle;opacity:.72;">V4.38</small></h1>
+          <span class="eyebrow dark">SSINNEU ADMIN · V4.39.2</span>
+          <h1>통합 관리자 <small style="font-size:.48em;font-weight:800;vertical-align:middle;opacity:.72;">V4.39.2</small></h1>
           <div class="topbar-role"><span id="adminRoleBadge">로그인 확인중</span><span id="adminBroadcastMini">방송 대기</span></div>
         </div>
         <div class="topbar-actions admin-only">
@@ -73,7 +72,7 @@
 
       <section id="homeTab" class="tab-section active v435-home">
         <section class="v435-welcome">
-          <div><span class="eyebrow dark">TODAY · V4.38</span><h2 id="homeWelcomeTitle">오늘도 좋은 하루 되세요 💗</h2><p id="homeWelcomeText">방송 · 주문 · CS · 출고까지 필요한 업무만 한눈에 확인하세요.</p></div>
+          <div><span class="eyebrow dark">TODAY · V4.39.2</span><h2 id="homeWelcomeTitle">오늘도 좋은 하루 되세요 💗</h2><p id="homeWelcomeText">방송 · 주문 · CS · 출고까지 필요한 업무만 한눈에 확인하세요.</p></div>
           <div class="home-quick-search"><input id="homeQuickSearch" placeholder="닉네임 · 이름 · 전화번호 · 주문번호"><button class="btn btn-primary" id="homeQuickSearchButton" type="button">고객 찾기</button></div>
         </section>
         <div class="summary-grid premium v435-home-summary">
@@ -360,7 +359,7 @@
 
       <section id="liveTab" class="tab-section">
         <section class="admin-panel broadcast-control-v435">
-          <div class="panel-title-row"><div><span class="eyebrow dark">BROADCAST SETUP · V4.38</span><h2>🎥 라이브 방송 설정</h2><p>새 방송을 시작하면 오늘 상품과 상시상품이 방송상품이력에 자동 저장됩니다.</p></div><span id="broadcastStateBadge" class="broadcast-state-badge">방송 대기</span></div>
+          <div class="panel-title-row"><div><span class="eyebrow dark">BROADCAST SETUP · V4.39.2</span><h2>🎥 라이브 방송 설정</h2><p>새 방송을 시작하면 오늘 상품과 상시상품이 방송상품이력에 자동 저장됩니다.</p></div><span id="broadcastStateBadge" class="broadcast-state-badge">방송 대기</span></div>
           <div class="broadcast-grid-v435">
             <div class="field"><label for="broadcastYoutubeUrl">YouTube 라이브 URL</label><input id="broadcastYoutubeUrl" placeholder="https://www.youtube.com/watch?v=..."></div>
             <div class="field"><label for="broadcastName">방송명</label><input id="broadcastName" placeholder="예: 9월 14일 라이브"></div>
@@ -371,7 +370,7 @@
           <details class="api-key-details"><summary>YouTube API 키 설정 (처음 1회)</summary><div class="api-key-row"><input id="youtubeApiKeyInput" type="password" placeholder="YouTube Data API v3 키"><button class="btn btn-subtle" type="button" id="youtubeApiKeySaveButton">API 키 저장</button></div><small>API 키는 GitHub 파일이 아니라 Apps Script 속성에 저장됩니다.</small></details>
         </section>
         <section class="admin-panel live-admin-hero">
-          <div class="panel-title-row"><div><span class="eyebrow dark">LIVE CONTROL · V4.38</span><h2>실시간 주문관리</h2><p>현재 판매상품 설정부터 예약 · 대기 · 취소 · 확인필요까지 한 화면에서 처리합니다.</p></div><div class="live-admin-head-actions"><button type="button" class="btn btn-primary" id="liveCollectNowButton">채팅 지금 수집</button><button type="button" class="btn btn-subtle" id="liveReloadButton">새로고침</button></div></div>
+          <div class="panel-title-row"><div><span class="eyebrow dark">LIVE CONTROL · V4.39.2</span><h2>실시간 주문관리</h2><p>현재 판매상품 설정부터 예약 · 대기 · 취소 · 확인필요까지 한 화면에서 처리합니다.</p></div><div class="live-admin-head-actions"><button type="button" class="btn btn-primary" id="liveCollectNowButton">채팅 지금 수집</button><button type="button" class="btn btn-subtle" id="liveReloadButton">새로고침</button></div></div>
           <div class="live-connection-line"><span id="liveConnectionStatus">방송 연결 상태 확인 중...</span><small id="liveAutoRefreshText">이 화면을 열어두면 약 20초 간격으로 자동 갱신합니다.</small></div>
         </section>
         <section class="admin-panel">

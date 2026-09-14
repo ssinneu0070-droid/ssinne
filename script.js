@@ -1,3 +1,4 @@
+// V4.39.2 - 관리자 XLSX 지연로딩 / 속도·중복·안정화
 // V4.00 - 수령인+닉네임 포함 자동일치 / 분할입금 조합합산 / 부족·초과 / 중복입금 방지
 // V3.30 - 입금 자동대조 시 수령인 + 닉네임 함께 조회
 // V3.29 - 단일 script.js 운영 + 토스뱅크/하나은행 통합 입금대조 + 입금완료 2차 재검사
@@ -17,6 +18,36 @@ const ADMIN_SESSION_STORAGE_KEY = "ssinne_admin_session_v427";
 let adminTokenV427 = "";
 let adminRoleV435 = "";
 let adminCsDataV435 = null;
+
+// V4.39.2: 관리자 첫 화면에서는 무거운 XLSX 라이브러리를 받지 않습니다.
+// 은행 엑셀/롯데 엑셀/발주 엑셀 기능을 실제로 누를 때 한 번만 동적으로 로드합니다.
+let xlsxLoadPromiseV4392 = null;
+function ensureXlsxLibraryLoadedV4392() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  if (xlsxLoadPromiseV4392) return xlsxLoadPromiseV4392;
+  xlsxLoadPromiseV4392 = new Promise(function(resolve, reject) {
+    const existing = document.querySelector('script[data-ssinne-xlsx="1"]');
+    if (existing) {
+      existing.addEventListener("load", function(){ window.XLSX ? resolve(window.XLSX) : reject(new Error("엑셀 라이브러리를 불러오지 못했습니다.")); }, {once:true});
+      existing.addEventListener("error", function(){ reject(new Error("엑셀 라이브러리를 불러오지 못했습니다.")); }, {once:true});
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+    script.async = true;
+    script.dataset.ssinneXlsx = "1";
+    script.onload = function(){
+      if (window.XLSX) resolve(window.XLSX);
+      else reject(new Error("엑셀 라이브러리를 불러오지 못했습니다."));
+    };
+    script.onerror = function(){ try{script.remove();}catch(e){} reject(new Error("엑셀 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인해주세요.")); };
+    document.head.appendChild(script);
+  }).catch(function(error){
+    xlsxLoadPromiseV4392 = null;
+    throw error;
+  });
+  return xlsxLoadPromiseV4392;
+}
 
 
 function initNoticeGate() {
@@ -1199,8 +1230,8 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
-  if (version.indexOf("V4.38") !== 0) {
-    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.38 기능을 사용하려면 V4.38 Code.gs를 새 버전으로 배포해야 합니다.");
+  if (version.indexOf("V4.39") !== 0) {
+    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.39.2 기능을 사용하려면 V4.39.2 Code.gs를 새 버전으로 배포해야 합니다.");
   }
   return info;
 }
@@ -1254,10 +1285,8 @@ function excelDateLabelV423(startDate, endDate) {
 }
 
 async function downloadSupplierOrderExcelV423() {
-  if (typeof XLSX === "undefined") {
-    alert("엑셀 기능을 불러오지 못했습니다. 인터넷 연결 후 관리자페이지를 새로고침해주세요.");
-    return;
-  }
+  try { await ensureXlsxLibraryLoadedV4392(); }
+  catch (error) { alert(error.message || "엑셀 기능을 불러오지 못했습니다."); return; }
   const btn = document.getElementById("rebuildButton");
   if (btn) btn.disabled = true;
   showLoading("거래처발주 엑셀을 만드는 중입니다.");
@@ -1317,10 +1346,8 @@ function closeCombinedShippingModalV423() {
 }
 
 async function downloadCombinedShippingExcelV423() {
-  if (typeof XLSX === "undefined") {
-    alert("엑셀 기능을 불러오지 못했습니다. 인터넷 연결 후 관리자페이지를 새로고침해주세요.");
-    return;
-  }
+  try { await ensureXlsxLibraryLoadedV4392(); }
+  catch (error) { alert(error.message || "엑셀 기능을 불러오지 못했습니다."); return; }
   const btn = document.getElementById("combinedShippingButton");
   const startDate = (document.getElementById("combinedStartDate") || {}).value || "";
   const endDate = (document.getElementById("combinedEndDate") || {}).value || "";
@@ -2355,7 +2382,7 @@ function parseBankSheetRows(rows, fileName) {
 }
 
 async function readBankFile(file) {
-  if (!window.XLSX) throw new Error("엑셀 읽기 프로그램을 불러오지 못했습니다. 인터넷 연결 후 관리자페이지를 새로고침해주세요.");
+  await ensureXlsxLibraryLoadedV4392();
   let buffer;
   try {
     buffer = await file.arrayBuffer();
@@ -3388,10 +3415,8 @@ function lotteDateFileLabelV421(startDate, endDate) {
 
 async function downloadLotteExcelV418() {
   console.log("[SSINNEU] LOTTE EXPORT V4.26 / HISTORY SOURCE / NO MONEY / LABEL CLEAN / DATE RANGE / 48COL / QTY DESC / PRODUCT NO DESC");
-  if (typeof XLSX === "undefined") {
-    alert("엑셀 기능을 불러오지 못했습니다. 인터넷 연결 후 다시 시도해주세요.");
-    return;
-  }
+  try { await ensureXlsxLibraryLoadedV4392(); }
+  catch (error) { alert(error.message || "엑셀 기능을 불러오지 못했습니다."); return; }
   const btn = document.getElementById("lotteExcelButtonV418");
   const startDate = (document.getElementById("lotteStartDate") || {}).value || "";
   const endDate = (document.getElementById("lotteEndDate") || {}).value || "";
@@ -3415,7 +3440,7 @@ async function downloadLotteExcelV418() {
       throw new Error("전체주문이력에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
         "전체주문이력 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
         "선택 기간: " + startDate + " ~ " + endDate + "\n" +
-        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.38인지 확인해주세요.");
+        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.39.2인지 확인해주세요.");
     }
 
     const sortedOrders = sortLotteOrdersV420(orders);
@@ -3507,10 +3532,8 @@ function stripLottePartSuffixV401(orderNumber) {
 async function uploadLotteTrackingResult(event) {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
-  if (typeof XLSX === "undefined") {
-    alert("엑셀 기능을 불러오지 못했습니다.");
-    return;
-  }
+  try { await ensureXlsxLibraryLoadedV4392(); }
+  catch (error) { alert(error.message || "엑셀 기능을 불러오지 못했습니다."); return; }
   showLoading("롯데 송장결과 엑셀에서 주문번호와 송장번호를 찾는 중입니다.");
   try {
     const buffer = await file.arrayBuffer();
@@ -3585,7 +3608,7 @@ async function uploadLotteTrackingResult(event) {
 }
 
 /* =========================================================
-   V4.38 최종안정화 PC/모바일 통합 관리자 · 방송회차 · 상시상품 · CS
+   V4.39.2 속도·중복·안정화 PC/모바일 통합 관리자 · 방송회차 · 상시상품 · CS
 ========================================================= */
 function applyAdminRoleV435(){
   const role=adminRoleV435||sessionStorage.getItem("ssinne_admin_role_v435")||"admin";
@@ -3753,7 +3776,7 @@ function renderBroadcastStatusV435(b,y){
 async function clearTodayProductsV435(){if(!confirm("오늘상품만 모두 비울까요?\n상시상품은 그대로 유지됩니다."))return;try{showLoading("오늘상품을 정리하는 중입니다.");const r=await apiPost({action:"adminClearTodayProducts"});alert(r.message||"정리했습니다.");await loadAdminProducts();}catch(e){alert(e.message);}finally{hideLoading();}}
 async function changeSheetModeV435(mode){try{showLoading("시트 화면을 정리하는 중입니다.");const r=await apiPost({action:"adminSheetMode",mode});alert(r.message||"시트를 정리했습니다.");}catch(e){alert(e.message);}finally{hideLoading();}}
 
-// V4.38 상품관리: 판매구분은 기존 열을 밀지 않고 맨 뒤 열에 저장합니다.
+// V4.39.2 상품관리: 판매구분은 기존 열을 밀지 않고 맨 뒤 열에 저장합니다.
 function renderAdminProducts(){
   const tbody=byId("adminProductList"),keyword=(byId("productKeyword").value||"").trim().toLowerCase();
   const filtered=adminProducts.filter(p=>[p.saleType,p.productNo,p.productName,p.color,p.size].join(" ").toLowerCase().includes(keyword));
