@@ -763,10 +763,10 @@ function initAdminPage() {
     summaryUnpaidCard.addEventListener("click", showUnpaidAndCardOrders);
   }
 
-  const summaryAllCard = document.getElementById("summaryAllCard");
-  if (summaryAllCard) summaryAllCard.addEventListener("click", showAllPaymentOrdersV4404);
-  const summaryPaidCard = document.getElementById("summaryPaidCard");
-  if (summaryPaidCard) summaryPaidCard.addEventListener("click", showPaidOrdersV4404);
+  const summaryAllCardV4404=document.getElementById("summaryAllCardV4404");
+  if(summaryAllCardV4404) summaryAllCardV4404.addEventListener("click",showAllOrdersV4404);
+  const summaryPaidCardV4404=document.getElementById("summaryPaidCardV4404");
+  if(summaryPaidCardV4404) summaryPaidCardV4404.addEventListener("click",showPaidOrdersV4404);
 
   document.getElementById("backToOrderListButton")
     .addEventListener("click", showOrderListView);
@@ -828,7 +828,7 @@ function resetAdminOrderDisplay() {
   adminOrders = [];
   adminHasSearched = false;
   adminPaymentFilter = "all";
-  ["summaryAllCard","summaryPaidCard","summaryUnpaidCard"].forEach(id=>{const el=byId(id);if(el)el.classList.remove("active-filter");});
+  setOrderSummaryActiveV4404("");
 
   document.getElementById("summaryOrderCount")
     .textContent = "0";
@@ -982,7 +982,7 @@ function showOrderListView() {
 
 async function searchAdminOrders() {
   adminPaymentFilter = "all";
-  ["summaryAllCard","summaryPaidCard","summaryUnpaidCard"].forEach(id=>{const el=byId(id);if(el)el.classList.remove("active-filter");});
+  setOrderSummaryActiveV4404("");
 
   const startDate =
     document.getElementById("startDate").value;
@@ -1051,6 +1051,18 @@ function loadAllAdminOrders() {
   searchAdminOrders();
 }
 
+function setOrderSummaryActiveV4404(which){
+  ["summaryAllCardV4404","summaryPaidCardV4404","summaryUnpaidCard"].forEach(function(id){const el=document.getElementById(id);if(el)el.classList.toggle("active-filter",id===which);});
+}
+function showAllOrdersV4404(){
+  if(!adminHasSearched){alert("먼저 조회하기, 오늘 주문 또는 전체 보기를 눌러 주문을 조회해주세요.");return;}
+  adminPaymentFilter="all";setOrderSummaryActiveV4404("summaryAllCardV4404");renderAdminOrders();showOrderListView();
+}
+function showPaidOrdersV4404(){
+  if(!adminHasSearched){alert("먼저 조회하기, 오늘 주문 또는 전체 보기를 눌러 주문을 조회해주세요.");return;}
+  adminPaymentFilter="paid";setOrderSummaryActiveV4404("summaryPaidCardV4404");renderAdminOrders();showOrderListView();
+}
+
 function showUnpaidAndCardOrders() {
   if (!adminHasSearched) {
     alert("먼저 조회하기, 오늘 주문 또는 전체 보기를 눌러 주문을 조회해주세요.");
@@ -1058,23 +1070,9 @@ function showUnpaidAndCardOrders() {
   }
 
   adminPaymentFilter = "unpaid-card";
-  setOrderSummaryActiveV4404("unpaid-card");
+  setOrderSummaryActiveV4404("summaryUnpaidCard");
   renderAdminOrders();
   showOrderListView();
-}
-
-function setOrderSummaryActiveV4404(name){
-  const map={all:"summaryAllCard",paid:"summaryPaidCard","unpaid-card":"summaryUnpaidCard"};
-  Object.values(map).forEach(id=>{const el=byId(id);if(el)el.classList.remove("active-filter");});
-  const id=map[name]; if(id&&byId(id))byId(id).classList.add("active-filter");
-}
-function showAllPaymentOrdersV4404(){
-  if(!adminHasSearched){alert("먼저 주문을 조회해주세요.");return;}
-  adminPaymentFilter="all"; setOrderSummaryActiveV4404("all"); renderAdminOrders(); showOrderListView();
-}
-function showPaidOrdersV4404(){
-  if(!adminHasSearched){alert("먼저 주문을 조회해주세요.");return;}
-  adminPaymentFilter="paid"; setOrderSummaryActiveV4404("paid"); renderAdminOrders(); showOrderListView();
 }
 
 function renderAdminOrders() {
@@ -1109,14 +1107,16 @@ function renderAdminOrders() {
         return ["미입금","카드결제대기","카드링크발송"].includes(order.paymentStatus);
       })
     : adminPaymentFilter === "paid"
-      ? adminOrders.filter(function(order){
-          return ["입금완료","카드결제완료","카드결제"].includes(order.paymentStatus);
-        })
+      ? adminOrders.filter(function(order){return ["입금완료","카드결제완료","카드결제"].includes(order.paymentStatus);})
       : adminOrders;
 
   if (!displayOrders.length) {
     tbody.innerHTML = '<tr><td colspan="14" class="empty-cell">' +
-      (adminPaymentFilter === "unpaid-card" ? '미입금 또는 카드결제 주문이 없습니다.' : adminPaymentFilter === "paid" ? '입금완료 주문이 없습니다.' : '조회된 주문이 없습니다.') +
+      (adminPaymentFilter === "unpaid-card"
+        ? '미입금 또는 카드결제 주문이 없습니다.'
+        : adminPaymentFilter === "paid"
+          ? '입금완료된 주문이 없습니다.'
+          : '조회된 주문이 없습니다.') +
       '</td></tr>';
     return;
   }
@@ -1250,7 +1250,7 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
-  if (version.indexOf("V4.40.4") !== 0) {
+  if (version.indexOf("V4.39") !== 0) {
     throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.40.4 기능을 사용하려면 V4.40.4 Code.gs를 새 버전으로 배포해야 합니다.");
   }
   return info;
@@ -2030,49 +2030,49 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 let adminLiveTimerV432=null;
-let adminLiveLastDataV4404=null;
-let adminLiveStatusFilterV4404="";
+let adminLiveDataV4404=null;
+let adminLiveStatusFilterV4404="all";
 function initAdminLiveV432(){
   const reload=byId("liveReloadButton"),collect=byId("liveCollectNowButton"),setBtn=byId("liveSetSaleButton"),clearBtn=byId("liveClearSaleButton");
-  document.querySelectorAll("[data-live-filter]").forEach(btn=>btn.onclick=()=>setLiveStatusFilterV4404(btn.dataset.liveFilter));
-  document.querySelectorAll("[data-bank-result]").forEach(btn=>btn.onclick=()=>focusBankResultV4404(btn.dataset.bankResult));
+  document.querySelectorAll("[data-live-summary-status]").forEach(function(card){card.onclick=function(){setLiveSummaryFilterV4404(card.dataset.liveSummaryStatus);};});
   if(reload)reload.onclick=loadAdminLiveDashboardV432;
   if(collect)collect.onclick=async()=>{try{showLoading("라이브 채팅을 수집하고 있습니다.");const r=await apiPost({action:"adminLiveCollect"});await loadAdminLiveDashboardV432();if(r&&r.skipped)console.log("YouTube 권장 수집간격 대기",r.nextPollMs)}catch(e){alert(e.message)}finally{hideLoading()}};
   if(setBtn)setBtn.onclick=async()=>{try{await apiPost({action:"adminLiveSetSale",productNo:(byId("liveSaleProductNo").value||"").trim(),color:(byId("liveSaleColor").value||"").trim(),size:(byId("liveSaleSize").value||"").trim()});await loadAdminLiveDashboardV432()}catch(e){alert(e.message)}};
   if(clearBtn)clearBtn.onclick=async()=>{if(!confirm("현재 판매상품 설정을 지울까요?"))return;try{await apiPost({action:"adminLiveSetSale",productNo:"",color:"",size:""});await loadAdminLiveDashboardV432()}catch(e){alert(e.message)}};
 }
-function focusBankResultV4404(type){
-  document.querySelectorAll("[data-bank-result]").forEach(b=>b.classList.toggle("active-filter",b.dataset.bankResult===type));
-  const sec=document.querySelector(`[data-bank-section="${CSS.escape(type)}"]`);
-  if(sec){sec.classList.add("focus-section-v4404");setTimeout(()=>sec.classList.remove("focus-section-v4404"),1400);sec.scrollIntoView({behavior:"smooth",block:"start"});}
-}
-function setLiveStatusFilterV4404(status){
-  adminLiveStatusFilterV4404=(adminLiveStatusFilterV4404===status)?"":status;
-  document.querySelectorAll("[data-live-filter]").forEach(b=>b.classList.toggle("active-filter",b.dataset.liveFilter===adminLiveStatusFilterV4404));
-  if(adminLiveLastDataV4404)renderAdminLiveDashboardV432(adminLiveLastDataV4404);
-  const table=byId("liveAdminOrderList");if(table&&table.closest("section"))table.closest("section").scrollIntoView({behavior:"smooth",block:"start"});
-}
 function startAdminLiveAutoV432(){stopAdminLiveAutoV432();adminLiveTimerV432=setInterval(async()=>{if(!byId("liveTab")||!byId("liveTab").classList.contains("active")||document.hidden)return;try{await apiPost({action:"adminLiveCollect"});await loadAdminLiveDashboardV432(true)}catch(e){console.warn("라이브 자동갱신",e.message)}},20000)}
 function stopAdminLiveAutoV432(){if(adminLiveTimerV432){clearInterval(adminLiveTimerV432);adminLiveTimerV432=null}}
 async function loadAdminLiveDashboardV432(silent){try{if(!silent)showLoading("라이브 주문을 불러오는 중입니다.");const d=await apiGet({action:"adminLiveDashboard"});renderAdminLiveDashboardV432(d)}catch(e){if(!silent)alert(e.message)}finally{if(!silent)hideLoading()}}
 function renderAdminLiveDashboardV432(d){
-  adminLiveLastDataV4404=d;
+  adminLiveDataV4404=d||{};
   const c=d.counts||{},sale=d.currentSale||{};[ ["liveReservedCount",c.reserved],["liveReviewCount",c.review],["liveWaitingCount",c.waiting],["liveCancelledCount",c.cancelled] ].forEach(x=>{const el=byId(x[0]);if(el)el.textContent=Number(x[1]||0)});const badge=byId("liveNavBadge");if(badge)badge.textContent=Number(c.review||0)+Number(c.waiting||0);
   const conn=byId("liveConnectionStatus");if(conn)conn.innerHTML=(d.youtube&&d.youtube.connected?"🟢 YouTube 방송 연결됨":"⚪ YouTube 방송 미연결")+(sale.broadcastId?" · 방송ID "+escapeHtml(sale.broadcastId):"");
   const cur=byId("liveCurrentSale");if(cur)cur.innerHTML=sale.productNo?`현재 판매: <strong>${escapeHtml(sale.productNo)}번</strong> ${sale.color?" · "+escapeHtml(sale.color):""} ${sale.size?" · "+escapeHtml(sale.size):""}`:"현재 판매상품 없음";
   if(sale.productNo){byId("liveSaleProductNo").value=sale.productNo;byId("liveSaleColor").value=sale.color||"";byId("liveSaleSize").value=sale.size||""}
-  const body=byId("liveAdminOrderList"),allOrders=d.orders||[],orders=adminLiveStatusFilterV4404?allOrders.filter(o=>String(o.status||"")===adminLiveStatusFilterV4404):allOrders;if(body)body.innerHTML=orders.length?orders.map(o=>`<tr><td>${escapeHtml(o.time||"")}</td><td><strong>${escapeHtml(o.nickname||"")}</strong></td><td class="live-msg-cell">${escapeHtml(o.message||"")}</td><td>${escapeHtml(o.productNo||"")} ${escapeHtml(o.color||"")} ${escapeHtml(o.size||"")}</td><td>${Number(o.quantity||0)}</td><td><span class="live-status-pill ${liveStatusClassV432(o.status)}">${escapeHtml(o.status||"")}</span>${o.customerConfirm&&o.customerConfirm!=="확인완료"?`<small class="live-customer-flag">${escapeHtml(o.customerConfirm)}</small>`:""}</td><td>${liveActionButtonsV432(o)}</td></tr>`).join(""):`<tr><td colspan="7" class="empty-cell">${adminLiveStatusFilterV4404?escapeHtml(adminLiveStatusFilterV4404)+" 주문이 없습니다.":"현재 방송 주문이 없습니다."}</td></tr>`;
-  if(body){body.querySelectorAll("[data-live-action]").forEach(btn=>btn.onclick=()=>handleAdminLiveOrderActionV432(btn));}
+  renderLiveOrdersV4404(d.orders||[]);
   const issueBox=byId("liveIssueList"),issues=d.issues||[];if(issueBox)issueBox.innerHTML=issues.length?issues.map(x=>`<article class="live-issue-card"><div><b>${escapeHtml(x.nickname||"")} · ${escapeHtml(x.type||"확인필요")}</b><span>${escapeHtml(x.status||"접수")}</span></div><p>${escapeHtml(x.message||"")}</p>${x.items?`<pre>${escapeHtml(x.items)}</pre>`:""}<button class="btn btn-primary live-issue-done" data-row="${x.rowNumber}">확인완료</button></article>`).join(""):'<div class="empty-state">확인필요 항목이 없습니다.</div>';
   if(issueBox)issueBox.querySelectorAll(".live-issue-done").forEach(b=>b.onclick=()=>handleAdminLiveIssueV432(Number(b.dataset.row)));
   renderBroadcastStatusV435(d.broadcast||{},d.youtube||{});
 }
+function setLiveSummaryFilterV4404(status){
+  adminLiveStatusFilterV4404=(adminLiveStatusFilterV4404===status)?"all":status;
+  document.querySelectorAll("[data-live-summary-status]").forEach(function(card){card.classList.toggle("active-summary-v4404",adminLiveStatusFilterV4404!=="all"&&card.dataset.liveSummaryStatus===adminLiveStatusFilterV4404);});
+  renderLiveOrdersV4404((adminLiveDataV4404&&adminLiveDataV4404.orders)||[]);
+  const table=byId("liveAdminOrderList");if(table&&table.closest(".table-wrap"))table.closest(".table-wrap").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function renderLiveOrdersV4404(orders){
+  const body=byId("liveAdminOrderList");if(!body)return;
+  const list=(orders||[]).filter(function(o){return adminLiveStatusFilterV4404==="all"||String(o.status||"")===adminLiveStatusFilterV4404;});
+  body.innerHTML=list.length?list.map(o=>`<tr><td>${escapeHtml(o.time||"")}</td><td><strong>${escapeHtml(o.nickname||"")}</strong></td><td class="live-msg-cell">${escapeHtml(o.message||"")}</td><td>${escapeHtml(o.productNo||"")} ${escapeHtml(o.color||"")} ${escapeHtml(o.size||"")}</td><td>${Number(o.quantity||0)}</td><td><span class="live-status-pill ${liveStatusClassV432(o.status)}">${escapeHtml(o.status||"")}</span>${o.customerConfirm&&o.customerConfirm!=="확인완료"?`<small class="live-customer-flag">${escapeHtml(o.customerConfirm)}</small>`:""}</td><td>${liveActionButtonsV432(o)}</td></tr>`).join(""):`<tr><td colspan="7" class="empty-cell">${adminLiveStatusFilterV4404==="all"?"현재 방송 주문이 없습니다.":escapeHtml(adminLiveStatusFilterV4404)+" 주문이 없습니다."}</td></tr>`;
+  body.querySelectorAll("[data-live-action]").forEach(btn=>btn.onclick=()=>handleAdminLiveOrderActionV432(btn));
+}
+
 function liveStatusClassV432(s){return s==="예약"?"reserved":s==="대기"?"waiting":s==="확인필요"?"review":s==="취소"?"cancelled":s==="주문서완료"?"submitted":""}
 function liveActionButtonsV432(o){if(o.status==="주문서완료")return '<span class="muted">고객주문에서 관리</span>';let html=`<button class="mini-action" data-live-action="change" data-row="${o.rowNumber}">변경</button>`;if(o.status!=="취소")html+=`<button class="mini-action danger" data-live-action="cancel" data-row="${o.rowNumber}">취소</button>`;if(o.status==="대기"||o.status==="취소"||o.status==="확인필요")html+=`<button class="mini-action good" data-live-action="reserve" data-row="${o.rowNumber}">예약</button>`;return html}
 async function handleAdminLiveOrderActionV432(btn){const row=Number(btn.dataset.row),action=btn.dataset.liveAction;let payload={action:"adminLiveOrderAction",rowNumber:row,actionType:action};if(action==="change"){const no=prompt("변경할 상품번호를 입력하세요.");if(no===null)return;const color=prompt("변경할 칼라를 입력하세요.");if(color===null)return;const size=prompt("변경할 사이즈를 입력하세요.");if(size===null)return;const qty=prompt("수량을 입력하세요.","1");if(qty===null)return;Object.assign(payload,{productNo:no,color:color,size:size,quantity:Number(qty||1)})}else if(action==="cancel"&&!confirm("이 임시주문을 취소할까요?"))return;try{showLoading("라이브 주문 처리 중입니다.");await apiPost(payload);await loadAdminLiveDashboardV432(true)}catch(e){alert(e.message)}finally{hideLoading()}}
 async function handleAdminLiveIssueV432(row){if(!confirm("이 확인필요 항목을 완료 처리할까요? 주문내용 수정이 필요하면 먼저 위 임시주문에서 변경해주세요."))return;try{await apiPost({action:"adminLiveIssueAction",rowNumber:row,status:"완료",note:"관리자 페이지 확인완료"});await loadAdminLiveDashboardV432(true)}catch(e){alert(e.message)}}
 
-function initCancelledV2(){const btn=document.getElementById('cancelledSideButton');if(btn)btn.addEventListener('click',function(){document.querySelectorAll('.tab-section').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.side-link').forEach(x=>x.classList.remove('active'));document.getElementById('cancelledTab').classList.add('active');btn.classList.add('active');loadCancelledOrders();});const search=document.getElementById('searchCancelledButton');if(search)search.onclick=loadCancelledOrders;}
+function initCancelledV2(){const summary=document.getElementById("cancelledSummaryCardV4404");if(summary)summary.onclick=()=>{const list=document.getElementById("cancelledOrderList");if(list)list.scrollIntoView({behavior:"smooth",block:"start"});};const btn=document.getElementById('cancelledSideButton');if(btn)btn.addEventListener('click',function(){document.querySelectorAll('.tab-section').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.side-link').forEach(x=>x.classList.remove('active'));document.getElementById('cancelledTab').classList.add('active');btn.classList.add('active');loadCancelledOrders();});const search=document.getElementById('searchCancelledButton');if(search)search.onclick=loadCancelledOrders;}
 async function loadCancelledOrders(){showLoading("취소주문을 조회하는 중입니다.");try{const d=await apiGet({action:"cancelledOrders",search:(document.getElementById('cancelKeyword')||{}).value||""});renderCancelledOrders(d.orders||[]);}catch(e){alert(e.message)}finally{hideLoading()}}
 function renderCancelledOrders(orders){document.getElementById('cancelledCount').textContent=orders.length;const c=document.getElementById('cancelledOrderList');if(!orders.length){c.innerHTML='<div class="empty-state">취소된 주문이 없습니다.</div>';return;}c.innerHTML=orders.map(o=>`<article class="cancel-card"><div class="v2-card-head"><div><span>취소일 ${escapeHtml(o.cancelDate)}</span><h3>${escapeHtml(o.nickname)} · ${escapeHtml(o.receiverName)}</h3></div><b class="status-pill cancelled">고객취소</b></div><p>${escapeHtml(o.phone)} · ${money(o.paymentAmount)}</p><div class="order-result-items">${escapeHtml(o.orderItems)}</div><div class="cancel-reason">취소사유: ${escapeHtml(o.reason||'-')}</div><button class="btn btn-success restore-btn" data-row="${o.rowNumber}">복구</button></article>`).join('');c.querySelectorAll('.restore-btn').forEach(b=>b.onclick=()=>restoreCancelled(Number(b.dataset.row)));}
 async function restoreCancelled(rowNumber){if(!confirm("이 주문을 고객주문으로 복구할까요?\n복구 후 입금상태는 미입금으로 설정됩니다."))return;showLoading("주문을 복구하고 있습니다.");try{await apiPost({action:"restoreCancelledOrder",rowNumber});await loadCancelledOrders();alert("주문이 복구되었습니다.");}catch(e){alert(e.message)}finally{hideLoading()}}
@@ -2172,6 +2172,7 @@ function initBankMatchPage() {
     document.querySelectorAll(".bank-review-check").forEach(function(cb){ cb.checked = reviewSelectAll.checked; });
     updateBankReviewBulkButton();
   });
+  document.querySelectorAll("[data-bank-result-target]").forEach(function(card){card.addEventListener("click",function(){scrollBankResultV4404(card.dataset.bankResultTarget,card);});});
 }
 
 
@@ -2772,6 +2773,13 @@ function reconcileBankData(groups, transactions) {
   }).map(function(x){ return x.tx; });
 
   return { matched: matched, review: review, unpaid: unpaid, orphan: orphan };
+}
+
+function scrollBankResultV4404(targetId,card){
+  const target=document.getElementById(targetId);if(!target)return;
+  document.querySelectorAll("[data-bank-result-target]").forEach(function(x){x.classList.toggle("active-summary-v4404",x===card);});
+  target.classList.remove("flash-v4404");void target.offsetWidth;target.classList.add("flash-v4404");
+  target.scrollIntoView({behavior:"smooth",block:"start"});
 }
 
 async function startBankReconciliation() {
@@ -3644,7 +3652,7 @@ async function uploadLotteTrackingResult(event) {
 }
 
 /* =========================================================
-   V4.40.4 컴팩트 요약카드 · 전체 클릭기능 · 페이앱+토스페이먼츠 듀얼결제 · PC/모바일 통합 관리자
+   V4.40.4 페이앱+토스페이먼츠 듀얼결제 · 속도·중복·안정화 PC/모바일 통합 관리자 · 방송회차 · 상시상품 · CS
 ========================================================= */
 function applyAdminRoleV435(){
   const role=adminRoleV435||sessionStorage.getItem("ssinne_admin_role_v435")||"admin";
@@ -3663,6 +3671,10 @@ function applyAdminRoleV435(){
 function initAdminV435(){
   applyAdminRoleV435();
   document.querySelectorAll("[data-go-tab],[data-home-tab]").forEach(b=>{b.onclick=()=>showAdminTab(b.dataset.goTab||b.dataset.homeTab);});
+  const homeToday=byId("homeTodayOrdersCardV4404");if(homeToday)homeToday.onclick=async()=>{showAdminTab("orders");await loadTodayAdminOrders();};
+  const homeUnpaid=byId("homeUnpaidCardV4404");if(homeUnpaid)homeUnpaid.onclick=async()=>{showAdminTab("orders");const today=todayString();byId("startDate").value=today;byId("endDate").value=today;byId("orderKeyword").value="";await searchAdminOrders();showUnpaidAndCardOrders();};
+  const homeCs=byId("homeCsCardV4404");if(homeCs)homeCs.onclick=async()=>{showAdminTab("cs");await loadCsCasesByStatusV4403("received");};
+  const homeLive=byId("homeLiveCardV4404");if(homeLive)homeLive.onclick=async()=>{showAdminTab("live");await loadAdminLiveDashboardV432();setLiveSummaryFilterV4404("확인필요");};
   document.querySelectorAll("[data-mobile-tab]").forEach(b=>{b.onclick=()=>showAdminTab(b.dataset.mobileTab);});
   const more=byId("mobileMoreButton"); if(more) more.onclick=()=>document.body.classList.toggle("mobile-sidebar-open");
   const quick=byId("homeQuickSearch"), quickBtn=byId("homeQuickSearchButton");

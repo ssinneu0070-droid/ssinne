@@ -1433,7 +1433,7 @@ textarea{min-height:92px;resize:vertical}
 @media (max-width:640px){.cs-payment-filters-v440{gap:8px;}.cs-payment-filters-v440 button{font-size:13px;padding:9px 12px;}}
 
 
-/* V4.40.3 CS 상태카드 클릭 + 오늘완료 표시초기화 */
+/* V4.40.4 CS 상태카드 클릭 + 오늘완료 표시초기화 */
 .cs-status-summary-v4403{appearance:none;border:0;text-align:left;cursor:pointer;width:100%;font:inherit;color:inherit;transition:transform .15s ease,box-shadow .15s ease;}
 .cs-status-summary-v4403:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(15,23,42,.12);}
 .cs-status-summary-v4403.active{outline:3px solid rgba(255,79,161,.22);box-shadow:0 10px 26px rgba(255,79,161,.18);}
@@ -1443,39 +1443,20 @@ textarea{min-height:92px;resize:vertical}
 @media (max-width:640px){.cs-status-toolbar-v4403{align-items:stretch;flex-direction:column}.cs-status-toolbar-v4403 .btn{width:100%}.cs-status-summary-v4403{min-height:112px}}
 
 
-/* V4.40.4 컴팩트 요약카드: PC 한 줄 / 모바일 한 줄 가로스크롤 */
-.compact-summary-row-v4404{
-  display:grid!important;
-  grid-template-columns:repeat(4,minmax(0,1fr))!important;
-  gap:8px!important;
-  margin-bottom:12px!important;
+/* =========================
+   V4.40.4 요약카드 컴팩트 + 전체 클릭
+========================= */
+@media (min-width:901px){
+  .v435-home-summary,.v2-summary,.cs-summary-v435,.bankmatch-summary,.live-summary-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;margin-bottom:14px!important;}
+  .v435-home-summary .metric-card,.v2-summary .metric-card,.cs-summary-v435 .metric-card,.bankmatch-summary .metric-card,.live-summary-grid .metric-card{min-height:94px!important;padding:13px 16px!important;border-radius:16px!important;}
+  .v435-home-summary .metric-card strong,.v2-summary .metric-card strong,.cs-summary-v435 .metric-card strong,.bankmatch-summary .metric-card strong,.live-summary-grid .metric-card strong{margin:5px 0 2px!important;font-size:24px!important;line-height:1.05!important;}
+  .v435-home-summary .metric-card small,.v2-summary .metric-card small,.cs-summary-v435 .metric-card small,.bankmatch-summary .metric-card small,.live-summary-grid .metric-card small{font-size:11.5px!important;line-height:1.25!important;}
 }
-.compact-summary-row-v4404 .metric-card{
-  min-height:76px!important;
-  padding:10px 14px!important;
-  border-radius:16px!important;
-  margin:0!important;
-  text-align:left;
-}
-.compact-summary-row-v4404 .metric-card span{font-size:12px!important;line-height:1.2}
-.compact-summary-row-v4404 .metric-card strong{font-size:24px!important;line-height:1;margin:5px 0 2px!important}
-.compact-summary-row-v4404 .metric-card small{font-size:11px!important;line-height:1.25;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.compact-summary-action-v4404{cursor:pointer;border:1px solid rgba(148,163,184,.18);transition:.15s ease;}
-.compact-summary-action-v4404:hover{transform:translateY(-1px);box-shadow:0 7px 18px rgba(15,23,42,.09)}
-.compact-summary-action-v4404.active-filter{outline:3px solid rgba(255,79,151,.20);box-shadow:0 0 0 2px #ff4f97 inset,0 7px 18px rgba(255,79,151,.12)}
-.bank-result-section.focus-section-v4404{animation:v4404Flash 1.35s ease;border-radius:16px}
-@keyframes v4404Flash{0%,100%{box-shadow:none}25%,75%{box-shadow:0 0 0 4px rgba(255,79,151,.18)}}
-@media(max-width:760px){
-  .compact-summary-row-v4404{
-    display:grid!important;
-    grid-template-columns:none!important;
-    grid-auto-flow:column!important;
-    grid-auto-columns:minmax(142px,46vw)!important;
-    overflow-x:auto!important;
-    overscroll-behavior-inline:contain;
-    scroll-snap-type:x proximity;
-    padding:1px 2px 7px!important;
-  }
-  .compact-summary-row-v4404 .metric-card{scroll-snap-align:start;min-height:72px!important;padding:9px 12px!important}
-  .compact-summary-row-v4404 .metric-card strong{font-size:22px!important}
-}
+.metric-card[type="button"],button.metric-card{width:100%;text-align:left;font:inherit;cursor:pointer;appearance:none;-webkit-appearance:none;transition:transform .14s ease,box-shadow .14s ease,border-color .14s ease;}
+button.metric-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(15,23,42,.09);}
+button.metric-card:focus-visible{outline:3px solid rgba(255,79,161,.28);outline-offset:2px;}
+button.metric-card.active-filter,button.metric-card.active-summary-v4404{box-shadow:0 0 0 3px rgba(255,79,161,.20),0 8px 24px rgba(15,23,42,.08);border-color:#ff7eb8;}
+.bank-result-section.flash-v4404{animation:v4404Flash 1.15s ease;}
+@keyframes v4404Flash{0%,100%{box-shadow:none}30%{box-shadow:0 0 0 4px rgba(255,79,161,.18);border-radius:12px}}
+.cancelled-summary-v4404{grid-template-columns:minmax(220px,320px)!important;}
+@media(max-width:900px){.v2-summary,.bankmatch-summary,.live-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}.v2-summary .metric-card,.bankmatch-summary .metric-card,.live-summary-grid .metric-card{min-height:104px;padding:14px 12px!important;}}
