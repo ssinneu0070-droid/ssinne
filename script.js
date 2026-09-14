@@ -1,4 +1,4 @@
-// V4.39.2 - 관리자 XLSX 지연로딩 / 속도·중복·안정화
+// V4.40.1 - 페이앱 + 토스페이먼츠 듀얼결제 / V4.39.2 속도·중복·안정화 유지
 // V4.00 - 수령인+닉네임 포함 자동일치 / 분할입금 조합합산 / 부족·초과 / 중복입금 방지
 // V3.30 - 입금 자동대조 시 수령인 + 닉네임 함께 조회
 // V3.29 - 단일 script.js 운영 + 토스뱅크/하나은행 통합 입금대조 + 입금완료 2차 재검사
@@ -18,6 +18,7 @@ const ADMIN_SESSION_STORAGE_KEY = "ssinne_admin_session_v427";
 let adminTokenV427 = "";
 let adminRoleV435 = "";
 let adminCsDataV435 = null;
+let adminCsPaymentFilterV440 = "all";
 
 // V4.39.2: 관리자 첫 화면에서는 무거운 XLSX 라이브러리를 받지 않습니다.
 // 은행 엑셀/롯데 엑셀/발주 엑셀 기능을 실제로 누를 때 한 번만 동적으로 로드합니다.
@@ -1231,7 +1232,7 @@ async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
   if (version.indexOf("V4.39") !== 0) {
-    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.39.2 기능을 사용하려면 V4.39.2 Code.gs를 새 버전으로 배포해야 합니다.");
+    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.40.1 기능을 사용하려면 V4.40.1 Code.gs를 새 버전으로 배포해야 합니다.");
   }
   return info;
 }
@@ -3440,7 +3441,7 @@ async function downloadLotteExcelV418() {
       throw new Error("전체주문이력에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
         "전체주문이력 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
         "선택 기간: " + startDate + " ~ " + endDate + "\n" +
-        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.39.2인지 확인해주세요.");
+        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.40.1인지 확인해주세요.");
     }
 
     const sortedOrders = sortLotteOrdersV420(orders);
@@ -3608,7 +3609,7 @@ async function uploadLotteTrackingResult(event) {
 }
 
 /* =========================================================
-   V4.39.2 속도·중복·안정화 PC/모바일 통합 관리자 · 방송회차 · 상시상품 · CS
+   V4.40.1 페이앱+토스페이먼츠 듀얼결제 · 속도·중복·안정화 PC/모바일 통합 관리자 · 방송회차 · 상시상품 · CS
 ========================================================= */
 function applyAdminRoleV435(){
   const role=adminRoleV435||sessionStorage.getItem("ssinne_admin_role_v435")||"admin";
@@ -3636,6 +3637,7 @@ function initAdminV435(){
   if(csBtn) csBtn.onclick=searchCsV435;
   if(csInput) csInput.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();searchCsV435();}});
   document.querySelectorAll("[data-cs-result]").forEach(b=>{b.onclick=()=>showCsResultV435(b.dataset.csResult);});
+  document.querySelectorAll("[data-cs-pay-filter]").forEach(b=>{b.onclick=()=>setCsPaymentFilterV440(b.dataset.csPayFilter);});
   if(byId("broadcastValidateButtonV436")) byId("broadcastValidateButtonV436").onclick=validateBroadcastProductsV436;
   if(byId("broadcastStartButton")) byId("broadcastStartButton").onclick=startBroadcastV435;
   if(byId("broadcastEndButton")) byId("broadcastEndButton").onclick=endBroadcastV435;
@@ -3644,6 +3646,7 @@ function initAdminV435(){
   if(byId("securitySaveButtonV436")) byId("securitySaveButtonV436").onclick=saveSecurityV436;
   if(byId("cardPaymentLinkSaveButtonV436")) byId("cardPaymentLinkSaveButtonV436").onclick=saveCardPaymentLinkV436;
   if(byId("payAppConfigSaveButtonV438")) byId("payAppConfigSaveButtonV438").onclick=savePayAppConfigV438;
+  if(byId("tossConfigSaveButtonV440")) byId("tossConfigSaveButtonV440").onclick=saveTossConfigV440;
   if(byId("clearTodayProductsButton")) byId("clearTodayProductsButton").onclick=clearTodayProductsV435;
   document.querySelectorAll("[data-sheet-mode]").forEach(b=>{b.onclick=()=>changeSheetModeV435(b.dataset.sheetMode);});
   loadCsDashboardV435();
@@ -3686,15 +3689,42 @@ function firstCsIdentityV435(d,q){
   const all=[...(d.current||[]),...(d.history||[]),...(d.cancelled||[])],o=all[0]||{};
   return {nickname:o.nickname||q,receiverName:o.receiverName||"",phone:o.phone||"",orderNumber:o.orderNumber||""};
 }
+function isCardStatusV440(status){return String(status||"").indexOf("카드")===0;}
+function matchCsPaymentFilterV440(order,filterName){
+  const s=String(order&&order.paymentStatus||"");
+  switch(String(filterName||"all")){
+    case "bank": return s && !isCardStatusV440(s);
+    case "card": return isCardStatusV440(s);
+    case "cardWaiting": return s==="카드결제대기";
+    case "cardSent": return s==="카드링크발송";
+    case "cardDone": return ["카드결제완료","카드결제"].includes(s);
+    default: return true;
+  }
+}
+function getCsPaymentFilterLabelV440(filterName){
+  const map={all:"전체",bank:"무통장",card:"카드결제",cardWaiting:"카드결제대기",cardSent:"카드링크발송",cardDone:"카드결제완료"};
+  return map[String(filterName||"all")]||"전체";
+}
+function setCsPaymentFilterV440(name){
+  adminCsPaymentFilterV440=name||"all";
+  document.querySelectorAll("[data-cs-pay-filter]").forEach(b=>b.classList.toggle("active",b.dataset.csPayFilter===adminCsPaymentFilterV440));
+  if(adminCsDataV435) renderCsSearchV435(adminCsDataV435,(byId("csSearchKeyword")&&byId("csSearchKeyword").value||"").trim());
+}
+
 function renderCsSearchV435(d,q){
   const current=d.current||[],history=d.history||[],notes=d.notes||[],cancelled=d.cancelled||[],ident=firstCsIdentityV435(d,q);
   byId("csEmptyState").hidden=true; byId("csCustomerPanel").hidden=false;
   byId("csCustomerTitle").textContent=(ident.nickname||"고객")+(ident.receiverName?" · "+ident.receiverName:"");
   byId("csCustomerSub").textContent=ident.phone||"";
   [["csCurrentCount",current.length],["csHistoryCount",history.length],["csNotesCount",notes.length],["csCancelledCount",cancelled.length]].forEach(x=>byId(x[0]).textContent=x[1]);
-  byId("csCurrentResults").innerHTML=current.length?current.map(renderCsCurrentCardV435).join(""):'<div class="empty-state">현재 진행 중인 주문이 없습니다.</div>';
-  byId("csHistoryResults").innerHTML=history.length?history.map(o=>renderCsOrderCardV435(o,false)).join(""):'<div class="empty-state">전체주문이력에서 찾은 주문이 없습니다.</div>';
-  byId("csCancelledResults").innerHTML=cancelled.length?cancelled.map(o=>renderCsOrderCardV435(o,false,"취소")).join(""):'<div class="empty-state">취소이력이 없습니다.</div>';
+  const filterName=adminCsPaymentFilterV440||"all";
+  const filterLabel=getCsPaymentFilterLabelV440(filterName);
+  const filteredCurrent=current.filter(o=>matchCsPaymentFilterV440(o,filterName));
+  const filteredHistory=history.filter(o=>matchCsPaymentFilterV440(o,filterName));
+  const filteredCancelled=cancelled.filter(o=>matchCsPaymentFilterV440(o,filterName));
+  byId("csCurrentResults").innerHTML=filteredCurrent.length?filteredCurrent.map(renderCsCurrentCardV435).join(""):`<div class="empty-state">${escapeHtml(filterLabel)} 주문이 없습니다.</div>`;
+  byId("csHistoryResults").innerHTML=filteredHistory.length?filteredHistory.map(o=>renderCsOrderCardV435(o,false)).join(""):`<div class="empty-state">${escapeHtml(filterLabel)} 주문이 없습니다.</div>`;
+  byId("csCancelledResults").innerHTML=filteredCancelled.length?filteredCancelled.map(o=>renderCsOrderCardV435(o,false,"취소")).join(""):`<div class="empty-state">${escapeHtml(filterLabel)} 취소이력이 없습니다.</div>`;
   byId("csNotesResults").innerHTML=(notes.length?notes.map(renderCsNoteV435).join(""):'<div class="empty-state">저장된 CS 기록이 없습니다.</div>')+renderCsComposerV435(ident);
   bindCsActionsV435(); showCsResultV435("current");
 }
@@ -3710,10 +3740,18 @@ function renderCsOrderCardV435(o,editable,label){
 }
 function renderCsCurrentCardV435(o){
   const base=renderCsOrderCardV435(o,true);
+  const canPayApp=Boolean(adminCsDataV435&&adminCsDataV435.payAppConfigured);
+  const canToss=Boolean(adminCsDataV435&&adminCsDataV435.tossConfigured);
+  let pgButtons="";
+  if(["카드결제대기","카드링크발송"].includes(o.paymentStatus)){
+    if(canPayApp) pgButtons+=`<button class="btn btn-dark cs-payapp-link" data-row="${o.rowNumber}">💳 페이앱 링크 만들기 · 복사</button><button class="btn btn-subtle cs-payapp-sms" data-row="${o.rowNumber}">📱 페이앱 문자로 바로 보내기</button>`;
+    if(canToss) pgButtons+=`<button class="btn btn-primary cs-toss-link" data-row="${o.rowNumber}">🔵 토스 결제링크 만들기 · 복사</button>`;
+    if(!canPayApp&&!canToss) pgButtons+=`<span class="payment-badge-v435 warning">카드 PG 미연결</span>`;
+  }
   const actions=`<div class="cs-edit-actions">
     <button class="btn btn-subtle cs-toggle-edit" data-row="${o.rowNumber}">배송정보 수정</button>
     ${!["입금완료","카드결제완료","카드결제"].includes(o.paymentStatus)?`<button class="btn btn-primary cs-card-change" data-row="${o.rowNumber}" data-method="카드결제">카드결제로 변경</button><button class="btn btn-subtle cs-bank-change" data-row="${o.rowNumber}" data-method="무통장입금">무통장으로 변경</button>`:""}
-    ${["카드결제대기","카드링크발송"].includes(o.paymentStatus)?`<button class="btn btn-dark cs-payapp-link" data-row="${o.rowNumber}">💳 페이앱 링크 만들기 · 복사</button><button class="btn btn-subtle cs-payapp-sms" data-row="${o.rowNumber}">📱 페이앱 문자로 바로 보내기</button>`:""}
+    ${pgButtons}
   </div>
   <div class="cs-shipping-edit" data-edit-row="${o.rowNumber}" hidden>
     <div class="form-grid two"><div class="field"><label>수령인</label><input data-f="receiverName" value="${escapeHtml(o.receiverName||"")}"></div><div class="field"><label>연락처</label><input data-f="phone" value="${escapeHtml(o.phone||"")}"></div><div class="field"><label>우편번호</label><input data-f="zipcode" value="${escapeHtml(o.zipcode||"")}"></div><div class="field"><label>배송메모</label><input data-f="shippingMemo" value="${escapeHtml(o.shippingMemo||"")}"></div><div class="field full"><label>주소</label><input data-f="address" value="${escapeHtml(o.address||"")}"></div></div>
@@ -3734,6 +3772,7 @@ function bindCsActionsV435(){
   document.querySelectorAll(".cs-card-change,.cs-bank-change").forEach(b=>b.onclick=()=>changeCsPaymentV435(Number(b.dataset.row),b.dataset.method));
   document.querySelectorAll(".cs-payapp-link").forEach(b=>b.onclick=()=>createPayAppLinkV438(Number(b.dataset.row),false));
   document.querySelectorAll(".cs-payapp-sms").forEach(b=>b.onclick=()=>createPayAppLinkV438(Number(b.dataset.row),true));
+  document.querySelectorAll(".cs-toss-link").forEach(b=>b.onclick=()=>createTossLinkV440(Number(b.dataset.row)));
   document.querySelectorAll(".cs-case-update-button-v436").forEach(b=>b.onclick=()=>updateCsCaseV436(b.dataset.csid));
   if(byId("csSaveNoteButton")) byId("csSaveNoteButton").onclick=saveCsNoteV435;
 }
@@ -3748,6 +3787,18 @@ async function changeCsPaymentV435(row,method){try{const g=await apiPost({action
 async function createPayAppLinkV438(row,sendSms){
   try{const g=await apiPost({action:"adminCsPaymentGroupPreview",rowNumber:row,purpose:"cardLink"});if(!g.count){alert("카드결제대기 주문이 없습니다.");return;}const text=`현재 미결제 주문 ${g.count}건\n기본금액 ${money(g.baseTotal||g.total||0)}\n카드결제 추가 10% ${money(g.cardExtraAmount||0)}\n최종 결제요청 ${money(g.cardPaymentAmount||0)}\n\n${sendSms?"페이앱에서 고객 휴대폰으로 결제요청 문자를 바로 보낼까요?":"페이앱 결제링크를 만들고 복사할까요?"}`;if(!confirm(text))return;showLoading(sendSms?"페이앱 결제요청 문자를 보내는 중입니다.":"페이앱 결제링크를 만드는 중입니다.");const r=await apiPost({action:"adminCsCreatePayAppLink",rowNumber:row,sendSms:Boolean(sendSms)});if(sendSms){alert((r.message||"문자 발송을 요청했습니다.")+`\n최종금액 ${money(r.cardPaymentAmount||0)}`);}else if(r.link){try{await navigator.clipboard.writeText(r.link);alert(`페이앱 결제링크를 복사했습니다.\n최종금액 ${money(r.cardPaymentAmount||0)}\n채널톡·카톡 등에 붙여넣어 보내주세요.`);}catch(e){prompt("아래 페이앱 링크를 복사해서 고객에게 보내주세요.",r.link);}}await searchCsV435();}catch(e){alert(e.message);}finally{hideLoading();}
 }
+async function createTossLinkV440(row){
+  try{
+    const g=await apiPost({action:"adminCsPaymentGroupPreview",rowNumber:row,purpose:"cardLink"});
+    if(!g.count){alert("카드결제대기 주문이 없습니다.");return;}
+    const text=`현재 미결제 주문 ${g.count}건\n기본금액 ${money(g.baseTotal||g.total||0)}\n카드결제 추가 10% ${money(g.cardExtraAmount||0)}\n최종 결제요청 ${money(g.cardPaymentAmount||0)}\n\n토스페이먼츠 결제링크를 만들고 복사할까요?`;
+    if(!confirm(text))return;
+    showLoading("토스페이먼츠 결제링크를 만드는 중입니다.");
+    const r=await apiPost({action:"adminCsCreateTossLink",rowNumber:row});
+    if(r.link){try{await navigator.clipboard.writeText(r.link);alert(`토스페이먼츠 결제링크를 복사했습니다.\n최종금액 ${money(r.cardPaymentAmount||0)}\n채널톡·카톡·문자에 붙여넣어 보내주세요.`);}catch(e){prompt("아래 토스페이먼츠 링크를 복사해서 고객에게 보내주세요.",r.link);}}
+    await searchCsV435();
+  }catch(e){alert(e.message);}finally{hideLoading();}
+}
 async function markCardLinkSentV435(row){
   try{const g=await apiPost({action:"adminCsPaymentGroupPreview",rowNumber:row,purpose:"cardLink"});if(!g.count){alert("카드결제대기 주문이 없습니다.");return;}if(!confirm(`카드결제대기 ${g.count}건 (${money(g.total||0)})의 결제링크를 복사하고\n링크발송 상태로 변경할까요?`))return;const r=await apiPost({action:"adminCsMarkCardLinkSent",rowNumber:row});if(r.link){const detail=`${Number(r.count||1)}건 · ${money(r.total||0)}`;try{await navigator.clipboard.writeText(r.link);alert("카드결제 링크를 복사했습니다.\n"+detail+"을 링크발송 상태로 변경했습니다.\n고객에게 링크를 붙여넣어 보내주세요.");}catch(e){prompt("아래 카드결제 링크를 복사해서 고객에게 보내주세요. ("+detail+")",r.link);}}await searchCsV435();}catch(e){alert(e.message);}
 }
@@ -3758,6 +3809,12 @@ function renderBroadcastPrecheckV436(r){const el=byId("broadcastPrecheckV436");i
 async function validateBroadcastProductsV436(){try{showLoading("방송 상품정보를 검사하는 중입니다.");const r=await apiPost({action:"adminValidateBroadcastProducts"});renderBroadcastPrecheckV436(r);if(r.success)alert(`상품정보 검사 완료\n${Number(r.productCount||0)}개 상품이 방송 시작 가능한 상태입니다.${(r.warnings||[]).length?`\n\n확인 권장 ${r.warnings.length}건이 있습니다.`:""}`);else alert("수정이 필요한 상품정보가 있습니다. 화면의 검사결과를 확인해주세요.");return r;}catch(e){alert(e.message);return {success:false,errors:[e.message]};}finally{hideLoading();}}
 async function saveSecurityV436(){const ap=(byId("newAdminPasswordV436")?.value||"").trim(),cp=(byId("newCsPasswordV436")?.value||"").trim();if(!ap&&!cp){alert("변경할 대표 또는 CS 비밀번호를 입력해주세요.");return;}if(!confirm("입력한 비밀번호로 변경할까요?\n다음 로그인부터 새 비밀번호를 사용합니다."))return;try{const r=await apiPost({action:"adminSaveSecurity",adminPassword:ap,csPassword:cp});byId("newAdminPasswordV436").value="";byId("newCsPasswordV436").value="";alert(r.message||"저장했습니다.");await loadBroadcastStatusV435();}catch(e){alert(e.message);}}
 async function savePayAppConfigV438(){const userid=(byId("payAppUserIdV438")?.value||"").trim(),linkkey=(byId("payAppLinkKeyV438")?.value||"").trim(),linkval=(byId("payAppLinkValV438")?.value||"").trim();if(!userid||!linkkey||!linkval){alert("페이앱 판매자 아이디, 연동 KEY, 연동 VALUE를 모두 입력해주세요.");return;}if(!confirm("페이앱 연결정보를 저장할까요?\n저장 후 KEY/VALUE는 화면에 다시 표시하지 않습니다."))return;try{showLoading("페이앱 연결정보를 저장하는 중입니다.");const r=await apiPost({action:"adminSavePayAppConfig",userid,linkkey,linkval});byId("payAppUserIdV438").value="";byId("payAppLinkKeyV438").value="";byId("payAppLinkValV438").value="";alert(r.message||"저장했습니다.");await loadBroadcastStatusV435();}catch(e){alert(e.message);}finally{hideLoading();}}
+async function saveTossConfigV440(){
+  const clientKey=(byId("tossClientKeyV440")?.value||"").trim(),secretKey=(byId("tossSecretKeyV440")?.value||"").trim(),payPageUrl=(byId("tossPayPageUrlV440")?.value||"").trim();
+  if(!clientKey||!secretKey){alert("토스페이먼츠 가입 후 개발자센터에서 클라이언트 키와 시크릿 키를 확인해 입력해주세요.\n아직 가입 전이면 이 설정은 비워두셔도 페이앱은 정상 작동합니다.");return;}
+  if(!confirm("토스페이먼츠 연결정보를 저장할까요?\n처음에는 테스트 키(test_gck/test_gsk)로 확인하는 것을 권장합니다."))return;
+  try{showLoading("토스페이먼츠 연결정보를 저장하는 중입니다.");const r=await apiPost({action:"adminSaveTossConfig",clientKey,secretKey,payPageUrl});byId("tossClientKeyV440").value="";byId("tossSecretKeyV440").value="";alert(r.message||"저장했습니다.");await loadBroadcastStatusV435();}catch(e){alert(e.message);}finally{hideLoading();}
+}
 async function saveCardPaymentLinkV436(){const link=(byId("cardPaymentLinkInputV436")?.value||"").trim();const text=link?"카드결제 링크를 저장할까요?":"카드결제 링크 설정을 지울까요?";if(!confirm(text))return;try{const r=await apiPost({action:"adminSaveCardPaymentLink",link});alert(r.message||"저장했습니다.");if(byId("cardPaymentLinkInputV436"))byId("cardPaymentLinkInputV436").value="";await loadBroadcastStatusV435();}catch(e){alert(e.message);}}
 async function saveYoutubeApiKeyV435(){const key=(byId("youtubeApiKeyInput").value||"").trim();if(!key){alert("YouTube API 키를 입력해주세요.");return;}try{showLoading("API 키를 저장하는 중입니다.");const r=await apiPost({action:"adminSaveYouTubeApiKey",apiKey:key});byId("youtubeApiKeyInput").value="";alert(r.message||"저장했습니다.");await loadBroadcastStatusV435();}catch(e){alert(e.message);}finally{hideLoading();}}
 async function startBroadcastV435(){const url=(byId("broadcastYoutubeUrl").value||"").trim();if(!url){alert("YouTube 라이브 URL을 입력해주세요.");return;}const check=await validateBroadcastProductsV436();if(!check.success)return;if(!confirm(`상품 ${Number(check.productCount||0)}개 검사를 통과했습니다.\n새 방송을 시작하고 YouTube에 연결할까요?\n\n※ YouTube 영상 확인이 실패하면 방송회차는 생성되지 않습니다.`))return;try{showLoading("YouTube와 상품정보를 최종 확인한 뒤 방송을 시작하는 중입니다.");const r=await apiPost({action:"adminStartBroadcast",youtubeUrl:url,broadcastName:(byId("broadcastName").value||"").trim()});alert((r.message||"방송을 시작했습니다.")+(r.warnings&&r.warnings.length?"\n\n확인 권장: "+r.warnings.join(" / "):""));await loadAdminLiveDashboardV432(true);await loadBroadcastStatusV435();}catch(e){alert(e.message);}finally{hideLoading();}}
@@ -3771,7 +3828,7 @@ function renderBroadcastStatusV435(b,y){
   const text=active?`<strong>${escapeHtml(b.broadcastId||session.broadcastId||"")}</strong><span>${escapeHtml(session.name||"")}</span><small>YouTube ${b.videoId||session.videoId?"연결 설정됨":"미연결"} · 상품 ${Number(session.productCount||0)}개 스냅샷 저장</small>`:`<strong>진행 중인 방송 없음</strong><span>URL을 입력하고 ‘새 방송 시작 · 연결’을 눌러주세요.</span><small>API 키 ${b.apiKeyConfigured?"설정됨":"미설정"}</small>`;
   if(byId("broadcastStatusCard")) byId("broadcastStatusCard").innerHTML=text;
   if(byId("homeBroadcastCard")) byId("homeBroadcastCard").innerHTML=text;
-  const sec=byId("securityStatusV436");if(sec){sec.textContent=(b.securityConfigured?"비밀번호 설정됨":"초기 비밀번호 사용중")+" · "+(b.payAppConfigured?"페이앱 연결됨":(b.cardPaymentLinkConfigured?"고정 카드링크 설정됨":"페이앱 미연결"));sec.classList.toggle("ready",Boolean(b.securityConfigured));}
+  const sec=byId("securityStatusV436");if(sec){const providers=[];if(b.payAppConfigured)providers.push("페이앱 연결");if(b.tossConfigured)providers.push("토스 연결");if(!providers.length&&b.cardPaymentLinkConfigured)providers.push("고정 카드링크");if(!providers.length)providers.push("카드 PG 미연결");sec.textContent=(b.securityConfigured?"비밀번호 설정됨":"초기 비밀번호 사용중")+" · "+providers.join(" · ");sec.classList.toggle("ready",Boolean(b.securityConfigured));}
 }
 async function clearTodayProductsV435(){if(!confirm("오늘상품만 모두 비울까요?\n상시상품은 그대로 유지됩니다."))return;try{showLoading("오늘상품을 정리하는 중입니다.");const r=await apiPost({action:"adminClearTodayProducts"});alert(r.message||"정리했습니다.");await loadAdminProducts();}catch(e){alert(e.message);}finally{hideLoading();}}
 async function changeSheetModeV435(mode){try{showLoading("시트 화면을 정리하는 중입니다.");const r=await apiPost({action:"adminSheetMode",mode});alert(r.message||"시트를 정리했습니다.");}catch(e){alert(e.message);}finally{hideLoading();}}

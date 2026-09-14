@@ -4,15 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#111827">
-  <title>씬느샵 통합 관리자 V4.39.2</title>
-  <link rel="stylesheet" href="style.css?v=20260915-v4-39-2-final">
-  <script src="script.js?v=20260915-v4-39-2-final" defer></script>
+  <title>씬느샵 통합 관리자 V4.40.1</title>
+  <link rel="stylesheet" href="style.css?v=20260915-v4-40-1-submit-stock-fix">
+  <script src="script.js?v=20260915-v4-40-1-submit-stock-fix" defer></script>
 </head>
 <body data-page="admin" class="page-admin">
   <div class="admin-login-gate" id="adminLoginGate">
     <div class="admin-login-card">
       <div class="admin-login-logo">S</div>
-      <span class="eyebrow dark">SSINNEU ADMIN · V4.39.2</span>
+      <span class="eyebrow dark">SSINNEU ADMIN · V4.40.1</span>
       <h1>관리자 로그인</h1>
       <p>대표 관리자 또는 CS 직원 비밀번호로 로그인하세요.</p>
       <label for="adminPasswordInput">로그인 비밀번호</label>
@@ -53,8 +53,8 @@
     <main class="admin-main">
       <header class="admin-topbar">
         <div>
-          <span class="eyebrow dark">SSINNEU ADMIN · V4.39.2</span>
-          <h1>통합 관리자 <small style="font-size:.48em;font-weight:800;vertical-align:middle;opacity:.72;">V4.39.2</small></h1>
+          <span class="eyebrow dark">SSINNEU ADMIN · V4.40.1</span>
+          <h1>통합 관리자 <small style="font-size:.48em;font-weight:800;vertical-align:middle;opacity:.72;">V4.40.1</small></h1>
           <div class="topbar-role"><span id="adminRoleBadge">로그인 확인중</span><span id="adminBroadcastMini">방송 대기</span></div>
         </div>
         <div class="topbar-actions admin-only">
@@ -72,7 +72,7 @@
 
       <section id="homeTab" class="tab-section active v435-home">
         <section class="v435-welcome">
-          <div><span class="eyebrow dark">TODAY · V4.39.2</span><h2 id="homeWelcomeTitle">오늘도 좋은 하루 되세요 💗</h2><p id="homeWelcomeText">방송 · 주문 · CS · 출고까지 필요한 업무만 한눈에 확인하세요.</p></div>
+          <div><span class="eyebrow dark">TODAY · V4.40.1</span><h2 id="homeWelcomeTitle">오늘도 좋은 하루 되세요 💗</h2><p id="homeWelcomeText">방송 · 주문 · CS · 출고까지 필요한 업무만 한눈에 확인하세요.</p></div>
           <div class="home-quick-search"><input id="homeQuickSearch" placeholder="닉네임 · 이름 · 전화번호 · 주문번호"><button class="btn btn-primary" id="homeQuickSearchButton" type="button">고객 찾기</button></div>
         </section>
         <div class="summary-grid premium v435-home-summary">
@@ -116,6 +116,17 @@
             </div>
             <div class="button-row"><button class="btn btn-primary" type="button" id="payAppConfigSaveButtonV438">페이앱 연결정보 저장</button></div>
             <small class="setting-help-v436">연동 KEY/VALUE는 Script Properties에 저장하며 저장 후 화면에 다시 표시하지 않습니다. CS 직원에게는 설정칸이 보이지 않습니다.</small>
+          </div>
+          <div class="payapp-setting-v438 toss-setting-v440">
+            <h3>🔵 토스페이먼츠 연결 <small>선택사항</small></h3>
+            <p><b>아직 가입 전이면 비워두셔도 됩니다.</b> 페이앱은 그대로 작동합니다. 토스 가입 후 테스트 키를 저장하면 CS 화면에 토스 결제링크 버튼이 자동으로 나타납니다.</p>
+            <div class="form-grid three">
+              <div class="field"><label for="tossClientKeyV440">클라이언트 키</label><input id="tossClientKeyV440" type="password" autocomplete="new-password" placeholder="test_gck_... / live_gck_..."></div>
+              <div class="field"><label for="tossSecretKeyV440">시크릿 키</label><input id="tossSecretKeyV440" type="password" autocomplete="new-password" placeholder="test_gsk_... / live_gsk_..."></div>
+              <div class="field"><label for="tossPayPageUrlV440">씬느샵 결제페이지 주소</label><input id="tossPayPageUrlV440" autocomplete="off" placeholder="https://ssinneu0070-droid.github.io/ssinne/pay.html"></div>
+            </div>
+            <div class="button-row"><button class="btn btn-primary" type="button" id="tossConfigSaveButtonV440">토스페이먼츠 연결정보 저장</button></div>
+            <small class="setting-help-v436">V2 주문서형/결제창형 연동 키(gck/gsk)를 사용합니다. 시크릿 키는 Script Properties에만 저장되고 GitHub·고객 화면에는 노출되지 않습니다.</small>
           </div>
           <small class="setting-help-v436">비밀번호는 평문으로 저장하지 않고 해시값으로 보관합니다. 기존 첫 로그인 비밀번호를 사용 중이면 먼저 새 비밀번호로 변경하세요.</small>
         </section>
@@ -258,6 +269,14 @@
         <section id="csCustomerPanel" class="admin-panel cs-customer-panel" hidden>
           <div class="cs-customer-head"><div><span class="eyebrow dark">고객 통합조회</span><h2 id="csCustomerTitle">고객</h2><p id="csCustomerSub"></p></div><span class="cs-source-badge" id="csCustomerStatus">조회완료</span></div>
           <div class="cs-result-tabs"><button class="active" type="button" data-cs-result="current">현재 주문 <b id="csCurrentCount">0</b></button><button type="button" data-cs-result="history">전체주문이력 <b id="csHistoryCount">0</b></button><button type="button" data-cs-result="notes">CS 기록 <b id="csNotesCount">0</b></button><button type="button" data-cs-result="cancelled">취소이력 <b id="csCancelledCount">0</b></button></div>
+          <div class="cs-payment-filters-v440">
+            <button class="active" type="button" data-cs-pay-filter="all">전체</button>
+            <button type="button" data-cs-pay-filter="bank">무통장</button>
+            <button type="button" data-cs-pay-filter="card">카드결제</button>
+            <button type="button" data-cs-pay-filter="cardWaiting">카드결제대기</button>
+            <button type="button" data-cs-pay-filter="cardSent">카드링크발송</button>
+            <button type="button" data-cs-pay-filter="cardDone">카드결제완료</button>
+          </div>
           <div id="csCurrentResults" class="cs-result-panel active"></div>
           <div id="csHistoryResults" class="cs-result-panel"></div>
           <div id="csNotesResults" class="cs-result-panel"></div>
@@ -359,7 +378,7 @@
 
       <section id="liveTab" class="tab-section">
         <section class="admin-panel broadcast-control-v435">
-          <div class="panel-title-row"><div><span class="eyebrow dark">BROADCAST SETUP · V4.39.2</span><h2>🎥 라이브 방송 설정</h2><p>새 방송을 시작하면 오늘 상품과 상시상품이 방송상품이력에 자동 저장됩니다.</p></div><span id="broadcastStateBadge" class="broadcast-state-badge">방송 대기</span></div>
+          <div class="panel-title-row"><div><span class="eyebrow dark">BROADCAST SETUP · V4.40.1</span><h2>🎥 라이브 방송 설정</h2><p>새 방송을 시작하면 오늘 상품과 상시상품이 방송상품이력에 자동 저장됩니다.</p></div><span id="broadcastStateBadge" class="broadcast-state-badge">방송 대기</span></div>
           <div class="broadcast-grid-v435">
             <div class="field"><label for="broadcastYoutubeUrl">YouTube 라이브 URL</label><input id="broadcastYoutubeUrl" placeholder="https://www.youtube.com/watch?v=..."></div>
             <div class="field"><label for="broadcastName">방송명</label><input id="broadcastName" placeholder="예: 9월 14일 라이브"></div>
@@ -370,7 +389,7 @@
           <details class="api-key-details"><summary>YouTube API 키 설정 (처음 1회)</summary><div class="api-key-row"><input id="youtubeApiKeyInput" type="password" placeholder="YouTube Data API v3 키"><button class="btn btn-subtle" type="button" id="youtubeApiKeySaveButton">API 키 저장</button></div><small>API 키는 GitHub 파일이 아니라 Apps Script 속성에 저장됩니다.</small></details>
         </section>
         <section class="admin-panel live-admin-hero">
-          <div class="panel-title-row"><div><span class="eyebrow dark">LIVE CONTROL · V4.39.2</span><h2>실시간 주문관리</h2><p>현재 판매상품 설정부터 예약 · 대기 · 취소 · 확인필요까지 한 화면에서 처리합니다.</p></div><div class="live-admin-head-actions"><button type="button" class="btn btn-primary" id="liveCollectNowButton">채팅 지금 수집</button><button type="button" class="btn btn-subtle" id="liveReloadButton">새로고침</button></div></div>
+          <div class="panel-title-row"><div><span class="eyebrow dark">LIVE CONTROL · V4.40.1</span><h2>실시간 주문관리</h2><p>현재 판매상품 설정부터 예약 · 대기 · 취소 · 확인필요까지 한 화면에서 처리합니다.</p></div><div class="live-admin-head-actions"><button type="button" class="btn btn-primary" id="liveCollectNowButton">채팅 지금 수집</button><button type="button" class="btn btn-subtle" id="liveReloadButton">새로고침</button></div></div>
           <div class="live-connection-line"><span id="liveConnectionStatus">방송 연결 상태 확인 중...</span><small id="liveAutoRefreshText">이 화면을 열어두면 약 20초 간격으로 자동 갱신합니다.</small></div>
         </section>
         <section class="admin-panel">

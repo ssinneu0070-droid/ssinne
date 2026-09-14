@@ -1420,3 +1420,14 @@ textarea{min-height:92px;resize:vertical}
 
 /* V4.39 페이앱 · 카드결제 10% 표시 */
 .card-extra-row{display:none!important;background:#fff3f7;border:1px solid #ffc3d8;border-radius:12px;padding:10px 12px;margin-top:8px}.card-extra-row.show{display:flex!important}.card-extra-row strong{color:#e91e63}.payapp-setting-v438{margin-top:18px;padding:18px;border:1px solid #ffd0df;border-radius:18px;background:#fff8fb}.payapp-setting-v438 h3{margin:0 0 6px}.payapp-setting-v438 p{margin:0 0 14px;color:#667085}.form-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}@media(max-width:780px){.form-grid.three{grid-template-columns:1fr}.cs-edit-actions .btn{width:100%}}
+
+/* V4.40 TossPayments optional connection */
+.toss-setting-v440{border-color:#bfe4ff;background:#f6fbff}
+.toss-setting-v440 h3{color:#1769aa}
+.toss-setting-v440 h3 small{font-size:.7em;font-weight:700;color:#667085}
+
+
+.cs-payment-filters-v440{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 6px;}
+.cs-payment-filters-v440 button{border:none;border-radius:999px;padding:10px 14px;background:#f5f7fb;color:#23314f;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(15,23,42,.06);}
+.cs-payment-filters-v440 button.active{background:linear-gradient(135deg,#ff4fa1,#ff7ab8);color:#fff;box-shadow:0 8px 18px rgba(255,79,161,.24);}
+@media (max-width:640px){.cs-payment-filters-v440{gap:8px;}.cs-payment-filters-v440 button{font-size:13px;padding:9px 12px;}}
