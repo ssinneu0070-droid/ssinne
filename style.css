@@ -1431,3 +1431,51 @@ textarea{min-height:92px;resize:vertical}
 .cs-payment-filters-v440 button{border:none;border-radius:999px;padding:10px 14px;background:#f5f7fb;color:#23314f;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(15,23,42,.06);}
 .cs-payment-filters-v440 button.active{background:linear-gradient(135deg,#ff4fa1,#ff7ab8);color:#fff;box-shadow:0 8px 18px rgba(255,79,161,.24);}
 @media (max-width:640px){.cs-payment-filters-v440{gap:8px;}.cs-payment-filters-v440 button{font-size:13px;padding:9px 12px;}}
+
+
+/* V4.40.3 CS 상태카드 클릭 + 오늘완료 표시초기화 */
+.cs-status-summary-v4403{appearance:none;border:0;text-align:left;cursor:pointer;width:100%;font:inherit;color:inherit;transition:transform .15s ease,box-shadow .15s ease;}
+.cs-status-summary-v4403:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(15,23,42,.12);}
+.cs-status-summary-v4403.active{outline:3px solid rgba(255,79,161,.22);box-shadow:0 10px 26px rgba(255,79,161,.18);}
+.cs-status-toolbar-v4403{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 14px;padding:10px 14px;background:#fff;border:1px solid #eef0f4;border-radius:14px;color:#667085;font-size:13px;}
+.cs-status-cases-v4403{margin-top:12px;}
+.cs-status-case-list-v4403{display:grid;gap:12px;}
+@media (max-width:640px){.cs-status-toolbar-v4403{align-items:stretch;flex-direction:column}.cs-status-toolbar-v4403 .btn{width:100%}.cs-status-summary-v4403{min-height:112px}}
+
+
+/* V4.40.4 컴팩트 요약카드: PC 한 줄 / 모바일 한 줄 가로스크롤 */
+.compact-summary-row-v4404{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:8px!important;
+  margin-bottom:12px!important;
+}
+.compact-summary-row-v4404 .metric-card{
+  min-height:76px!important;
+  padding:10px 14px!important;
+  border-radius:16px!important;
+  margin:0!important;
+  text-align:left;
+}
+.compact-summary-row-v4404 .metric-card span{font-size:12px!important;line-height:1.2}
+.compact-summary-row-v4404 .metric-card strong{font-size:24px!important;line-height:1;margin:5px 0 2px!important}
+.compact-summary-row-v4404 .metric-card small{font-size:11px!important;line-height:1.25;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.compact-summary-action-v4404{cursor:pointer;border:1px solid rgba(148,163,184,.18);transition:.15s ease;}
+.compact-summary-action-v4404:hover{transform:translateY(-1px);box-shadow:0 7px 18px rgba(15,23,42,.09)}
+.compact-summary-action-v4404.active-filter{outline:3px solid rgba(255,79,151,.20);box-shadow:0 0 0 2px #ff4f97 inset,0 7px 18px rgba(255,79,151,.12)}
+.bank-result-section.focus-section-v4404{animation:v4404Flash 1.35s ease;border-radius:16px}
+@keyframes v4404Flash{0%,100%{box-shadow:none}25%,75%{box-shadow:0 0 0 4px rgba(255,79,151,.18)}}
+@media(max-width:760px){
+  .compact-summary-row-v4404{
+    display:grid!important;
+    grid-template-columns:none!important;
+    grid-auto-flow:column!important;
+    grid-auto-columns:minmax(142px,46vw)!important;
+    overflow-x:auto!important;
+    overscroll-behavior-inline:contain;
+    scroll-snap-type:x proximity;
+    padding:1px 2px 7px!important;
+  }
+  .compact-summary-row-v4404 .metric-card{scroll-snap-align:start;min-height:72px!important;padding:9px 12px!important}
+  .compact-summary-row-v4404 .metric-card strong{font-size:22px!important}
+}
