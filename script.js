@@ -7,7 +7,7 @@
   아래 3개 주소만 실제 주소로 바꾸세요.
 */
 const CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwObiO2MpJk7xOKwmSWgBevZQH5NXnoU8EA-oZ6lH4lg9Rzkf3PEj_J6MGPvTuymkae/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyDxweXjXYjGSAYB35pPj3fhJuGq0_PfCAkhLmbDYT7bH9_B4jcVG5jhsmEiRsgVNrU/exec",
   BAND_URL: "https://www.band.us/band/102398891/post",
   CHANNEL_URL: "https://pf.kakao.com/_YVncn"
 };
@@ -91,8 +91,6 @@ function initNoticeGate() {
 
 document.addEventListener("DOMContentLoaded", function () {
   const page = document.body.dataset.page;
-
-  if (page === "order") initNoticeGate();
 
   if (page === "order") initOrderPage();
   if (page === "admin") initAdminProtectedPageV427();
@@ -240,7 +238,9 @@ function todayString() {
 }
 
 /* =========================
-   고객 주문서
+   고객 주문서 V4.33
+   - 라이브 주문 불러오기 + 기존 직접작성 선택
+   - 라이브 주문은 서버 임시주문을 그대로 확정하고 상품을 고객이 임의 수정하지 못하게 합니다.
 ========================= */
 let orderProducts=[];
 let orderCart=[];
@@ -250,204 +250,246 @@ let orderPreviewTimer=null;
 let orderProductsPromise=null;
 let paymentPreviewCache=new Map();
 let paymentPreviewSeq=0;
-let lastPaymentPreview={existingProductAmount:0,currentProductAmount:0,cumulativeProductAmount:0,shippingFee:0,cumulativeFinalAmount:0,additionalOrder:false,remote:false};
+let lastPaymentPreview={existingProductAmount:0,currentProductAmount:0,cumulativeProductAmount:0,shippingFee:0,cumulativeFinalAmount:0,alreadyPaidAmount:0,amountDueNow:0,additionalOrder:false,remote:false};
+let orderMode=""; // manual | live
+let liveOrderToken="";
+let liveOrderConfirmed=false;
+let currentLiveLookup=null;
+let useExistingFullAddress=false;
+const SSINNE_ACCOUNT_NUMBER="100257908378";
+const SUBMISSION_STORAGE_KEY="ssinne_pending_submission_v433";
+let lastCompletedAmountDue=0;
+
+function byId(id){return document.getElementById(id)}
+function getSubmissionIdV432(){let id=sessionStorage.getItem(SUBMISSION_STORAGE_KEY)||"";if(!id){id="SUB-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,10);sessionStorage.setItem(SUBMISSION_STORAGE_KEY,id)}return id}
+function rotateSubmissionIdV432(){sessionStorage.removeItem(SUBMISSION_STORAGE_KEY);return getSubmissionIdV432()}
+async function copyTextSafeV432(text,button,status,defaultLabel){let ok=false;try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(String(text));ok=true}else{const ta=document.createElement("textarea");ta.value=String(text);ta.setAttribute("readonly","");ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();ok=document.execCommand("copy");ta.remove()}}catch(e){ok=false}if(ok){if(button){button.textContent="✓ 복사되었습니다";button.classList.add("copied");setTimeout(()=>{button.textContent=defaultLabel;button.classList.remove("copied")},1800)}if(status)status.textContent="복사되었습니다."}else if(status)status.textContent="복사가 안 되면 숫자를 길게 눌러 복사해주세요.";return ok}
+function updatePaymentMethodUIV432(){
+  updateCardVatNotice();
+  const value=byId("paymentMethod").value;
+  const bankBtn=byId("bankPaymentChoice"),cardBtn=byId("cardPaymentChoice");
+  if(bankBtn){const active=value==="무통장입금";bankBtn.classList.toggle("active",active);bankBtn.setAttribute("aria-pressed",active?"true":"false");const dot=bankBtn.querySelector(".payment-radio-dot");if(dot)dot.textContent=active?"●":"○";}
+  if(cardBtn){const active=value==="카드결제";cardBtn.classList.toggle("active",active);cardBtn.setAttribute("aria-pressed",active?"true":"false");const dot=cardBtn.querySelector(".payment-radio-dot");if(dot)dot.textContent=active?"●":"○";}
+}
 
 async function initOrderPage(){
-  document.getElementById("bandLink").href=CONFIG.BAND_URL;
-  document.getElementById("channelLink").href=CONFIG.CHANNEL_URL;
-  document.getElementById("phone").addEventListener("input",function(e){formatPhoneInput(e);schedulePaymentPreview();});
-  document.getElementById("receiverName").addEventListener("input",schedulePaymentPreview);
-  document.getElementById("addressSearchButton").addEventListener("click",openAddressSearch);
-  const addressCloseButton=document.getElementById("addressSearchCloseButton");
-  if(addressCloseButton)addressCloseButton.addEventListener("click",closeAddressSearch);
-  document.getElementById("shippingRegion").addEventListener("change",schedulePaymentPreview);
-  document.getElementById("paymentMethod").addEventListener("change",updateCardVatNotice);
-  document.getElementById("singleProductNo").addEventListener("input",function(e){e.target.value=e.target.value.replace(/[^0-9]/g,"");resetSingleProductSelection()});
-  document.getElementById("singleProductNo").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();searchSingleProduct()}});
-  document.getElementById("singleProductSearchButton").addEventListener("click",searchSingleProduct);
-  document.getElementById("singleProductColor").addEventListener("change",updateSingleSizes);
-  document.getElementById("singleMinusButton").addEventListener("click",function(){changeSingleQuantity(-1)});
-  document.getElementById("singlePlusButton").addEventListener("click",function(){changeSingleQuantity(1)});
-  document.getElementById("addToCartButton").addEventListener("click",addSelectedProductToCart);
-  document.getElementById("focusProductButton").addEventListener("click",function(){document.getElementById("singleProductNo").focus();window.scrollTo({top:0,behavior:"smooth"})});
-  document.getElementById("clearCustomerButton").addEventListener("click",clearSavedCustomer);
-  document.getElementById("finishOrderButton").addEventListener("click",finishOrder);
-  document.getElementById("orderForm").addEventListener("submit",submitOrder);
+  byId("bandLink").href=CONFIG.BAND_URL;
+  byId("channelLink").href=CONFIG.CHANNEL_URL;
+  byId("phone").addEventListener("input",function(e){formatPhoneInput(e);schedulePaymentPreview();useExistingFullAddress=false;byId("detailAddress").required=true;});
+  byId("receiverName").addEventListener("input",schedulePaymentPreview);
+  byId("addressSearchButton").addEventListener("click",openAddressSearch);
+  const addressCloseButton=byId("addressSearchCloseButton");if(addressCloseButton)addressCloseButton.addEventListener("click",closeAddressSearch);
+  byId("shippingRegion").addEventListener("change",schedulePaymentPreview);
+  byId("paymentMethod").addEventListener("change",updatePaymentMethodUIV432);
+  ["bankPaymentChoice","cardPaymentChoice"].forEach(function(id){const btn=byId(id);if(btn)btn.addEventListener("click",function(){byId("paymentMethod").value=btn.dataset.payment||"무통장입금";byId("paymentMethod").dispatchEvent(new Event("change",{bubbles:true}));});});
+  const copyAccount=byId("copyPaymentAccountButton");if(copyAccount)copyAccount.addEventListener("click",()=>copyTextSafeV432(SSINNE_ACCOUNT_NUMBER,copyAccount,byId("copyPaymentStatus"),"📋 계좌번호 복사"));
+  const copyAmount=byId("copyPaymentAmountButton");if(copyAmount)copyAmount.addEventListener("click",()=>copyTextSafeV432(String(Math.max(0,Number(lastPaymentPreview.amountDueNow||0))),copyAmount,byId("copyPaymentStatus"),"💰 지금 입금할 금액 복사"));
+  const completeAccount=byId("completeCopyAccountButton");if(completeAccount)completeAccount.addEventListener("click",()=>copyTextSafeV432(SSINNE_ACCOUNT_NUMBER,completeAccount,byId("completeCopyStatus"),"📋 계좌번호 복사"));
+  const completeAmount=byId("completeCopyAmountButton");if(completeAmount)completeAmount.addEventListener("click",()=>copyTextSafeV432(String(Math.max(0,lastCompletedAmountDue)),completeAmount,byId("completeCopyStatus"),"💰 입금금액 복사"));
+  getSubmissionIdV432();
+  byId("singleProductNo").addEventListener("input",function(e){e.target.value=e.target.value.replace(/[^0-9]/g,"").slice(0,4);resetSingleProductSelection()});
+  byId("singleProductNo").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();searchSingleProduct()}});
+  byId("singleProductSearchButton").addEventListener("click",searchSingleProduct);
+  byId("singleProductColor").addEventListener("change",updateSingleSizes);
+  byId("singleMinusButton").addEventListener("click",function(){changeSingleQuantity(-1)});
+  byId("singlePlusButton").addEventListener("click",function(){changeSingleQuantity(1)});
+  byId("addToCartButton").addEventListener("click",addSelectedProductToCart);
+  byId("focusProductButton").addEventListener("click",function(){byId("singleProductNo").focus();byId("manualProductEntryCard").scrollIntoView({behavior:"smooth",block:"start"})});
+  byId("clearCustomerButton").addEventListener("click",clearSavedCustomer);
+  byId("finishOrderButton").addEventListener("click",finishOrder);
+  byId("orderForm").addEventListener("submit",submitOrder);
+  byId("liveModeButton").addEventListener("click",function(){selectOrderMode("live")});
+  byId("manualModeButton").addEventListener("click",function(){selectOrderMode("manual")});
+  byId("backToModeButton").addEventListener("click",resetOrderModeSelection);
+  byId("changeOrderModeButton").addEventListener("click",resetOrderModeSelection);
+  byId("liveLookupButton").addEventListener("click",lookupLiveOrder);
+  byId("liveLookupNickname").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();lookupLiveOrder()}});
+  byId("liveLookupCode").addEventListener("input",function(e){e.target.value=e.target.value.replace(/[^0-9]/g,"").slice(0,6)});
+  byId("liveOrderConfirmButton").addEventListener("click",confirmLiveOrder);
+  byId("liveOrderMismatchButton").addEventListener("click",function(){byId("liveOrderIssueBox").style.display="block";byId("liveOrderIssueText").focus()});
+  byId("liveOrderIssueSubmitButton").addEventListener("click",submitLiveOrderIssue);
+  byId("liveOrderNotMineButton").addEventListener("click",reportNotMineLiveOrder);
+  byId("loadPreviousCustomerButton").addEventListener("click",loadPreviousCustomerInfo);
+
   loadSavedCustomer();
+  const savedNick=(byId("nickname").value||"").trim();
+  if(savedNick)byId("liveLookupNickname").value=savedNick;
   renderOrderCart();
-  updateCardVatNotice();
-  // V3.21: 첫 화면은 서버 응답을 기다리지 않고 즉시 표시합니다.
-  // 상품목록은 브라우저가 한가할 때 미리 받아두고, 검색 시 아직 없으면 그때만 기다립니다.
+  updatePaymentMethodUIV432();
   const warm=()=>ensureOrderProductsLoaded().catch(function(e){console.warn("상품정보 사전 로딩:",e.message)});
-  if("requestIdleCallback" in window) requestIdleCallback(warm,{timeout:2500});
-  else setTimeout(warm,1200);
+  if("requestIdleCallback" in window) requestIdleCallback(warm,{timeout:2500}); else setTimeout(warm,1200);
 }
 
-async function loadOrderProducts(show){
-  const d=await apiGet({action:"products"});
-  orderProducts=Array.isArray(d.products)?d.products:[];
-  if(!orderProducts.length)throw new Error("상품정보 시트에 등록된 상품이 없습니다.");
-  if(show)alert("상품정보를 새로 불러왔습니다.");
-  return orderProducts;
-}
-function ensureOrderProductsLoaded(){
-  if(orderProducts.length)return Promise.resolve(orderProducts);
-  if(!orderProductsPromise){
-    orderProductsPromise=loadOrderProducts(false).finally(function(){orderProductsPromise=null});
+function selectOrderMode(mode){
+  orderMode=mode;
+  liveOrderToken="";liveOrderConfirmed=false;currentLiveLookup=null;orderCart=[];renderOrderCart();
+  byId("orderModeChooser").style.display="none";
+  byId("completeScreen").classList.remove("show");
+  if(mode==="live"){
+    byId("liveLookupPanel").style.display="block";
+    byId("orderForm").style.display="none";
+    byId("orderModeToolbar").style.display="none";
+    byId("liveOrderResult").style.display="none";
+    byId("liveOrderIssueBox").style.display="none";
+    byId("liveLookupStatus").textContent="라이브에서 사용한 닉네임을 정확하게 입력해주세요.";
+    const saved=(byId("nickname").value||"").trim();if(saved&&!byId("liveLookupNickname").value)byId("liveLookupNickname").value=saved;
+    setTimeout(()=>byId("liveLookupNickname").focus(),50);
+  }else{
+    byId("liveLookupPanel").style.display="none";
+    showOrderFormForMode();
   }
-  return orderProductsPromise;
 }
-function resetSingleProductSelection(){selectedOrderProduct=null;singleProductName.value="";singleProductColor.innerHTML='<option value="">칼라를 선택하세요</option>';singleProductSize.innerHTML='<option value="">사이즈를 선택하세요</option>';singleProductColor.disabled=true;singleProductSize.disabled=true;singleProductMessage.className="product-message";singleProductMessage.textContent="상품번호 입력 후 검색을 눌러주세요."}
-async function searchSingleProduct(){const no=singleProductNo.value.trim();if(!no){singleProductMessage.className="product-message error";singleProductMessage.textContent="상품번호를 입력해주세요.";return}if(!orderProducts.length){singleProductMessage.className="product-message";singleProductMessage.textContent="상품정보를 확인하는 중입니다...";try{await ensureOrderProductsLoaded()}catch(e){singleProductMessage.className="product-message error";singleProductMessage.textContent=e.message;return}}const p=orderProducts.find(x=>String(x.productNo)===no);if(!p){resetSingleProductSelection();singleProductMessage.className="product-message error";singleProductMessage.textContent="등록되지 않은 상품번호입니다.";return}selectedOrderProduct=p;singleProductName.value=p.productName||"";singleProductColor.innerHTML='<option value="">칼라를 선택하세요</option>';Object.keys(p.colors||{}).forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;singleProductColor.appendChild(o)});singleProductColor.disabled=false;singleProductMessage.className="product-message success";singleProductMessage.textContent="상품이 확인되었습니다."}
-function updateSingleSizes(){const c=singleProductColor.value;singleProductSize.innerHTML='<option value="">사이즈를 선택하세요</option>';if(!selectedOrderProduct||!c||!selectedOrderProduct.colors[c]){singleProductSize.disabled=true;return}selectedOrderProduct.colors[c].forEach(s=>{const o=document.createElement("option");o.value=s;o.textContent=s;singleProductSize.appendChild(o)});singleProductSize.disabled=false}
-function changeSingleQuantity(n){singleProductQuantity.value=Math.min(99,Math.max(1,Number(singleProductQuantity.value||1)+n))}
-function addSelectedProductToCart(){const no=singleProductNo.value.trim(),c=singleProductColor.value,s=singleProductSize.value,q=Math.min(99,Math.max(1,Number(singleProductQuantity.value||1)));if(!selectedOrderProduct||String(selectedOrderProduct.productNo)!==no){alert("상품번호를 검색해주세요.");return}if(!c){alert("칼라를 선택해주세요.");return}if(!s){alert("사이즈를 선택해주세요.");return}orderCart.push({productNo:no,productName:selectedOrderProduct.productName||"",color:c,size:s,quantity:q,price:Number(selectedOrderProduct.price||0)});renderOrderCart();singleProductNo.value="";singleProductQuantity.value="1";resetSingleProductSelection();singleProductNo.focus()}
-function removeCartItem(i){orderCart.splice(i,1);renderOrderCart()}
 
-function getCurrentCartProductAmount(){return orderCart.reduce((a,x)=>a+Number(x.price||0)*Number(x.quantity||0),0)}
-function renderOrderCart(){
-  if(!orderCart.length){cartList.innerHTML='<div class="cart-empty">담긴 상품이 없습니다.</div>';purchaseSummary.textContent="상품을 담으면 구매내역이 자동으로 표시됩니다."}
-  else{cartList.innerHTML=orderCart.map((x,i)=>`<div class="cart-item"><div class="cart-number">${i+1}</div><div class="cart-info"><strong>${escapeHtml(x.productNo)}번 ${escapeHtml(x.productName)}</strong><span>${escapeHtml(x.color)} / ${escapeHtml(x.size)} / ${x.quantity}개</span></div><div class="cart-side"><span class="cart-price">${money(x.price*x.quantity)}</span><button type="button" class="cart-delete" data-index="${i}">🗑 삭제</button></div></div>`).join("");cartList.querySelectorAll(".cart-delete").forEach(b=>b.addEventListener("click",()=>removeCartItem(Number(b.dataset.index))));purchaseSummary.textContent=orderCart.map(x=>`${x.productNo}번 ${x.productName} / ${x.color} / ${x.size} / ${x.quantity}개 / ${money(x.price*x.quantity)}`).join("\n")}
-  const count=orderCart.reduce((a,x)=>a+x.quantity,0),total=getCurrentCartProductAmount();
-  totalItemCount.textContent=count+"개";
-  grandTotal.textContent=money(total);
+function showOrderFormForMode(){
+  const manual=orderMode==="manual";
+  byId("orderForm").style.display="grid";
+  byId("orderModeToolbar").style.display="flex";
+  byId("selectedModeText").textContent=manual?"✏️ 직접 주문서 작성":"✨ 라이브 주문 불러오기";
+  byId("manualProductEntryCard").style.display=manual?"block":"none";
+  byId("focusProductButton").style.display=manual?"block":"none";
+  byId("nickname").readOnly=!manual;
+  if(manual)byId("nickname").removeAttribute("aria-readonly");else byId("nickname").setAttribute("aria-readonly","true");
+  renderOrderCart();
   schedulePaymentPreview();
+  setTimeout(()=>{(manual?byId("singleProductNo"):byId("phone")).focus()},60);
 }
 
-function updateCardVatNotice(){
-  const notice=document.getElementById("cardVatNotice");
-  if(!notice)return;
-  notice.classList.toggle("show",paymentMethod.value==="카드결제");
+function resetOrderModeSelection(){
+  if(orderSubmitting)return;
+  if(orderCart.length&&!confirm("현재 선택한 주문내용을 지우고 주문방법을 다시 선택할까요?"))return;
+  orderMode="";liveOrderToken="";liveOrderConfirmed=false;currentLiveLookup=null;orderCart=[];
+  byId("nickname").readOnly=false;
+  byId("liveLookupPanel").style.display="none";byId("orderForm").style.display="none";byId("orderModeToolbar").style.display="none";
+  byId("orderModeChooser").style.display="block";renderOrderCart();window.scrollTo({top:0,behavior:"smooth"});
 }
 
-function schedulePaymentPreview(){
-  clearTimeout(orderPreviewTimer);
-  orderPreviewTimer=setTimeout(refreshPaymentPreview,550);
+async function lookupLiveOrder(){
+  const nickname=(byId("liveLookupNickname").value||"").trim(),confirmCode=(byId("liveLookupCode").value||"").trim();
+  if(!nickname){alert("유튜브 닉네임을 입력해주세요.");return}
+  try{
+    showLoading("라이브 주문을 찾고 있습니다.");byId("liveLookupButton").disabled=true;
+    const r=await apiGet({action:"liveOrderLookup",nickname:nickname,confirmCode:confirmCode});currentLiveLookup=r;liveOrderToken=r.liveOrderToken||"";liveOrderConfirmed=false;
+    if(!r.found){byId("liveOrderResult").style.display="none";byId("liveLookupStatus").textContent=r.message||"주문을 찾지 못했습니다.";if(r.requiresCode)byId("liveLookupCode").focus();return}
+    byId("liveLookupStatus").textContent=r.message||"라이브 주문을 찾았습니다.";byId("liveResultNickname").textContent=(r.nickname||nickname)+"님의 라이브 주문";
+    byId("liveOrderList").innerHTML=(r.items||[]).length?(r.items||[]).map((x,i)=>`<div class="live-order-line"><span>${i+1}</span><div><strong>${escapeHtml(x.productNo)}번 ${escapeHtml(x.productName||"")}</strong><small>${escapeHtml(x.color)} / ${escapeHtml(x.size)} / ${Number(x.quantity||0)}개</small></div><b>${money(x.lineTotal||0)}</b></div>`).join(""):'<div class="cart-empty">현재 확정된 상품은 없습니다.</div>';
+    byId("liveTotalQuantity").textContent=Number(r.totalQuantity||0)+"개";byId("liveTotalAmount").textContent=money(r.totalAmount||0);
+    const waitingBox=byId("liveWaitingBox"),waitingList=byId("liveWaitingList"),waitingItems=r.waitingItems||[];
+    if(waitingBox){waitingBox.style.display=waitingItems.length?"block":"none";if(waitingList)waitingList.innerHTML=waitingItems.map((x,i)=>`<div class="live-waiting-line"><b>${i+1}. ${escapeHtml(x.productNo)}번 ${escapeHtml(x.productName||"")}</b><span>${escapeHtml(x.color)} / ${escapeHtml(x.size)} / ${Number(x.quantity||0)}개</span></div>`).join("")}
+    const warning=byId("liveResultWarning");if(Number(r.needsReviewCount||0)>0){warning.style.display="block";warning.textContent="⚠ 확인필요 주문 "+r.needsReviewCount+"건이 있습니다. 관리자 확인 후 다시 불러와주세요."}else if(Number(r.waitingCount||0)>0){warning.style.display="block";warning.textContent="⏳ 대기상품 "+r.waitingCount+"건은 결제금액에서 제외됩니다. 확정상품만 먼저 제출할 수 있어요."}else warning.style.display="none";
+    byId("liveOrderConfirmButton").disabled=!r.canConfirm;byId("liveOrderResult").style.display="block";byId("liveOrderIssueBox").style.display="none";
+  }catch(err){byId("liveOrderResult").style.display="none";byId("liveLookupStatus").textContent=err.message;alert(err.message)}finally{hideLoading();byId("liveLookupButton").disabled=false}
 }
 
+function confirmLiveOrder(){
+  const r=currentLiveLookup;
+  if(!r||!r.found||!r.canConfirm||!liveOrderToken){alert("확정할 수 있는 라이브 주문이 없습니다. 다시 불러와주세요.");return}
+  orderMode="live";liveOrderConfirmed=true;
+  orderCart=(r.items||[]).map(x=>({productNo:String(x.productNo),productName:x.productName||"",color:x.color||"",size:x.size||"",quantity:Number(x.quantity||1),price:Number(x.price||0)}));
+  byId("nickname").value=r.nickname||byId("liveLookupNickname").value.trim();
+  byId("nickname").readOnly=true;
+  renderOrderCart();showOrderFormForMode();
+  byId("liveLookupPanel").style.display="none";
+  byId("savedNotice").textContent="라이브 주문을 불러왔습니다. 상품은 수정하지 말고 배송정보만 확인해주세요.";byId("savedNotice").classList.add("show");
+  byId("orderForm").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+async function submitLiveOrderIssue(){
+  if(!liveOrderToken){alert("먼저 주문을 불러와주세요.");return}
+  const message=(byId("liveOrderIssueText").value||"").trim();if(!message){alert("다른 내용을 간단히 적어주세요.");return}
+  try{
+    showLoading("확인 요청을 접수하고 있습니다.");
+    const r=await apiPost({action:"liveOrderIssue",liveOrderToken:liveOrderToken,issueType:"일부내용다름",message:message});
+    alert(r.message||"확인 요청이 접수되었습니다.");
+    byId("liveLookupStatus").textContent="⚠ 주문 확인요청이 접수되었습니다. 관리자 확인 전에는 결제하지 말아주세요.";
+    byId("liveOrderIssueSubmitButton").disabled=true;byId("liveOrderConfirmButton").disabled=true;
+  }catch(err){alert(err.message)}finally{hideLoading()}
+}
+
+async function reportNotMineLiveOrder(){
+  if(!liveOrderToken){resetLiveLookupOnly();return}
+  if(!confirm("불러온 주문이 본인 주문이 아닌가요? 관리자에게 확인요청을 보낼게요."))return;
+  try{showLoading("잘못 연결된 주문을 신고하고 있습니다.");await apiPost({action:"liveOrderIssue",liveOrderToken:liveOrderToken,issueType:"내주문아님",message:"고객이 '제 주문이 아니에요'를 선택함"});alert("확인요청을 보냈습니다. 닉네임을 다시 확인하거나 관리자에게 문의해주세요.");resetLiveLookupOnly()}catch(err){alert(err.message)}finally{hideLoading()}
+}
+function resetLiveLookupOnly(){currentLiveLookup=null;liveOrderToken="";liveOrderConfirmed=false;byId("liveOrderResult").style.display="none";byId("liveOrderIssueBox").style.display="none";byId("liveLookupStatus").textContent="닉네임을 다시 확인해주세요.";byId("liveLookupNickname").focus()}
+
+async function loadPreviousCustomerInfo(){
+  const nick=(byId("nickname").value||"").trim(), receiver=(byId("receiverName").value||"").trim(), phoneValue=(byId("phone").value||"").replace(/[^0-9]/g,"");
+  const status=byId("previousCustomerStatus");
+  if(phoneValue.length<10||(!nick&&!receiver)){status.textContent="연락처 전체번호와 닉네임 또는 수령인 이름을 먼저 입력해주세요.";return}
+  try{
+    status.textContent="이전 배송정보를 찾는 중입니다...";
+    const r=await apiGet({action:"previousCustomerInfo",nickname:nick,receiverName:receiver,phone:phoneValue});
+    if(!r.found){status.textContent=r.message||"이전 배송정보가 없습니다.";return}
+    const c=r.customer||{};
+    byId("receiverName").value=c.receiverName||"";byId("zipcode").value=c.zipcode||"";byId("address").value=c.address||"";byId("shippingMemo").value=c.shippingMemo||"";
+    byId("detailAddress").value="";byId("detailAddress").required=false;byId("detailAddress").placeholder="이전 주소 전체가 위 주소칸에 저장되어 있습니다. 변경 없으면 비워두세요.";
+    byId("shippingRegion").value=c.remote?"remote":"normal";useExistingFullAddress=true;schedulePaymentPreview();
+    status.textContent="💗 이전 배송정보를 불러왔습니다. 주소가 맞는지 꼭 확인해주세요.";
+  }catch(err){status.textContent=err.message}
+}
+
+async function loadOrderProducts(show){const d=await apiGet({action:"products"});orderProducts=Array.isArray(d.products)?d.products:[];if(!orderProducts.length)throw new Error("상품정보 시트에 등록된 상품이 없습니다.");if(show)alert("상품정보를 새로 불러왔습니다.");return orderProducts}
+function ensureOrderProductsLoaded(){if(orderProducts.length)return Promise.resolve(orderProducts);if(!orderProductsPromise)orderProductsPromise=loadOrderProducts(false).finally(function(){orderProductsPromise=null});return orderProductsPromise}
+function resetSingleProductSelection(){selectedOrderProduct=null;byId("singleProductName").value="";byId("singleProductColor").innerHTML='<option value="">칼라를 선택하세요</option>';byId("singleProductSize").innerHTML='<option value="">사이즈를 선택하세요</option>';byId("singleProductColor").disabled=true;byId("singleProductSize").disabled=true;byId("singleProductMessage").className="product-message";byId("singleProductMessage").textContent="상품번호 입력 후 검색을 눌러주세요."}
+async function searchSingleProduct(){const no=byId("singleProductNo").value.trim();if(!no){byId("singleProductMessage").className="product-message error";byId("singleProductMessage").textContent="상품번호를 입력해주세요.";return}if(!/^\d{1,4}$/.test(no)||Number(no)<1||Number(no)>9999){byId("singleProductMessage").className="product-message error";byId("singleProductMessage").textContent="상품번호는 1~9999 사이로 입력해주세요.";return}if(!orderProducts.length){byId("singleProductMessage").className="product-message";byId("singleProductMessage").textContent="상품정보를 확인하는 중입니다...";try{await ensureOrderProductsLoaded()}catch(e){byId("singleProductMessage").className="product-message error";byId("singleProductMessage").textContent=e.message;return}}const p=orderProducts.find(x=>String(x.productNo)===no);if(!p){resetSingleProductSelection();byId("singleProductMessage").className="product-message error";byId("singleProductMessage").textContent="등록되지 않은 상품번호입니다.";return}selectedOrderProduct=p;byId("singleProductName").value=p.productName||"";byId("singleProductColor").innerHTML='<option value="">칼라를 선택하세요</option>';Object.keys(p.colors||{}).forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;byId("singleProductColor").appendChild(o)});byId("singleProductColor").disabled=false;byId("singleProductMessage").className="product-message success";byId("singleProductMessage").textContent="상품이 확인되었습니다."}
+function updateSingleSizes(){const c=byId("singleProductColor").value;byId("singleProductSize").innerHTML='<option value="">사이즈를 선택하세요</option>';if(!selectedOrderProduct||!c||!selectedOrderProduct.colors[c]){byId("singleProductSize").disabled=true;return}selectedOrderProduct.colors[c].forEach(s=>{const o=document.createElement("option");const stock=selectedOrderProduct.stocks&&selectedOrderProduct.stocks[c]?selectedOrderProduct.stocks[c][s]:null;o.value=s;o.textContent=s+(stock===0?" (품절)":(stock!==null&&stock!==undefined?" · 재고 "+stock+"개":""));if(stock===0)o.disabled=true;byId("singleProductSize").appendChild(o)});byId("singleProductSize").disabled=false}
+function changeSingleQuantity(n){byId("singleProductQuantity").value=Math.min(99,Math.max(1,Number(byId("singleProductQuantity").value||1)+n))}
+function addSelectedProductToCart(){if(orderMode!=="manual"){alert("라이브 주문은 상품을 직접 수정할 수 없습니다.");return}const no=byId("singleProductNo").value.trim(),c=byId("singleProductColor").value,s=byId("singleProductSize").value,q=Math.min(99,Math.max(1,Number(byId("singleProductQuantity").value||1)));if(!selectedOrderProduct||String(selectedOrderProduct.productNo)!==no){alert("상품번호를 검색해주세요.");return}if(!c){alert("칼라를 선택해주세요.");return}if(!s){alert("사이즈를 선택해주세요.");return}const stock=selectedOrderProduct.stocks&&selectedOrderProduct.stocks[c]?selectedOrderProduct.stocks[c][s]:null;const already=orderCart.filter(x=>String(x.productNo)===no&&x.color===c&&x.size===s).reduce((sum,x)=>sum+Number(x.quantity||0),0);if(stock!==null&&stock!==undefined&&already+q>Number(stock)){alert("현재 남은 재고는 "+stock+"개입니다.");return}orderCart.push({productNo:no,productName:selectedOrderProduct.productName||"",color:c,size:s,quantity:q,price:Number(selectedOrderProduct.price||0)});renderOrderCart();byId("singleProductNo").value="";byId("singleProductQuantity").value="1";resetSingleProductSelection();byId("singleProductNo").focus()}
+function removeCartItem(i){if(orderMode!=="manual")return;orderCart.splice(i,1);renderOrderCart()}
+function getCurrentCartProductAmount(){return orderCart.reduce((a,x)=>a+Number(x.price||0)*Number(x.quantity||0),0)}
+function renderOrderCart(){const cartList=byId("cartList"),purchaseSummary=byId("purchaseSummary");if(!orderCart.length){cartList.innerHTML='<div class="cart-empty">담긴 상품이 없습니다.</div>';purchaseSummary.textContent="상품을 담으면 구매내역이 자동으로 표시됩니다."}else{cartList.innerHTML=orderCart.map((x,i)=>`<div class="cart-item"><div class="cart-number">${i+1}</div><div class="cart-info"><strong>${escapeHtml(x.productNo)}번 ${escapeHtml(x.productName)}</strong><span>${escapeHtml(x.color)} / ${escapeHtml(x.size)} / ${x.quantity}개</span></div><div class="cart-side"><span class="cart-price">${money(x.price*x.quantity)}</span>${orderMode==="manual"?`<button type="button" class="cart-delete" data-index="${i}">🗑 삭제</button>`:"<span class=\"live-locked-label\">🔒 라이브 주문</span>"}</div></div>`).join("");cartList.querySelectorAll(".cart-delete").forEach(b=>b.addEventListener("click",()=>removeCartItem(Number(b.dataset.index))));purchaseSummary.textContent=orderCart.map(x=>`${x.productNo}번 ${x.productName} / ${x.color} / ${x.size} / ${x.quantity}개 / ${money(x.price*x.quantity)}`).join("\n")}const count=orderCart.reduce((a,x)=>a+Number(x.quantity||0),0),total=getCurrentCartProductAmount();byId("totalItemCount").textContent=count+"개";byId("grandTotal").textContent=money(total);schedulePaymentPreview()}
+function updateCardVatNotice(){const notice=byId("cardVatNotice");if(notice)notice.classList.toggle("show",byId("paymentMethod").value==="카드결제")}
+function schedulePaymentPreview(){clearTimeout(orderPreviewTimer);orderPreviewTimer=setTimeout(refreshPaymentPreview,550)}
 async function refreshPaymentPreview(){
-  const seq=++paymentPreviewSeq;
-  const current=getCurrentCartProductAmount();
-  const receiver=(document.getElementById("receiverName")||{}).value||"";
-  const phone=(document.getElementById("phone")||{}).value||"";
-  const remote=(document.getElementById("shippingRegion")||{}).value==="remote";
-  let preview={existingProductAmount:0,currentProductAmount:current,cumulativeProductAmount:current,shippingFee:current?((current>=200000)?0:(remote?7000:4000)):0,cumulativeFinalAmount:current?current+((current>=200000)?0:(remote?7000:4000)):0,additionalOrder:false,remote:remote};
-  if(current>0&&receiver.trim()&&phone.replace(/[^0-9]/g,"").length>=10){
-    const key=[receiver.trim(),phone.replace(/[^0-9]/g,""),current,remote?1:0].join("|");
-    if(paymentPreviewCache.has(key)){
-      preview=paymentPreviewCache.get(key);
-    }else{
-      try{
-        const d=await apiGet({action:"paymentPreview",receiverName:receiver.trim(),phone:phone,currentProductAmount:String(current),remote:remote?"1":"0"});
-        if(d&&d.preview){preview=d.preview;paymentPreviewCache.set(key,preview);if(paymentPreviewCache.size>30)paymentPreviewCache.delete(paymentPreviewCache.keys().next().value);}
-      }catch(e){console.warn("배송비 미리보기:",e.message)}
-    }
-  }
-  if(seq!==paymentPreviewSeq)return;
-  lastPaymentPreview=preview;
-  renderPaymentPreview(preview);
+  const seq=++paymentPreviewSeq,current=getCurrentCartProductAmount(),receiver=byId("receiverName").value||"",phoneValue=byId("phone").value||"",remote=byId("shippingRegion").value==="remote";
+  const fee=current?((current>=200000)?0:(remote?7000:4000)):0;
+  let preview={existingProductAmount:0,currentProductAmount:current,cumulativeProductAmount:current,shippingFee:fee,cumulativeFinalAmount:current+fee,alreadyPaidAmount:0,amountDueNow:current+fee,additionalOrder:false,remote:remote};
+  if(current>0&&receiver.trim()&&phoneValue.replace(/[^0-9]/g,"").length>=10){const key=[receiver.trim(),phoneValue.replace(/[^0-9]/g,""),current,remote?1:0].join("|");if(paymentPreviewCache.has(key))preview=paymentPreviewCache.get(key);else{try{const d=await apiGet({action:"paymentPreview",receiverName:receiver.trim(),phone:phoneValue,currentProductAmount:String(current),remote:remote?"1":"0"});if(d&&d.preview){preview=d.preview;paymentPreviewCache.set(key,preview);if(paymentPreviewCache.size>30)paymentPreviewCache.delete(paymentPreviewCache.keys().next().value)}}catch(e){console.warn("배송비 미리보기:",e.message)}}}
+  if(seq!==paymentPreviewSeq)return;lastPaymentPreview=preview;renderPaymentPreview(preview)
 }
-
 function renderPaymentPreview(p){
-  const current=Number(p.currentProductAmount||0),existing=Number(p.existingProductAmount||0),cumulative=Number(p.cumulativeProductAmount||0),fee=Number(p.shippingFee||0),finalAmount=Number(p.cumulativeFinalAmount||0);
-  const set=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=money(val)};
-  set("currentProductAmount",current);set("existingProductAmount",existing);set("cumulativeProductAmount",cumulative);set("calculatedShippingFee",fee);set("cumulativeFinalAmount",finalAmount);
-  const existingRow=document.getElementById("existingOrderAmountRow");if(existingRow)existingRow.classList.toggle("show",existing>0);
-  const msg=document.getElementById("shippingMessage");
-  if(msg){
-    if(!current)msg.textContent="상품을 담으면 배송비와 최종 입금금액이 자동으로 계산됩니다.";
-    else if(cumulative>=200000)msg.innerHTML="🎁 누적 상품금액이 20만원 이상이라 <strong>무료배송</strong>입니다.";
-    else if(existing>0)msg.innerHTML="⭐ 추가 주문입니다. 배송비는 같은 방송에서 <strong>1회만</strong> 적용되고 누적 최종금액을 보여드립니다.";
-    else msg.innerHTML=(p.remote?"🚚 제주·도서산간 배송비 7,000원이 적용됩니다.":"🚚 기본 배송비 4,000원이 적용됩니다.");
-  }
-  const hidden=document.getElementById("displayPaymentAmount");if(hidden)hidden.value=money(finalAmount);
-  const cb=document.getElementById("paymentConfirmCheckbox");if(cb)cb.checked=false;
+  const current=Number(p.currentProductAmount||0),existing=Number(p.existingProductAmount||0),cumulative=Number(p.cumulativeProductAmount||0),fee=Number(p.shippingFee||0),finalAmount=Number(p.cumulativeFinalAmount||0),paid=Number(p.alreadyPaidAmount||0),due=Number(p.amountDueNow!==undefined?p.amountDueNow:Math.max(0,finalAmount-paid));
+  const set=(id,val)=>{const el=byId(id);if(el)el.textContent=money(val)};set("currentProductAmount",current);set("existingProductAmount",existing);set("cumulativeProductAmount",cumulative);set("calculatedShippingFee",fee);set("alreadyPaidAmount",paid);set("cumulativeFinalAmount",finalAmount);set("amountDueNow",due);
+  const existingRow=byId("existingOrderAmountRow");if(existingRow)existingRow.classList.toggle("show",existing>0);const paidRow=byId("alreadyPaidAmountRow");if(paidRow)paidRow.classList.toggle("show",paid>0);
+  const msg=byId("shippingMessage");if(msg){if(!current)msg.textContent="상품을 담으면 배송비와 결제 예정 금액이 자동으로 계산됩니다.";else if(paid>0)msg.innerHTML="✅ 이미 결제완료된 <strong>"+money(paid)+"</strong>을 제외한 금액만 입금하시면 됩니다.";else if(cumulative>=200000)msg.innerHTML="🎁 누적 상품금액이 20만원 이상이라 <strong>무료배송</strong>입니다.";else if(existing>0)msg.innerHTML="⭐ 추가 주문입니다. 기존 미결제 주문까지 합친 <strong>현재 미결제 금액</strong>입니다.";else msg.innerHTML=(p.remote?"🚚 제주·도서산간 배송비 7,000원이 적용됩니다.":"🚚 기본 배송비 4,000원이 적용됩니다.")}
+  const hidden=byId("displayPaymentAmount");if(hidden)hidden.value=money(due);const cb=byId("paymentConfirmCheckbox");if(cb)cb.checked=false
 }
 
 async function submitOrder(e){
   e.preventDefault();if(orderSubmitting)return;
   try{
-    if(!orderCart.length)throw new Error("주문 상품을 한 개 이상 담아주세요.");
-    if(!paymentConfirmCheckbox.checked)throw new Error("최종 입금금액을 확인한 뒤 체크해주세요.");
-    const data={action:"saveOrder",nickname:nickname.value.trim(),receiverName:receiverName.value.trim(),phone:phone.value.trim(),zipcode:zipcode.value.trim(),address:address.value.trim(),detailAddress:detailAddress.value.trim(),shippingMemo:shippingMemo.value.trim(),paymentMethod:paymentMethod.value,isRemoteShipping:shippingRegion.value==="remote",products:orderCart.map(x=>({productNo:x.productNo,color:x.color,size:x.size,quantity:x.quantity}))};
-    if(!data.nickname||!data.receiverName)throw new Error("닉네임과 수령인 성함을 입력해주세요.");
-    if(data.phone.replace(/[^0-9]/g,"").length<10)throw new Error("연락처를 정확하게 입력해주세요.");
-    if(!data.zipcode||!data.address||!data.detailAddress)throw new Error("주소와 상세주소를 입력해주세요.");
-    orderSubmitting=true;showLoading("주문서를 저장하고 있습니다.");submitButton.disabled=true;
-    const r=await apiPost(data);paymentPreviewCache.clear();saveCustomerInfo();orderForm.style.display="none";
-    completePaymentAmount.textContent=money(r.cumulativeFinalAmount||r.paymentAmount||0);
-    const note=document.getElementById("completeShippingNote");
-    if(note){note.textContent=(r.cumulativeProductAmount>=200000?"20만원 이상 무료배송 적용":(r.additionalOrder?"같은 방송 배송비 1회 적용":"배송비 포함 금액"));}
-    completeScreen.classList.add("show");window.scrollTo({top:0,behavior:"smooth"});
-  }catch(err){alert(err.message)}finally{orderSubmitting=false;hideLoading();submitButton.disabled=false}
+    if(!orderMode)throw new Error("주문방법을 먼저 선택해주세요.");if(orderMode==="live"&&!liveOrderConfirmed)throw new Error("라이브 주문내용이 맞는지 먼저 확인해주세요.");if(!orderCart.length)throw new Error("주문 상품이 없습니다.");
+    const data={action:"saveOrder",submissionId:getSubmissionIdV432(),orderMode:orderMode,liveOrderToken:liveOrderToken,liveOrderConfirmed:liveOrderConfirmed,nickname:byId("nickname").value.trim(),receiverName:byId("receiverName").value.trim(),phone:byId("phone").value.trim(),zipcode:byId("zipcode").value.trim(),address:byId("address").value.trim(),detailAddress:byId("detailAddress").value.trim(),useExistingFullAddress:useExistingFullAddress,shippingMemo:byId("shippingMemo").value.trim(),paymentMethod:byId("paymentMethod").value,isRemoteShipping:byId("shippingRegion").value==="remote",products:orderCart.map(x=>({productNo:x.productNo,color:x.color,size:x.size,quantity:x.quantity}))};
+    if(!data.nickname||!data.receiverName)throw new Error("닉네임과 수령인 성함을 입력해주세요.");if(data.phone.replace(/[^0-9]/g,"").length<10)throw new Error("연락처를 정확하게 입력해주세요.");if(!data.zipcode||!data.address||(!data.useExistingFullAddress&&!data.detailAddress))throw new Error("주소와 상세주소를 확인해주세요.");
+    if(orderMode==="manual"){try{const live=await apiGet({action:"liveOrderLookup",nickname:data.nickname});if(live&&(live.found||live.requiresCode)){if(!confirm("⚠ 같은 닉네임의 미제출 라이브 주문이 있습니다.\n라이브 주문과 중복될 수 있어요.\n\n그래도 직접 작성 주문을 제출할까요?"))return}}catch(checkError){console.warn("라이브 중복확인:",checkError.message)}}
+    orderSubmitting=true;showLoading("주문서를 저장하고 있습니다.");byId("submitButton").disabled=true;
+    const r=await apiPost(data);sessionStorage.removeItem(SUBMISSION_STORAGE_KEY);paymentPreviewCache.clear();saveCustomerInfo();byId("orderForm").style.display="none";byId("orderModeToolbar").style.display="none";
+    lastCompletedAmountDue=Number(r.amountDueNow!==undefined?r.amountDueNow:(r.cumulativeFinalAmount||r.paymentAmount||0));
+    byId("completePaymentAmount").textContent=money(lastCompletedAmountDue);
+    const isCard=byId("paymentMethod").value==="카드결제",completeBank=byId("completeBankBox");if(completeBank)completeBank.style.display=isCard?"none":"block";
+    const orderNo=byId("completeOrderNumber");if(orderNo)orderNo.textContent=r.orderNumber||"-";
+    const itemCount=byId("completeItemCount");if(itemCount)itemCount.textContent=orderCart.reduce((sum,x)=>sum+Number(x.quantity||0),0)+"개";
+    const paymentStatus=byId("completePaymentStatus");if(paymentStatus)paymentStatus.textContent=isCard?"카드결제대기":"미입금";
+    const paymentMethodText=byId("completePaymentMethod");if(paymentMethodText)paymentMethodText.textContent=isCard?"카드결제":"무통장입금";
+    const paymentLabel=byId("completePaymentLabel");if(paymentLabel)paymentLabel.textContent=isCard?"카드 결제 예정 금액":"지금 입금할 금액";
+    const waitingWarn=byId("completeWaitingWarning");if(waitingWarn)waitingWarn.style.display=(orderMode==="live"&&currentLiveLookup&&Number(currentLiveLookup.waitingCount||0)>0)?"block":"none";
+    const note=byId("completeShippingNote");if(note){note.textContent=isCard?"카드결제 링크 안내 후 결제해주세요":(Number(r.alreadyPaidAmount||0)>0?"이미 결제한 금액을 제외한 추가 입금액입니다":(r.cumulativeProductAmount>=200000?"20만원 이상 무료배송 적용":(r.additionalOrder?"기존 미결제 주문과 합산된 금액입니다":"배송비 포함 금액")))}
+    byId("completeScreen").classList.add("show");window.scrollTo({top:0,behavior:"smooth"});
+  }catch(err){alert(err.message)}finally{orderSubmitting=false;hideLoading();byId("submitButton").disabled=false}
 }
 
-function saveCustomerInfo(){localStorage.setItem(CUSTOMER_STORAGE_KEY,JSON.stringify({nickname:nickname.value.trim(),receiverName:receiverName.value.trim(),phone:phone.value.trim(),zipcode:zipcode.value.trim(),address:address.value.trim(),detailAddress:detailAddress.value.trim(),shippingMemo:shippingMemo.value.trim(),shippingRegion:shippingRegion.value}))}
-function loadSavedCustomer(){try{const raw=localStorage.getItem(CUSTOMER_STORAGE_KEY);if(!raw)return;const info=JSON.parse(raw);Object.keys(info).forEach(k=>{const e=document.getElementById(k);if(e)e.value=info[k]||""});if(info.nickname||info.phone)savedNotice.classList.add("show");schedulePaymentPreview()}catch(e){console.error(e)}}
-function clearSavedCustomer(){if(!confirm("저장된 고객정보를 지울까요?"))return;localStorage.removeItem(CUSTOMER_STORAGE_KEY);["nickname","receiverName","phone","zipcode","address","detailAddress","shippingMemo"].forEach(id=>document.getElementById(id).value="");shippingRegion.value="normal";savedNotice.classList.remove("show");schedulePaymentPreview()}
-function finishOrder(){completeScreen.classList.remove("show");orderForm.style.display="grid";orderCart=[];renderOrderCart();loadSavedCustomer();window.scrollTo({top:0,behavior:"smooth"})}
+function saveCustomerInfo(){localStorage.setItem(CUSTOMER_STORAGE_KEY,JSON.stringify({nickname:byId("nickname").value.trim(),receiverName:byId("receiverName").value.trim(),phone:byId("phone").value.trim(),zipcode:byId("zipcode").value.trim(),address:byId("address").value.trim(),detailAddress:useExistingFullAddress?"":byId("detailAddress").value.trim(),shippingMemo:byId("shippingMemo").value.trim(),shippingRegion:byId("shippingRegion").value}))}
+function loadSavedCustomer(){try{const raw=localStorage.getItem(CUSTOMER_STORAGE_KEY);if(!raw)return;const info=JSON.parse(raw);Object.keys(info).forEach(k=>{const e=byId(k);if(e)e.value=info[k]||""});if(info.nickname||info.phone)byId("savedNotice").classList.add("show");schedulePaymentPreview()}catch(e){console.error(e)}}
+function clearSavedCustomer(){if(!confirm("이 브라우저에 저장된 고객정보를 지울까요?"))return;localStorage.removeItem(CUSTOMER_STORAGE_KEY);["nickname","receiverName","phone","zipcode","address","detailAddress","shippingMemo"].forEach(id=>byId(id).value="");byId("shippingRegion").value="normal";byId("savedNotice").classList.remove("show");byId("previousCustomerStatus").textContent="";useExistingFullAddress=false;byId("detailAddress").required=true;byId("detailAddress").placeholder="상세주소를 입력해주세요";schedulePaymentPreview()}
+function finishOrder(){byId("completeScreen").classList.remove("show");orderCart=[];orderMode="";liveOrderToken="";liveOrderConfirmed=false;currentLiveLookup=null;lastCompletedAmountDue=0;rotateSubmissionIdV432();renderOrderCart();loadSavedCustomer();byId("nickname").readOnly=false;byId("orderModeChooser").style.display="block";byId("liveLookupPanel").style.display="none";byId("orderForm").style.display="none";byId("orderModeToolbar").style.display="none";window.scrollTo({top:0,behavior:"smooth"})}
 function formatPhoneInput(e){let n=e.target.value.replace(/[^0-9]/g,"").slice(0,11);e.target.value=n.length<=3?n:n.length<=7?n.slice(0,3)+"-"+n.slice(3):n.slice(0,3)+"-"+n.slice(3,7)+"-"+n.slice(7)}
-let postcodeScriptPromise=null;
-let postcodeEmbedded=false;
-function loadPostcodeScript(){
-  if(window.daum&&window.daum.Postcode)return Promise.resolve();
-  if(postcodeScriptPromise)return postcodeScriptPromise;
-  postcodeScriptPromise=new Promise((resolve,reject)=>{
-    const sc=document.createElement("script");
-    sc.src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
-    sc.async=true;
-    sc.onload=()=>window.daum&&window.daum.Postcode?resolve():reject(new Error("주소검색 모듈을 초기화하지 못했습니다."));
-    sc.onerror=()=>reject(new Error("주소검색 서비스를 불러오지 못했습니다."));
-    document.head.appendChild(sc);
-  });
-  return postcodeScriptPromise;
-}
-function setAddressSearchStatus(message,isError){
-  const el=document.getElementById("addressSearchStatus");
-  if(!el)return;
-  el.textContent=message;
-  el.classList.toggle("address-manual-help",!!isError);
-}
-function enableManualAddressFallback(){
-  const zip=document.getElementById("zipcode"),addr=document.getElementById("address");
-  if(zip){zip.readOnly=false;zip.placeholder="우편번호 직접 입력";}
-  if(addr){addr.readOnly=false;addr.placeholder="주소를 직접 입력해주세요";}
-  setAddressSearchStatus("주소검색이 차단된 환경입니다. 우편번호와 주소를 직접 입력할 수 있게 전환했습니다.",true);
-}
-async function openAddressSearch(){
-  const panel=document.getElementById("addressSearchPanel");
-  const embed=document.getElementById("postcodeEmbed");
-  if(!panel||!embed)return;
-  panel.classList.add("show");panel.setAttribute("aria-hidden","false");
-  setAddressSearchStatus("주소검색을 불러오는 중입니다...",false);
-  try{
-    await loadPostcodeScript();
-    setAddressSearchStatus("도로명, 건물명 또는 지번으로 검색해주세요.",false);
-    if(!postcodeEmbedded){
-      new window.daum.Postcode({
-        width:"100%",height:"100%",
-        oncomplete:d=>{
-          zipcode.value=d.zonecode||"";
-          address.value=d.userSelectedType==="R"?(d.roadAddress||""):(d.jibunAddress||"");
-          detailAddress.value="";
-          shippingRegion.value=String(address.value).indexOf("제주")!==-1?"remote":"normal";
-          schedulePaymentPreview();
-          closeAddressSearch();
-          setTimeout(()=>detailAddress.focus(),50);
-        }
-      }).embed(embed);
-      postcodeEmbedded=true;
-    }
-    panel.scrollIntoView({behavior:"smooth",block:"center"});
-  }catch(err){
-    console.error(err);
-    enableManualAddressFallback();
-  }
-}
-function closeAddressSearch(){
-  const panel=document.getElementById("addressSearchPanel");
-  if(panel){panel.classList.remove("show");panel.setAttribute("aria-hidden","true");}
-}
+let postcodeScriptPromise=null;let postcodeEmbedded=false;
+function loadPostcodeScript(){if(window.daum&&window.daum.Postcode)return Promise.resolve();if(postcodeScriptPromise)return postcodeScriptPromise;postcodeScriptPromise=new Promise((resolve,reject)=>{const sc=document.createElement("script");sc.src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";sc.async=true;sc.onload=()=>window.daum&&window.daum.Postcode?resolve():reject(new Error("주소검색 모듈을 초기화하지 못했습니다."));sc.onerror=()=>reject(new Error("주소검색 서비스를 불러오지 못했습니다."));document.head.appendChild(sc)});return postcodeScriptPromise}
+function setAddressSearchStatus(message,isError){const el=byId("addressSearchStatus");if(!el)return;el.textContent=message;el.classList.toggle("address-manual-help",!!isError)}
+function enableManualAddressFallback(){const zip=byId("zipcode"),addr=byId("address");if(zip){zip.readOnly=false;zip.placeholder="우편번호 직접 입력"}if(addr){addr.readOnly=false;addr.placeholder="주소를 직접 입력해주세요"}setAddressSearchStatus("주소검색이 차단된 환경입니다. 우편번호와 주소를 직접 입력할 수 있게 전환했습니다.",true);useExistingFullAddress=false;byId("detailAddress").required=true}
+async function openAddressSearch(){const panel=byId("addressSearchPanel"),embed=byId("postcodeEmbed");if(!panel||!embed)return;panel.classList.add("show");panel.setAttribute("aria-hidden","false");setAddressSearchStatus("주소검색을 불러오는 중입니다...",false);try{await loadPostcodeScript();setAddressSearchStatus("도로명, 건물명 또는 지번으로 검색해주세요.",false);if(!postcodeEmbedded){new window.daum.Postcode({width:"100%",height:"100%",oncomplete:d=>{byId("zipcode").value=d.zonecode||"";byId("address").value=d.userSelectedType==="R"?(d.roadAddress||""):(d.jibunAddress||"");byId("detailAddress").value="";byId("detailAddress").required=true;byId("detailAddress").placeholder="상세주소를 입력해주세요";useExistingFullAddress=false;byId("shippingRegion").value=String(byId("address").value).indexOf("제주")!==-1?"remote":"normal";schedulePaymentPreview();closeAddressSearch();setTimeout(()=>byId("detailAddress").focus(),50)}}).embed(embed);postcodeEmbedded=true}panel.scrollIntoView({behavior:"smooth",block:"center"})}catch(err){console.error(err);enableManualAddressFallback()}}
+function closeAddressSearch(){const panel=byId("addressSearchPanel");if(panel){panel.classList.remove("show");panel.setAttribute("aria-hidden","true")}}
+
 
 /* =========================
    관리자
@@ -626,7 +668,7 @@ function initAdminPage() {
   document.getElementById("adminProductNo")
     .addEventListener("input", function(event) {
       event.target.value =
-        event.target.value.replace(/[^0-9]/g, "");
+        event.target.value.replace(/[^0-9]/g, "").slice(0, 4);
     });
 
   document.getElementById("saveProductButton")
@@ -643,6 +685,7 @@ function initAdminPage() {
 
   resetAdminOrderDisplay();
   initBankMatchPage();
+  initAdminLiveV432();
 }
 
 function showAdminTab(tabName) {
@@ -665,13 +708,13 @@ function showAdminTab(tabName) {
 
   const cancelledTab = document.getElementById("cancelledTab");
   if (cancelledTab && tabName !== "cancelled") cancelledTab.classList.remove("active");
+  const liveTab=document.getElementById("liveTab");if(liveTab)liveTab.classList.toggle("active",tabName==="live");
 
   if (tabName === "products") {
     loadAdminProducts();
   }
-  if (tabName === "bankmatch") {
-    loadBankMatchOrders();
-  }
+  if (tabName === "bankmatch") { loadBankMatchOrders(); }
+  if (tabName === "live") { startAdminLiveAutoV432(); loadAdminLiveDashboardV432(); } else { stopAdminLiveAutoV432(); }
 }
 
 function setAdminOrderSource(source) {
@@ -1104,8 +1147,8 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
-  if (version.indexOf("V4.27") !== 0) {
-    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.27 기능을 사용하려면 V4.27 Code.gs를 새 버전으로 배포해야 합니다.");
+  if (version.indexOf("V4.33") !== 0) {
+    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.33 기능을 사용하려면 V4.33 Code.gs를 새 버전으로 배포해야 합니다.");
   }
   return info;
 }
@@ -1310,7 +1353,7 @@ function renderAdminProducts() {
   });
 
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">표시할 상품정보가 없습니다.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" class="empty-cell">표시할 상품정보가 없습니다.</td></tr>';
     return;
   }
 
@@ -1323,6 +1366,10 @@ function renderAdminProducts() {
         <td data-label="사이즈">${escapeHtml(product.size)}</td>
         <td data-label="판매가">${money(product.salePrice)}</td>
         <td data-label="입금가">${money(product.depositPrice)}</td>
+        <td data-label="현재재고">${product.stockManaged ? Number(product.currentStock).toLocaleString("ko-KR") + "개" : "미설정"}</td>
+        <td data-label="라이브예약">${product.stockManaged ? Number(product.reservedStock||0).toLocaleString("ko-KR") + "개" : "-"}</td>
+        <td data-label="판매가능"><strong>${product.stockManaged ? Number(product.availableStock||0).toLocaleString("ko-KR") + "개" : "미설정"}</strong></td>
+        <td data-label="상태"><span class="stock-status ${["품절","예약품절"].includes(product.status) ? "soldout" : ""}">${escapeHtml(product.status || "재고미설정")}</span></td>
         <td data-label="관리">
           <button type="button" class="button dark small edit-product"
                   data-row="${product.rowNumber}">수정</button>
@@ -1361,6 +1408,7 @@ function editAdminProduct(rowNumber) {
   document.getElementById("adminProductSize").value = product.size || "";
   document.getElementById("adminSalePrice").value = product.salePrice || "";
   document.getElementById("adminDepositPrice").value = product.depositPrice || "";
+  document.getElementById("adminCurrentStock").value = product.stockManaged ? product.currentStock : "";
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -1374,6 +1422,7 @@ function resetAdminProductForm() {
   document.getElementById("adminProductSize").value = "";
   document.getElementById("adminSalePrice").value = "";
   document.getElementById("adminDepositPrice").value = "";
+  document.getElementById("adminCurrentStock").value = "";
 }
 
 async function saveAdminProduct() {
@@ -1385,11 +1434,17 @@ async function saveAdminProduct() {
     color: document.getElementById("adminProductColor").value.trim(),
     size: document.getElementById("adminProductSize").value.trim(),
     salePrice: Number(document.getElementById("adminSalePrice").value || 0),
-    depositPrice: Number(document.getElementById("adminDepositPrice").value || 0)
+    depositPrice: Number(document.getElementById("adminDepositPrice").value || 0),
+    currentStock: document.getElementById("adminCurrentStock").value.trim()
   };
 
   if (!payload.productNo || !payload.productName || !payload.color || !payload.size) {
     alert("상품번호, 상품명, 칼라, 사이즈를 모두 입력해주세요.");
+    return;
+  }
+
+  if (!/^\d{1,4}$/.test(payload.productNo) || Number(payload.productNo) < 1 || Number(payload.productNo) > 9999) {
+    alert("상품번호는 1~9999 사이의 숫자로 입력해주세요.");
     return;
   }
 
@@ -1699,8 +1754,15 @@ function resetEditAddProduct() {
 }
 
 function searchEditAddProduct() {
-  const productNo = editAddProductNo.value.replace(/[^0-9]/g, "");
+  const productNo = editAddProductNo.value.replace(/[^0-9]/g, "").slice(0, 4);
   editAddProductNo.value = productNo;
+  if (!/^\d{1,4}$/.test(productNo) || Number(productNo) < 1 || Number(productNo) > 9999) {
+    resetEditAddProduct();
+    editAddProductNo.value = productNo;
+    editAddMessage.textContent = "상품번호는 1~9999 사이로 입력해주세요.";
+    editAddMessage.className = "edit-product-message error";
+    return;
+  }
   const product = getEditCatalogProduct(productNo);
 
   if (!product) {
@@ -1848,7 +1910,7 @@ document.addEventListener("DOMContentLoaded", function() {
     };
 
     editAddProductNo.addEventListener("input", function(event) {
-      event.target.value = event.target.value.replace(/[^0-9]/g, "");
+      event.target.value = event.target.value.replace(/[^0-9]/g, "").slice(0, 4);
       resetEditAddProduct();
       editAddProductNo.value = event.target.value;
     });
@@ -1866,6 +1928,33 @@ document.addEventListener("DOMContentLoaded", function() {
   if (document.body.dataset.page === "admin") initCancelledV2();
 });
 
+
+
+let adminLiveTimerV432=null;
+function initAdminLiveV432(){
+  const reload=byId("liveReloadButton"),collect=byId("liveCollectNowButton"),setBtn=byId("liveSetSaleButton"),clearBtn=byId("liveClearSaleButton");
+  if(reload)reload.onclick=loadAdminLiveDashboardV432;
+  if(collect)collect.onclick=async()=>{try{showLoading("라이브 채팅을 수집하고 있습니다.");const r=await apiPost({action:"adminLiveCollect"});await loadAdminLiveDashboardV432();if(r&&r.skipped)console.log("YouTube 권장 수집간격 대기",r.nextPollMs)}catch(e){alert(e.message)}finally{hideLoading()}};
+  if(setBtn)setBtn.onclick=async()=>{try{await apiPost({action:"adminLiveSetSale",productNo:(byId("liveSaleProductNo").value||"").trim(),color:(byId("liveSaleColor").value||"").trim(),size:(byId("liveSaleSize").value||"").trim()});await loadAdminLiveDashboardV432()}catch(e){alert(e.message)}};
+  if(clearBtn)clearBtn.onclick=async()=>{if(!confirm("현재 판매상품 설정을 지울까요?"))return;try{await apiPost({action:"adminLiveSetSale",productNo:"",color:"",size:""});await loadAdminLiveDashboardV432()}catch(e){alert(e.message)}};
+}
+function startAdminLiveAutoV432(){stopAdminLiveAutoV432();adminLiveTimerV432=setInterval(async()=>{if(!byId("liveTab")||!byId("liveTab").classList.contains("active")||document.hidden)return;try{await apiPost({action:"adminLiveCollect"});await loadAdminLiveDashboardV432(true)}catch(e){console.warn("라이브 자동갱신",e.message)}},20000)}
+function stopAdminLiveAutoV432(){if(adminLiveTimerV432){clearInterval(adminLiveTimerV432);adminLiveTimerV432=null}}
+async function loadAdminLiveDashboardV432(silent){try{if(!silent)showLoading("라이브 주문을 불러오는 중입니다.");const d=await apiGet({action:"adminLiveDashboard"});renderAdminLiveDashboardV432(d)}catch(e){if(!silent)alert(e.message)}finally{if(!silent)hideLoading()}}
+function renderAdminLiveDashboardV432(d){
+  const c=d.counts||{},sale=d.currentSale||{};[ ["liveReservedCount",c.reserved],["liveReviewCount",c.review],["liveWaitingCount",c.waiting],["liveCancelledCount",c.cancelled] ].forEach(x=>{const el=byId(x[0]);if(el)el.textContent=Number(x[1]||0)});const badge=byId("liveNavBadge");if(badge)badge.textContent=Number(c.review||0)+Number(c.waiting||0);
+  const conn=byId("liveConnectionStatus");if(conn)conn.innerHTML=(d.youtube&&d.youtube.connected?"🟢 YouTube 방송 연결됨":"⚪ YouTube 방송 미연결")+(sale.broadcastId?" · 방송ID "+escapeHtml(sale.broadcastId):"");
+  const cur=byId("liveCurrentSale");if(cur)cur.innerHTML=sale.productNo?`현재 판매: <strong>${escapeHtml(sale.productNo)}번</strong> ${sale.color?" · "+escapeHtml(sale.color):""} ${sale.size?" · "+escapeHtml(sale.size):""}`:"현재 판매상품 없음";
+  if(sale.productNo){byId("liveSaleProductNo").value=sale.productNo;byId("liveSaleColor").value=sale.color||"";byId("liveSaleSize").value=sale.size||""}
+  const body=byId("liveAdminOrderList"),orders=d.orders||[];if(body)body.innerHTML=orders.length?orders.map(o=>`<tr><td>${escapeHtml(o.time||"")}</td><td><strong>${escapeHtml(o.nickname||"")}</strong></td><td class="live-msg-cell">${escapeHtml(o.message||"")}</td><td>${escapeHtml(o.productNo||"")} ${escapeHtml(o.color||"")} ${escapeHtml(o.size||"")}</td><td>${Number(o.quantity||0)}</td><td><span class="live-status-pill ${liveStatusClassV432(o.status)}">${escapeHtml(o.status||"")}</span>${o.customerConfirm&&o.customerConfirm!=="확인완료"?`<small class="live-customer-flag">${escapeHtml(o.customerConfirm)}</small>`:""}</td><td>${liveActionButtonsV432(o)}</td></tr>`).join(""):'<tr><td colspan="7" class="empty-cell">현재 방송 주문이 없습니다.</td></tr>';
+  if(body){body.querySelectorAll("[data-live-action]").forEach(btn=>btn.onclick=()=>handleAdminLiveOrderActionV432(btn));}
+  const issueBox=byId("liveIssueList"),issues=d.issues||[];if(issueBox)issueBox.innerHTML=issues.length?issues.map(x=>`<article class="live-issue-card"><div><b>${escapeHtml(x.nickname||"")} · ${escapeHtml(x.type||"확인필요")}</b><span>${escapeHtml(x.status||"접수")}</span></div><p>${escapeHtml(x.message||"")}</p>${x.items?`<pre>${escapeHtml(x.items)}</pre>`:""}<button class="btn btn-primary live-issue-done" data-row="${x.rowNumber}">확인완료</button></article>`).join(""):'<div class="empty-state">확인필요 항목이 없습니다.</div>';
+  if(issueBox)issueBox.querySelectorAll(".live-issue-done").forEach(b=>b.onclick=()=>handleAdminLiveIssueV432(Number(b.dataset.row)));
+}
+function liveStatusClassV432(s){return s==="예약"?"reserved":s==="대기"?"waiting":s==="확인필요"?"review":s==="취소"?"cancelled":s==="주문서완료"?"submitted":""}
+function liveActionButtonsV432(o){if(o.status==="주문서완료")return '<span class="muted">고객주문에서 관리</span>';let html=`<button class="mini-action" data-live-action="change" data-row="${o.rowNumber}">변경</button>`;if(o.status!=="취소")html+=`<button class="mini-action danger" data-live-action="cancel" data-row="${o.rowNumber}">취소</button>`;if(o.status==="대기"||o.status==="취소"||o.status==="확인필요")html+=`<button class="mini-action good" data-live-action="reserve" data-row="${o.rowNumber}">예약</button>`;return html}
+async function handleAdminLiveOrderActionV432(btn){const row=Number(btn.dataset.row),action=btn.dataset.liveAction;let payload={action:"adminLiveOrderAction",rowNumber:row,actionType:action};if(action==="change"){const no=prompt("변경할 상품번호를 입력하세요.");if(no===null)return;const color=prompt("변경할 칼라를 입력하세요.");if(color===null)return;const size=prompt("변경할 사이즈를 입력하세요.");if(size===null)return;const qty=prompt("수량을 입력하세요.","1");if(qty===null)return;Object.assign(payload,{productNo:no,color:color,size:size,quantity:Number(qty||1)})}else if(action==="cancel"&&!confirm("이 임시주문을 취소할까요?"))return;try{showLoading("라이브 주문 처리 중입니다.");await apiPost(payload);await loadAdminLiveDashboardV432(true)}catch(e){alert(e.message)}finally{hideLoading()}}
+async function handleAdminLiveIssueV432(row){if(!confirm("이 확인필요 항목을 완료 처리할까요? 주문내용 수정이 필요하면 먼저 위 임시주문에서 변경해주세요."))return;try{await apiPost({action:"adminLiveIssueAction",rowNumber:row,status:"완료",note:"관리자 페이지 확인완료"});await loadAdminLiveDashboardV432(true)}catch(e){alert(e.message)}}
 
 function initCancelledV2(){const btn=document.getElementById('cancelledSideButton');if(btn)btn.addEventListener('click',function(){document.querySelectorAll('.tab-section').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.side-link').forEach(x=>x.classList.remove('active'));document.getElementById('cancelledTab').classList.add('active');btn.classList.add('active');loadCancelledOrders();});const search=document.getElementById('searchCancelledButton');if(search)search.onclick=loadCancelledOrders;}
 async function loadCancelledOrders(){showLoading("취소주문을 조회하는 중입니다.");try{const d=await apiGet({action:"cancelledOrders",search:(document.getElementById('cancelKeyword')||{}).value||""});renderCancelledOrders(d.orders||[]);}catch(e){alert(e.message)}finally{hideLoading()}}
@@ -3273,7 +3362,7 @@ async function downloadLotteExcelV418() {
       throw new Error("전체주문이력에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
         "전체주문이력 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
         "선택 기간: " + startDate + " ~ " + endDate + "\n" +
-        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.27인지 확인해주세요.");
+        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.33인지 확인해주세요.");
     }
 
     const sortedOrders = sortLotteOrdersV420(orders);

@@ -4,16 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#111827">
-  <title>씬느샵 통합 관리자 V4.27</title>
-  <link rel="stylesheet" href="style.css?v=20260819-v3-25">
+  <title>씬느샵 통합 관리자 V4.33</title>
+  <link rel="stylesheet" href="style.css?v=20260914-v4-33-senior-ui-final">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="script.js?v=20260909-v4-27-history-combine-admin-lock" defer></script>
+  <script src="script.js?v=20260914-v4-33-senior-ui-final" defer></script>
 </head>
 <body data-page="admin" class="page-admin">
   <div class="admin-login-gate" id="adminLoginGate">
     <div class="admin-login-card">
       <div class="admin-login-logo">S</div>
-      <span class="eyebrow dark">SSINNEU ADMIN · V4.27</span>
+      <span class="eyebrow dark">SSINNEU ADMIN · V4.33</span>
       <h1>관리자 로그인</h1>
       <p>관리자 비밀번호를 입력해야 통합관리자에 들어갈 수 있습니다.</p>
       <label for="adminPasswordInput">관리자 비밀번호</label>
@@ -38,6 +38,7 @@
         <button class="side-link active" data-tab="orders">
           <span>▣</span> 주문 관리
         </button>
+        <button class="side-link" data-tab="live" id="liveAdminSideButton"><span>🎥</span> 라이브 주문관리 <b class="live-nav-badge" id="liveNavBadge">0</b></button>
         <button class="side-link" data-tab="cancelled" id="cancelledSideButton"><span>↶</span> 취소 주문</button>
         <button class="side-link" data-tab="bankmatch" id="bankMatchSideButton"><span>₩</span> 입금 자동대조</button>
         <button class="side-link" data-tab="products">
@@ -59,15 +60,15 @@
     <main class="admin-main">
       <header class="admin-topbar">
         <div>
-          <span class="eyebrow dark">SSINNEU ADMIN · V4.27</span>
-          <h1>통합 관리자 <small style="font-size:.48em;font-weight:800;vertical-align:middle;opacity:.72;">V4.27</small></h1>
+          <span class="eyebrow dark">SSINNEU ADMIN · V4.33</span>
+          <h1>통합 관리자 <small style="font-size:.48em;font-weight:800;vertical-align:middle;opacity:.72;">V4.33</small></h1>
         </div>
         <div class="topbar-actions">
           <button class="btn btn-dark" type="button" id="rebuildButton">📦 거래처발주 엑셀 다운로드</button>
           <button class="btn btn-dark" type="button" id="combinedShippingButton">🔗 합배송 가능 고객 · 전체주문이력</button>
           <button class="btn btn-primary" type="button" id="archiveHistoryButton">전체주문이력 저장/갱신</button>
           <button class="btn btn-dark" type="button" id="fillLegacyOrderNumbersButton">🔢 기존 주문번호 자동생성</button>
-          <button class="btn btn-primary" type="button" id="lotteExcelButtonV418">🚚 롯데택배 V4.27 · 전체주문이력 날짜선택</button>
+          <button class="btn btn-primary" type="button" id="lotteExcelButtonV418">🚚 롯데택배 V4.33 · 전체주문이력 날짜선택</button>
           <button class="btn btn-dark" type="button" id="lotteTrackingButton">📥 롯데 송장결과 업로드</button>
           <input type="file" id="lotteTrackingFile" accept=".xlsx,.xls" hidden>
           <button class="btn btn-subtle" type="button" id="adminLogoutButton">🔒 로그아웃</button>
@@ -286,6 +287,22 @@
         </section>
       </section>
 
+
+      <section id="liveTab" class="tab-section">
+        <section class="admin-panel live-admin-hero">
+          <div class="panel-title-row"><div><span class="eyebrow dark">LIVE CONTROL · V4.33</span><h2>🎥 라이브 주문관리</h2><p>현재 판매상품 설정부터 예약·대기·취소·확인필요까지 관리자 페이지에서 처리합니다. 구글시트는 뒤에서 자동 저장됩니다.</p></div><div class="live-admin-head-actions"><button type="button" class="btn btn-primary" id="liveCollectNowButton">채팅 지금 수집</button><button type="button" class="btn btn-subtle" id="liveReloadButton">새로고침</button></div></div>
+          <div class="live-connection-line"><span id="liveConnectionStatus">방송 연결 상태 확인 중...</span><small id="liveAutoRefreshText">이 화면을 열어두면 약 20초 간격으로 자동 갱신합니다.</small></div>
+        </section>
+        <section class="admin-panel">
+          <div class="panel-title-row"><div><h2>현재 판매상품</h2><p>상품번호를 지정하고 필요하면 기본 칼라/사이즈를 입력하세요. 여러 칼라 상품에서 기본 칼라를 비우면 고객이 댓글에 칼라를 적어야 합니다.</p></div></div>
+          <div class="live-sale-form"><div class="field compact"><label>상품번호</label><input id="liveSaleProductNo" inputmode="numeric" maxlength="4" placeholder="예: 15"></div><div class="field compact"><label>기본 칼라</label><input id="liveSaleColor" placeholder="선택"></div><div class="field compact"><label>기본 사이즈</label><input id="liveSaleSize" placeholder="예: FREE"></div><button class="btn btn-primary" type="button" id="liveSetSaleButton">판매상품 설정</button><button class="btn btn-subtle" type="button" id="liveClearSaleButton">판매 종료/지우기</button></div>
+          <div class="live-current-sale" id="liveCurrentSale">현재 판매상품 없음</div>
+        </section>
+        <div class="summary-grid premium live-summary-grid"><div class="metric-card success"><span>예약</span><strong id="liveReservedCount">0</strong><small>재고 안에 들어온 주문</small></div><div class="metric-card warning"><span>확인필요</span><strong id="liveReviewCount">0</strong><small>관리자 확인 필요</small></div><div class="metric-card"><span>대기</span><strong id="liveWaitingCount">0</strong><small>재고 소진 후 순번</small></div><div class="metric-card accent"><span>취소</span><strong id="liveCancelledCount">0</strong><small>취소된 임시주문</small></div></div>
+        <section class="admin-panel"><div class="panel-title-row"><div><h2>실시간 임시주문</h2><p>주문서 제출 전 주문입니다. 제출완료 건은 고객주문에서 관리하세요.</p></div></div><div class="table-wrap"><table class="data-table live-admin-table"><thead><tr><th>시간</th><th>고객</th><th>댓글</th><th>상품</th><th>수량</th><th>상태</th><th>처리</th></tr></thead><tbody id="liveAdminOrderList"><tr><td colspan="7" class="empty-cell">라이브 데이터를 불러오는 중입니다.</td></tr></tbody></table></div></section>
+        <section class="admin-panel"><div class="panel-title-row"><div><h2>🔴 확인필요</h2><p>고객 신고·애매한 취소·옵션 확인 건만 모아서 처리합니다.</p></div></div><div id="liveIssueList" class="live-issue-list"><div class="empty-state">확인필요 항목이 없습니다.</div></div></section>
+      </section>
+
       <section id="cancelledTab" class="tab-section">
         <section class="admin-panel">
           <div class="panel-title-row"><div><h2>취소주문</h2><p>취소된 주문을 확인하고 고객주문으로 복구할 수 있습니다.</p></div></div>
@@ -299,7 +316,7 @@
           <div class="panel-title-row">
             <div>
               <h2 id="productFormTitle">상품정보 추가</h2>
-              <p>방송 전 상품번호·옵션·금액을 등록하세요.</p>
+              <p>방송 전 상품번호·옵션·금액·현재재고를 등록하세요. 재고를 비워두면 재고관리 미사용으로 처리됩니다.</p>
             </div>
           </div>
 
@@ -308,7 +325,7 @@
           <div class="form-grid three">
             <div class="field">
               <label for="adminProductNo">상품번호</label>
-              <input id="adminProductNo" type="text" inputmode="numeric" maxlength="3" placeholder="숫자만 입력">
+              <input id="adminProductNo" type="text" inputmode="numeric" maxlength="4" placeholder="상품번호 1~9999">
             </div>
             <div class="field">
               <label for="adminProductName">상품명</label>
@@ -329,6 +346,10 @@
             <div class="field">
               <label for="adminDepositPrice">입금가</label>
               <input id="adminDepositPrice" type="number" min="0">
+            </div>
+            <div class="field">
+              <label for="adminCurrentStock">현재재고</label>
+              <input id="adminCurrentStock" type="number" min="0" step="1" placeholder="미입력 = 재고관리 안 함">
             </div>
           </div>
 
@@ -364,11 +385,15 @@
                   <th>사이즈</th>
                   <th>판매가</th>
                   <th>입금가</th>
+                  <th>현재재고</th>
+                  <th>라이브예약</th>
+                  <th>판매가능</th>
+                  <th>상태</th>
                   <th>관리</th>
                 </tr>
               </thead>
               <tbody id="adminProductList">
-                <tr><td colspan="7" class="empty-cell">상품정보를 불러오는 중입니다.</td></tr>
+                <tr><td colspan="11" class="empty-cell">상품정보를 불러오는 중입니다.</td></tr>
               </tbody>
             </table>
           </div>
