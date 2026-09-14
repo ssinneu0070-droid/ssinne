@@ -1433,7 +1433,7 @@ textarea{min-height:92px;resize:vertical}
 @media (max-width:640px){.cs-payment-filters-v440{gap:8px;}.cs-payment-filters-v440 button{font-size:13px;padding:9px 12px;}}
 
 
-/* V4.40.4 CS 상태카드 클릭 + 오늘완료 표시초기화 */
+/* V4.40.5 CS 상태카드 + 카드결제 고객 모아보기 */
 .cs-status-summary-v4403{appearance:none;border:0;text-align:left;cursor:pointer;width:100%;font:inherit;color:inherit;transition:transform .15s ease,box-shadow .15s ease;}
 .cs-status-summary-v4403:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(15,23,42,.12);}
 .cs-status-summary-v4403.active{outline:3px solid rgba(255,79,161,.22);box-shadow:0 10px 26px rgba(255,79,161,.18);}
@@ -1444,7 +1444,7 @@ textarea{min-height:92px;resize:vertical}
 
 
 /* =========================
-   V4.40.4 요약카드 컴팩트 + 전체 클릭
+   V4.40.5 요약카드 컴팩트 + 전체 클릭 + 카드결제 고객
 ========================= */
 @media (min-width:901px){
   .v435-home-summary,.v2-summary,.cs-summary-v435,.bankmatch-summary,.live-summary-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;margin-bottom:14px!important;}
@@ -1460,3 +1460,30 @@ button.metric-card.active-filter,button.metric-card.active-summary-v4404{box-sha
 @keyframes v4404Flash{0%,100%{box-shadow:none}30%{box-shadow:0 0 0 4px rgba(255,79,161,.18);border-radius:12px}}
 .cancelled-summary-v4404{grid-template-columns:minmax(220px,320px)!important;}
 @media(max-width:900px){.v2-summary,.bankmatch-summary,.live-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}.v2-summary .metric-card,.bankmatch-summary .metric-card,.live-summary-grid .metric-card{min-height:104px;padding:14px 12px!important;}}
+
+
+/* =========================
+   V4.40.5 CS 카드결제 고객 모아보기
+========================= */
+.cs-card-payment-summary-v4405{background:linear-gradient(135deg,#eef4ff,#e8efff)!important;color:#24428a!important;border:1px solid #cddcff!important;}
+.cs-card-payment-summary-v4405 span,.cs-card-payment-summary-v4405 small{color:#5e70a5!important;}
+.cs-card-payment-summary-v4405.active{outline:3px solid rgba(60,105,220,.18);box-shadow:0 10px 26px rgba(60,105,220,.16)!important;}
+.cs-card-payments-v4405{margin-top:12px;}
+.cs-card-payment-tabs-v4405{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px;}
+.cs-card-payment-tabs-v4405 button{border:0;border-radius:999px;padding:9px 13px;background:#f3f6fb;color:#42526b;font-weight:850;cursor:pointer;}
+.cs-card-payment-tabs-v4405 button.active{background:#274c9b;color:#fff;box-shadow:0 6px 14px rgba(39,76,155,.18);}
+.cs-card-payment-summary-line-v4405{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 12px;border-radius:12px;background:#f8faff;color:#667085;font-size:13px;}
+.cs-card-payment-summary-line-v4405 b{font-size:18px;color:#24428a;}
+.cs-card-payment-list-v4405{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+.cs-card-payment-customer-v4405{padding:16px;border:1px solid #e5eaf4;border-radius:16px;background:#fff;box-shadow:0 5px 18px rgba(15,23,42,.04);}
+.cs-card-payment-customer-head-v4405{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}
+.cs-card-payment-customer-head-v4405 h3{margin:0 0 4px;font-size:16px;}
+.cs-card-payment-customer-head-v4405 p{margin:0;color:#7a8597;font-size:12px;}
+.cs-card-payment-customer-head-v4405>strong{white-space:nowrap;color:#24428a;font-size:14px;}
+.cs-card-payment-statuses-v4405{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 10px;}
+.cs-card-payment-orders-v4405{display:grid;gap:6px;margin-bottom:12px;padding:10px;border-radius:12px;background:#f8faff;}
+.cs-card-payment-order-v4405{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:#667085;}
+.cs-card-payment-order-v4405 b{color:#344054;}
+.cs-card-payment-customer-v4405 .btn{width:100%;}
+@media (min-width:901px){.cs-summary-v435{grid-template-columns:repeat(5,minmax(0,1fr))!important;}}
+@media (max-width:900px){.cs-card-payment-list-v4405{grid-template-columns:1fr;}.cs-card-payment-customer-head-v4405{flex-direction:column}.cs-card-payment-customer-head-v4405>strong{white-space:normal}.cs-card-payment-tabs-v4405 button{flex:1 1 calc(50% - 8px);}}

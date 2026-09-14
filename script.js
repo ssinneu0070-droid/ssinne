@@ -1,4 +1,4 @@
-// V4.40.4 - 페이앱 + 토스페이먼츠 듀얼결제 / V4.39.2 속도·중복·안정화 유지
+// V4.40.5 - CS 카드결제 고객 모아보기 + 페이앱/토스페이먼츠 듀얼결제 / V4.39.2 속도·중복·안정화 유지
 // V4.00 - 수령인+닉네임 포함 자동일치 / 분할입금 조합합산 / 부족·초과 / 중복입금 방지
 // V3.30 - 입금 자동대조 시 수령인 + 닉네임 함께 조회
 // V3.29 - 단일 script.js 운영 + 토스뱅크/하나은행 통합 입금대조 + 입금완료 2차 재검사
@@ -19,6 +19,8 @@ let adminTokenV427 = "";
 let adminRoleV435 = "";
 let adminCsDataV435 = null;
 let adminCsPaymentFilterV440 = "all";
+let adminCsCardPaymentsV4405 = [];
+let adminCsCardListFilterV4405 = "all";
 let adminCsActiveStatusV4403 = "";
 
 // V4.39.2: 관리자 첫 화면에서는 무거운 XLSX 라이브러리를 받지 않습니다.
@@ -1250,8 +1252,8 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
-  if (version.indexOf("V4.39") !== 0) {
-    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.40.4 기능을 사용하려면 V4.40.4 Code.gs를 새 버전으로 배포해야 합니다.");
+  if (version.indexOf("V4.40.5") !== 0) {
+    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.40.5 기능을 사용하려면 V4.40.5 Code.gs를 새 버전으로 배포해야 합니다.");
   }
   return info;
 }
@@ -3484,7 +3486,7 @@ async function downloadLotteExcelV418() {
       throw new Error("전체주문이력에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
         "전체주문이력 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
         "선택 기간: " + startDate + " ~ " + endDate + "\n" +
-        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.40.4인지 확인해주세요.");
+        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.40.5인지 확인해주세요.");
     }
 
     const sortedOrders = sortLotteOrdersV420(orders);
@@ -3652,7 +3654,7 @@ async function uploadLotteTrackingResult(event) {
 }
 
 /* =========================================================
-   V4.40.4 페이앱+토스페이먼츠 듀얼결제 · 속도·중복·안정화 PC/모바일 통합 관리자 · 방송회차 · 상시상품 · CS
+   V4.40.5 카드결제 고객 모아보기 · 페이앱+토스페이먼츠 듀얼결제 · PC/모바일 통합 관리자 · 방송회차 · 상시상품 · CS
 ========================================================= */
 function applyAdminRoleV435(){
   const role=adminRoleV435||sessionStorage.getItem("ssinne_admin_role_v435")||"admin";
@@ -3686,6 +3688,9 @@ function initAdminV435(){
   document.querySelectorAll("[data-cs-result]").forEach(b=>{b.onclick=()=>showCsResultV435(b.dataset.csResult);});
   document.querySelectorAll("[data-cs-pay-filter]").forEach(b=>{b.onclick=()=>setCsPaymentFilterV440(b.dataset.csPayFilter);});
   document.querySelectorAll("[data-cs-case-status]").forEach(b=>{b.onclick=()=>loadCsCasesByStatusV4403(b.dataset.csCaseStatus);});
+  if(byId("csCardPaymentCardV4405")) byId("csCardPaymentCardV4405").onclick=loadCsCardPaymentsV4405;
+  document.querySelectorAll("[data-cs-card-list-filter]").forEach(b=>{b.onclick=()=>setCsCardListFilterV4405(b.dataset.csCardListFilter);});
+  if(byId("csCardPaymentsCloseV4405")) byId("csCardPaymentsCloseV4405").onclick=closeCsCardPaymentsV4405;
   if(byId("csDoneResetButtonV4403")) byId("csDoneResetButtonV4403").onclick=resetCsDoneViewV4403;
   if(byId("csStatusCasesCloseV4403")) byId("csStatusCasesCloseV4403").onclick=()=>{adminCsActiveStatusV4403="";const p=byId("csStatusCasesPanelV4403");if(p)p.hidden=true;document.querySelectorAll("[data-cs-case-status]").forEach(b=>b.classList.remove("active"));};
   if(byId("broadcastValidateButtonV436")) byId("broadcastValidateButtonV436").onclick=validateBroadcastProductsV436;
@@ -3722,13 +3727,57 @@ async function loadAdminHomeV435(){
 }
 
 function csStatusLabelV4403(key){return {received:"접수",progress:"진행",done:"오늘 완료",hold:"보류"}[String(key||"")]||"CS";}
-async function loadCsCasesByStatusV4403(status,opts){adminCsActiveStatusV4403=status||"";document.querySelectorAll("[data-cs-case-status]").forEach(b=>b.classList.toggle("active",b.dataset.csCaseStatus===adminCsActiveStatusV4403));const panel=byId("csStatusCasesPanelV4403"),list=byId("csStatusCasesListV4403"),title=byId("csStatusCasesTitleV4403"),sub=byId("csStatusCasesSubV4403");if(panel)panel.hidden=false;if(title)title.textContent=csStatusLabelV4403(status)+" CS";if(sub)sub.textContent=status==="done"?"오늘 완료 처리된 CS입니다. 초기화는 표시만 비우고 기록은 남깁니다.":"현재 "+csStatusLabelV4403(status)+" 상태인 CS입니다.";if(list)list.innerHTML='<div class="empty-state">불러오는 중입니다.</div>';try{const d=await apiGet({action:"adminCsCases",status:status});const cases=d.cases||[];if(list)list.innerHTML=cases.length?cases.map(renderCsNoteV435).join(""):'<div class="empty-state">해당 상태의 CS가 없습니다.</div>';bindCsActionsV435();if(!(opts&&opts.noScroll)&&panel)panel.scrollIntoView({behavior:"smooth",block:"start"});}catch(e){if(list)list.innerHTML='<div class="empty-state">'+escapeHtml(e.message)+'</div>';}}
+async function loadCsCasesByStatusV4403(status,opts){closeCsCardPaymentsV4405(true);adminCsActiveStatusV4403=status||"";document.querySelectorAll("[data-cs-case-status]").forEach(b=>b.classList.toggle("active",b.dataset.csCaseStatus===adminCsActiveStatusV4403));const panel=byId("csStatusCasesPanelV4403"),list=byId("csStatusCasesListV4403"),title=byId("csStatusCasesTitleV4403"),sub=byId("csStatusCasesSubV4403");if(panel)panel.hidden=false;if(title)title.textContent=csStatusLabelV4403(status)+" CS";if(sub)sub.textContent=status==="done"?"오늘 완료 처리된 CS입니다. 초기화는 표시만 비우고 기록은 남깁니다.":"현재 "+csStatusLabelV4403(status)+" 상태인 CS입니다.";if(list)list.innerHTML='<div class="empty-state">불러오는 중입니다.</div>';try{const d=await apiGet({action:"adminCsCases",status:status});const cases=d.cases||[];if(list)list.innerHTML=cases.length?cases.map(renderCsNoteV435).join(""):'<div class="empty-state">해당 상태의 CS가 없습니다.</div>';bindCsActionsV435();if(!(opts&&opts.noScroll)&&panel)panel.scrollIntoView({behavior:"smooth",block:"start"});}catch(e){if(list)list.innerHTML='<div class="empty-state">'+escapeHtml(e.message)+'</div>';}}
 async function resetCsDoneViewV4403(){if(!confirm("오늘 완료 표시를 0건으로 초기화할까요?\n\nCS 기록은 삭제되지 않고, 초기화 이후 새로 완료 처리한 건부터 다시 표시됩니다."))return;try{showLoading("오늘 완료 표시를 초기화하는 중입니다.");const r=await apiPost({action:"adminCsResetDoneView"});await loadCsDashboardV435();if(adminCsActiveStatusV4403==="done")await loadCsCasesByStatusV4403("done",{noScroll:true});alert(r.message||"오늘 완료 표시를 초기화했습니다.");}catch(e){alert(e.message);}finally{hideLoading();}}
 function renderCsCountsV435(c){
-  [["csReceivedCount",c.received],["csProgressCount",c.progress],["csDoneCount",c.done],["csHoldCount",c.hold],["homeCsReceived",c.received],["homeCsProgress",c.progress],["homeCsDone",c.done],["homeCsHold",c.hold],["homeCsCount",Number(c.received||0)+Number(c.progress||0)+Number(c.hold||0)]].forEach(x=>{const el=byId(x[0]);if(el)el.textContent=Number(x[1]||0);});
+  [["csReceivedCount",c.received],["csProgressCount",c.progress],["csDoneCount",c.done],["csHoldCount",c.hold],["csCardPaymentCountV4405",c.cardCustomers],["homeCsReceived",c.received],["homeCsProgress",c.progress],["homeCsDone",c.done],["homeCsHold",c.hold],["homeCsCount",Number(c.received||0)+Number(c.progress||0)+Number(c.hold||0)]].forEach(x=>{const el=byId(x[0]);if(el)el.textContent=Number(x[1]||0);});
   const badge=byId("csNavBadge"); if(badge) badge.textContent=Number(c.received||0)+Number(c.progress||0);
 }
 async function loadCsDashboardV435(){try{const d=await apiGet({action:"adminCsDashboard"});renderCsCountsV435(d.counts||{});}catch(e){console.warn(e.message);}}
+
+function closeCsCardPaymentsV4405(silent){
+  const panel=byId("csCardPaymentsPanelV4405");if(panel)panel.hidden=true;
+  const card=byId("csCardPaymentCardV4405");if(card)card.classList.remove("active");
+  if(!silent)adminCsCardListFilterV4405="all";
+}
+function cardListStatusMatchV4405(o,filterName){
+  const s=String(o&&o.paymentStatus||"");
+  if(filterName==="waiting")return s==="카드결제대기";
+  if(filterName==="sent")return s==="카드링크발송";
+  if(filterName==="done")return s==="카드결제완료"||s==="카드결제";
+  return s.indexOf("카드")===0;
+}
+function cardCustomerKeyV4405(o){
+  const phone=String(o&&o.phone||"").replace(/[^0-9]/g,"");
+  return phone?"P:"+phone:"N:"+[o&&o.nickname||"",o&&o.receiverName||""].join("|");
+}
+function groupCardCustomersV4405(orders){
+  const map=new Map();
+  (orders||[]).forEach(o=>{const k=cardCustomerKeyV4405(o);if(!map.has(k))map.set(k,{key:k,nickname:o.nickname||"",receiverName:o.receiverName||"",phone:o.phone||"",orders:[],total:0});const g=map.get(k);g.orders.push(o);g.total+=Number(o.paymentAmount||0);});
+  return Array.from(map.values()).sort((a,b)=>{const ad=(a.orders[0]&&a.orders[0].orderDate)||"",bd=(b.orders[0]&&b.orders[0].orderDate)||"";return String(bd).localeCompare(String(ad));});
+}
+function renderCsCardPaymentsV4405(){
+  const list=byId("csCardPaymentsListV4405"),summary=byId("csCardPaymentsSummaryV4405");if(!list)return;
+  const filtered=(adminCsCardPaymentsV4405||[]).filter(o=>cardListStatusMatchV4405(o,adminCsCardListFilterV4405));
+  const groups=groupCardCustomersV4405(filtered);
+  document.querySelectorAll("[data-cs-card-list-filter]").forEach(b=>b.classList.toggle("active",b.dataset.csCardListFilter===adminCsCardListFilterV4405));
+  if(summary)summary.innerHTML=`<b>${groups.length}명</b><span>카드 주문 ${filtered.length}건 · 주문금액 ${money(filtered.reduce((a,o)=>a+Number(o.paymentAmount||0),0))}</span>`;
+  if(!groups.length){list.innerHTML='<div class="empty-state">해당 카드결제 고객이 없습니다.</div>';return;}
+  list.innerHTML=groups.map(g=>{
+    const statuses={};g.orders.forEach(o=>{const s=o.paymentStatus||"카드결제";statuses[s]=(statuses[s]||0)+1;});
+    const statusHtml=Object.keys(statuses).map(s=>`<span class="payment-badge-v435 ${paymentBadgeClassV435(s)}">${escapeHtml(s)} ${statuses[s]}건</span>`).join("");
+    const orderHtml=g.orders.slice(0,8).map(o=>`<div class="cs-card-payment-order-v4405"><span>${escapeHtml(o.orderDate||"")} · ${escapeHtml(o.orderNumber||"-")}</span><b>${money(o.paymentAmount||0)}</b></div>`).join("");
+    const searchKey=g.phone||g.nickname||g.receiverName||((g.orders[0]&&g.orders[0].orderNumber)||"");
+    return `<article class="cs-card-payment-customer-v4405"><div class="cs-card-payment-customer-head-v4405"><div><h3>${escapeHtml(g.nickname||"고객")}${g.receiverName?` · ${escapeHtml(g.receiverName)}`:""}</h3><p>${escapeHtml(g.phone||"연락처 없음")}</p></div><strong>${g.orders.length}건 · ${money(g.total)}</strong></div><div class="cs-card-payment-statuses-v4405">${statusHtml}</div><div class="cs-card-payment-orders-v4405">${orderHtml}</div><button type="button" class="btn btn-primary cs-card-customer-open-v4405" data-search="${escapeHtml(searchKey)}">고객 카드주문 상세보기</button></article>`;
+  }).join("");
+  document.querySelectorAll(".cs-card-customer-open-v4405").forEach(b=>b.onclick=async()=>{const q=b.dataset.search||"";if(!q)return;byId("csSearchKeyword").value=q;setCsPaymentFilterV440("card");await searchCsV435();const p=byId("csCustomerPanel");if(p)p.scrollIntoView({behavior:"smooth",block:"start"});});
+}
+function setCsCardListFilterV4405(name){adminCsCardListFilterV4405=name||"all";renderCsCardPaymentsV4405();}
+async function loadCsCardPaymentsV4405(){
+  adminCsActiveStatusV4403="";document.querySelectorAll("[data-cs-case-status]").forEach(b=>b.classList.remove("active"));const statusPanel=byId("csStatusCasesPanelV4403");if(statusPanel)statusPanel.hidden=true;
+  const panel=byId("csCardPaymentsPanelV4405"),list=byId("csCardPaymentsListV4405"),card=byId("csCardPaymentCardV4405");if(panel)panel.hidden=false;if(card)card.classList.add("active");if(list)list.innerHTML='<div class="empty-state">카드결제 고객을 불러오는 중입니다.</div>';
+  try{const d=await apiGet({action:"adminCsCardPayments",_ts:Date.now()});adminCsCardPaymentsV4405=d.orders||[];renderCsCardPaymentsV4405();if(panel)panel.scrollIntoView({behavior:"smooth",block:"start"});}catch(e){if(list)list.innerHTML=`<div class="empty-state">${escapeHtml(e.message)}</div>`;}
+}
 
 async function searchCsV435(){
   const q=(byId("csSearchKeyword").value||"").trim();
