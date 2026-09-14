@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="theme-color" content="#ff4f97">
 <title>씬느샵 주문서 작성</title>
-<link rel="stylesheet" href="style.css?v=20260914-v4-33-senior-ui-final">
-<script src="script.js?v=20260914-v4-33-senior-ui-final" defer></script>
+<link rel="stylesheet" href="style.css?v=20260914-v4-34-phone-first-final">
+<script src="script.js?v=20260914-v4-34-phone-first-final" defer></script>
 </head>
 <body data-page="order" class="page-order final-order-page">
 <header class="final-order-header">
@@ -34,14 +34,36 @@
     <div class="mode-help-text">원하시는 주문 방식을 바로 선택해주세요. ♡</div>
   </section>
 
-  <section class="live-lookup-card" id="liveLookupPanel" style="display:none;">
-    <div class="live-lookup-head"><div><span>LIVE ORDER</span><h2>내 라이브 주문 불러오기</h2></div><button type="button" class="mode-change-button" id="backToModeButton">주문방법 다시 선택</button></div>
-    <div class="live-lookup-grid">
-      <div class="field"><label for="liveLookupNickname">유튜브 닉네임</label><input id="liveLookupNickname" type="text" placeholder="라이브에서 사용한 닉네임"></div>
-      <div class="field"><label for="liveLookupCode">주문확인번호 <span class="muted">(같은 닉네임이 있을 때만)</span></label><input id="liveLookupCode" type="text" inputmode="numeric" maxlength="6" placeholder="6자리 · 보통은 비워두세요"></div>
+  <section class="live-lookup-card phone-first-live-card" id="liveLookupPanel" style="display:none;">
+    <div class="live-lookup-head"><div><span>LIVE ORDER</span><h2>내 라이브 주문 불러오기</h2><p>전화번호부터 확인하면 단골 고객은 이전 배송지도 자동으로 불러옵니다.</p></div><button type="button" class="mode-change-button" id="backToModeButton">주문방법 다시 선택</button></div>
+
+    <div class="live-entry-steps" aria-label="라이브 주문 찾기 단계">
+      <span class="active" id="liveStepBadge1">1. 전화번호</span>
+      <span id="liveStepBadge2">2. 닉네임/이름</span>
+      <span id="liveStepBadge3">3. 주문확인</span>
     </div>
-    <button type="button" class="final-btn primary full-width" id="liveLookupButton">🔎 내 주문 불러오기</button>
-    <div class="live-lookup-status" id="liveLookupStatus">라이브에서 주문한 닉네임을 정확하게 입력해주세요.</div>
+
+    <div class="live-phone-step" id="livePhoneStep">
+      <div class="field live-big-field">
+        <label for="liveLookupPhone">주문 고객 전화번호</label>
+        <input id="liveLookupPhone" type="tel" inputmode="numeric" maxlength="13" autocomplete="tel" placeholder="010-1234-5678">
+        <small>주문하실 고객님의 휴대폰 번호 전체를 입력해주세요.</small>
+      </div>
+      <button type="button" class="final-btn primary full-width live-entry-button" id="livePhoneNextButton">다음 <span>›</span></button>
+    </div>
+
+    <div class="live-identity-step" id="liveIdentityStep" style="display:none;">
+      <div class="live-customer-check" id="liveCustomerCheckMessage"></div>
+      <div class="field live-big-field">
+        <label for="liveLookupIdentity" id="liveLookupIdentityLabel">유튜브 닉네임 또는 수령인 이름</label>
+        <input id="liveLookupIdentity" type="text" autocomplete="off" placeholder="예: 까미 또는 김미영">
+        <small id="liveLookupIdentityHelp">닉네임은 일부만 입력해도 됩니다. 검색 결과가 한 명이면 자동으로 연결됩니다.</small>
+      </div>
+      <button type="button" class="final-btn primary full-width live-entry-button" id="liveLookupButton">🔎 내 주문 불러오기</button>
+      <button type="button" class="live-phone-change-button" id="livePhoneChangeButton">전화번호 다시 입력</button>
+    </div>
+
+    <div class="live-lookup-status" id="liveLookupStatus">먼저 전화번호를 입력해주세요.</div>
 
     <div class="live-order-result" id="liveOrderResult" style="display:none;">
       <div class="live-result-title">✅ 주문을 찾았습니다</div>

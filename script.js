@@ -238,7 +238,7 @@ function todayString() {
 }
 
 /* =========================
-   고객 주문서 V4.33
+   고객 주문서 V4.34
    - 라이브 주문 불러오기 + 기존 직접작성 선택
    - 라이브 주문은 서버 임시주문을 그대로 확정하고 상품을 고객이 임의 수정하지 못하게 합니다.
 ========================= */
@@ -255,9 +255,12 @@ let orderMode=""; // manual | live
 let liveOrderToken="";
 let liveOrderConfirmed=false;
 let currentLiveLookup=null;
+let liveLookupPhoneVerified=false;
+let liveLookupExistingCustomer=false;
+let liveLookupPhoneValue="";
 let useExistingFullAddress=false;
 const SSINNE_ACCOUNT_NUMBER="100257908378";
-const SUBMISSION_STORAGE_KEY="ssinne_pending_submission_v433";
+const SUBMISSION_STORAGE_KEY="ssinne_pending_submission_v434";
 let lastCompletedAmountDue=0;
 
 function byId(id){return document.getElementById(id)}
@@ -302,9 +305,12 @@ async function initOrderPage(){
   byId("manualModeButton").addEventListener("click",function(){selectOrderMode("manual")});
   byId("backToModeButton").addEventListener("click",resetOrderModeSelection);
   byId("changeOrderModeButton").addEventListener("click",resetOrderModeSelection);
+  byId("livePhoneNextButton").addEventListener("click",checkLiveCustomerPhoneV434);
+  byId("liveLookupPhone").addEventListener("input",function(e){formatPhoneInput(e);liveLookupPhoneVerified=false;byId("liveLookupStatus").textContent="전화번호 확인 후 다음 단계로 이동합니다.";});
+  byId("liveLookupPhone").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();checkLiveCustomerPhoneV434()}});
   byId("liveLookupButton").addEventListener("click",lookupLiveOrder);
-  byId("liveLookupNickname").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();lookupLiveOrder()}});
-  byId("liveLookupCode").addEventListener("input",function(e){e.target.value=e.target.value.replace(/[^0-9]/g,"").slice(0,6)});
+  byId("liveLookupIdentity").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();lookupLiveOrder()}});
+  byId("livePhoneChangeButton").addEventListener("click",resetLivePhoneStepV434);
   byId("liveOrderConfirmButton").addEventListener("click",confirmLiveOrder);
   byId("liveOrderMismatchButton").addEventListener("click",function(){byId("liveOrderIssueBox").style.display="block";byId("liveOrderIssueText").focus()});
   byId("liveOrderIssueSubmitButton").addEventListener("click",submitLiveOrderIssue);
@@ -312,8 +318,8 @@ async function initOrderPage(){
   byId("loadPreviousCustomerButton").addEventListener("click",loadPreviousCustomerInfo);
 
   loadSavedCustomer();
-  const savedNick=(byId("nickname").value||"").trim();
-  if(savedNick)byId("liveLookupNickname").value=savedNick;
+  const savedPhone=(byId("phone").value||"").trim();
+  if(savedPhone)byId("liveLookupPhone").value=savedPhone;
   renderOrderCart();
   updatePaymentMethodUIV432();
   const warm=()=>ensureOrderProductsLoaded().catch(function(e){console.warn("상품정보 사전 로딩:",e.message)});
@@ -329,11 +335,9 @@ function selectOrderMode(mode){
     byId("liveLookupPanel").style.display="block";
     byId("orderForm").style.display="none";
     byId("orderModeToolbar").style.display="none";
-    byId("liveOrderResult").style.display="none";
-    byId("liveOrderIssueBox").style.display="none";
-    byId("liveLookupStatus").textContent="라이브에서 사용한 닉네임을 정확하게 입력해주세요.";
-    const saved=(byId("nickname").value||"").trim();if(saved&&!byId("liveLookupNickname").value)byId("liveLookupNickname").value=saved;
-    setTimeout(()=>byId("liveLookupNickname").focus(),50);
+    resetLiveEntryV434(false);
+    const savedPhone=(byId("phone").value||"").trim();if(savedPhone&&!byId("liveLookupPhone").value)byId("liveLookupPhone").value=savedPhone;
+    setTimeout(()=>byId("liveLookupPhone").focus(),50);
   }else{
     byId("liveLookupPanel").style.display="none";
     showOrderFormForMode();
@@ -358,26 +362,79 @@ function resetOrderModeSelection(){
   if(orderSubmitting)return;
   if(orderCart.length&&!confirm("현재 선택한 주문내용을 지우고 주문방법을 다시 선택할까요?"))return;
   orderMode="";liveOrderToken="";liveOrderConfirmed=false;currentLiveLookup=null;orderCart=[];
+  liveLookupPhoneVerified=false;liveLookupExistingCustomer=false;liveLookupPhoneValue="";
   byId("nickname").readOnly=false;
   byId("liveLookupPanel").style.display="none";byId("orderForm").style.display="none";byId("orderModeToolbar").style.display="none";
   byId("orderModeChooser").style.display="block";renderOrderCart();window.scrollTo({top:0,behavior:"smooth"});
 }
 
+function setLiveEntryStepV434(step){
+  const phoneStep=byId("livePhoneStep"),identityStep=byId("liveIdentityStep"),result=byId("liveOrderResult");
+  if(phoneStep)phoneStep.style.display=step===1?"block":"none";
+  if(identityStep)identityStep.style.display=step===2?"block":"none";
+  if(result&&step<3)result.style.display="none";
+  [1,2,3].forEach(function(n){const b=byId("liveStepBadge"+n);if(b)b.classList.toggle("active",n<=step);});
+}
+function resetLiveEntryV434(clearPhone){
+  currentLiveLookup=null;liveOrderToken="";liveOrderConfirmed=false;liveLookupPhoneVerified=false;liveLookupExistingCustomer=false;liveLookupPhoneValue="";
+  if(clearPhone&&byId("liveLookupPhone"))byId("liveLookupPhone").value="";
+  if(byId("liveLookupIdentity"))byId("liveLookupIdentity").value="";
+  if(byId("liveCustomerCheckMessage"))byId("liveCustomerCheckMessage").textContent="";
+  if(byId("liveOrderResult"))byId("liveOrderResult").style.display="none";
+  if(byId("liveOrderIssueBox"))byId("liveOrderIssueBox").style.display="none";
+  if(byId("liveLookupStatus"))byId("liveLookupStatus").textContent="먼저 전화번호를 입력해주세요.";
+  setLiveEntryStepV434(1);
+}
+function resetLivePhoneStepV434(){resetLiveEntryV434(false);byId("liveLookupPhone").focus();}
+function formatPhoneValueV434(value){let n=String(value||"").replace(/[^0-9]/g,"").slice(0,11);return n.length<=3?n:n.length<=7?n.slice(0,3)+"-"+n.slice(3):n.slice(0,3)+"-"+n.slice(3,7)+"-"+n.slice(7)}
+
+async function checkLiveCustomerPhoneV434(){
+  const phone=(byId("liveLookupPhone").value||"").replace(/[^0-9]/g,"");
+  if(phone.length<10){alert("전화번호 전체를 입력해주세요.");byId("liveLookupPhone").focus();return}
+  try{
+    showLoading("고객 정보를 확인하고 있습니다.");byId("livePhoneNextButton").disabled=true;
+    const r=await apiGet({action:"liveCustomerPhoneCheck",phone:phone});
+    liveLookupPhoneVerified=true;liveLookupExistingCustomer=!!r.existingCustomer;liveLookupPhoneValue=phone;
+    byId("liveCustomerCheckMessage").textContent=r.existingCustomer?"💗 기존 주문고객입니다. 본인 확인 후 이전 배송지를 자동으로 불러옵니다.":"처음 주문하시거나 이 전화번호로 주문한 기록이 없습니다. 유튜브 닉네임을 입력해주세요.";
+    byId("liveLookupIdentityLabel").textContent=r.existingCustomer?"유튜브 닉네임 또는 수령인 이름":"유튜브 닉네임";
+    byId("liveLookupIdentity").placeholder=r.existingCustomer?"예: 까미 또는 김미영":"예: 까미sts";
+    byId("liveLookupIdentityHelp").textContent=r.existingCustomer?"닉네임은 일부만 입력해도 됩니다. 수령인 이름을 입력해도 본인 확인이 가능합니다.":"닉네임은 일부만 입력해도 됩니다. 같은 이름이 여러 명이면 조금 더 정확하게 입력해주세요.";
+    byId("liveLookupStatus").textContent="전화번호 확인이 끝났습니다. 닉네임 또는 이름을 입력해주세요.";
+    setLiveEntryStepV434(2);setTimeout(()=>byId("liveLookupIdentity").focus(),50);
+  }catch(err){byId("liveLookupStatus").textContent=err.message;alert(err.message)}finally{hideLoading();byId("livePhoneNextButton").disabled=false}
+}
+
 async function lookupLiveOrder(){
-  const nickname=(byId("liveLookupNickname").value||"").trim(),confirmCode=(byId("liveLookupCode").value||"").trim();
-  if(!nickname){alert("유튜브 닉네임을 입력해주세요.");return}
+  const phone=(liveLookupPhoneValue||byId("liveLookupPhone").value||"").replace(/[^0-9]/g,"");
+  const identity=(byId("liveLookupIdentity").value||"").trim();
+  if(!liveLookupPhoneVerified||phone.length<10){alert("먼저 전화번호를 확인해주세요.");setLiveEntryStepV434(1);byId("liveLookupPhone").focus();return}
+  if(!identity){alert(liveLookupExistingCustomer?"유튜브 닉네임 또는 수령인 이름을 입력해주세요.":"유튜브 닉네임을 입력해주세요.");return}
   try{
     showLoading("라이브 주문을 찾고 있습니다.");byId("liveLookupButton").disabled=true;
-    const r=await apiGet({action:"liveOrderLookup",nickname:nickname,confirmCode:confirmCode});currentLiveLookup=r;liveOrderToken=r.liveOrderToken||"";liveOrderConfirmed=false;
-    if(!r.found){byId("liveOrderResult").style.display="none";byId("liveLookupStatus").textContent=r.message||"주문을 찾지 못했습니다.";if(r.requiresCode)byId("liveLookupCode").focus();return}
-    byId("liveLookupStatus").textContent=r.message||"라이브 주문을 찾았습니다.";byId("liveResultNickname").textContent=(r.nickname||nickname)+"님의 라이브 주문";
+    const r=await apiGet({action:"liveOrderLookup",phone:phone,identity:identity});currentLiveLookup=r;liveOrderToken=r.liveOrderToken||"";liveOrderConfirmed=false;
+    if(!r.found){byId("liveOrderResult").style.display="none";byId("liveLookupStatus").textContent=r.message||"주문을 찾지 못했습니다.";return}
+    byId("liveLookupStatus").textContent=r.message||"라이브 주문을 찾았습니다.";byId("liveResultNickname").textContent=(r.nickname||identity)+"님의 라이브 주문";
     byId("liveOrderList").innerHTML=(r.items||[]).length?(r.items||[]).map((x,i)=>`<div class="live-order-line"><span>${i+1}</span><div><strong>${escapeHtml(x.productNo)}번 ${escapeHtml(x.productName||"")}</strong><small>${escapeHtml(x.color)} / ${escapeHtml(x.size)} / ${Number(x.quantity||0)}개</small></div><b>${money(x.lineTotal||0)}</b></div>`).join(""):'<div class="cart-empty">현재 확정된 상품은 없습니다.</div>';
     byId("liveTotalQuantity").textContent=Number(r.totalQuantity||0)+"개";byId("liveTotalAmount").textContent=money(r.totalAmount||0);
     const waitingBox=byId("liveWaitingBox"),waitingList=byId("liveWaitingList"),waitingItems=r.waitingItems||[];
     if(waitingBox){waitingBox.style.display=waitingItems.length?"block":"none";if(waitingList)waitingList.innerHTML=waitingItems.map((x,i)=>`<div class="live-waiting-line"><b>${i+1}. ${escapeHtml(x.productNo)}번 ${escapeHtml(x.productName||"")}</b><span>${escapeHtml(x.color)} / ${escapeHtml(x.size)} / ${Number(x.quantity||0)}개</span></div>`).join("")}
     const warning=byId("liveResultWarning");if(Number(r.needsReviewCount||0)>0){warning.style.display="block";warning.textContent="⚠ 확인필요 주문 "+r.needsReviewCount+"건이 있습니다. 관리자 확인 후 다시 불러와주세요."}else if(Number(r.waitingCount||0)>0){warning.style.display="block";warning.textContent="⏳ 대기상품 "+r.waitingCount+"건은 결제금액에서 제외됩니다. 확정상품만 먼저 제출할 수 있어요."}else warning.style.display="none";
-    byId("liveOrderConfirmButton").disabled=!r.canConfirm;byId("liveOrderResult").style.display="block";byId("liveOrderIssueBox").style.display="none";
+    byId("liveOrderConfirmButton").disabled=!r.canConfirm;byId("liveOrderResult").style.display="block";byId("liveOrderIssueBox").style.display="none";setLiveEntryStepV434(3);
   }catch(err){byId("liveOrderResult").style.display="none";byId("liveLookupStatus").textContent=err.message;alert(err.message)}finally{hideLoading();byId("liveLookupButton").disabled=false}
+}
+
+function applyPreviousCustomerFromLiveV434(customer){
+  if(!customer)return false;
+  byId("receiverName").value=customer.receiverName||"";
+  byId("phone").value=formatPhoneValueV434(customer.phone||liveLookupPhoneValue);
+  byId("zipcode").value=customer.zipcode||"";
+  byId("address").value=customer.address||"";
+  byId("shippingMemo").value=customer.shippingMemo||"";
+  byId("detailAddress").value="";byId("detailAddress").required=false;byId("detailAddress").placeholder="이전 주소 전체가 위 주소칸에 저장되어 있습니다. 변경 없으면 비워두세요.";
+  byId("shippingRegion").value=customer.remote?"remote":"normal";useExistingFullAddress=true;
+  byId("previousCustomerStatus").textContent="💗 이전 배송정보를 자동으로 불러왔습니다. 주소가 맞는지만 확인해주세요.";
+  byId("savedNotice").textContent="기존 고객의 이전 배송정보를 자동으로 불러왔습니다. 주소가 맞는지 확인해주세요.";byId("savedNotice").classList.add("show");
+  return true;
 }
 
 function confirmLiveOrder(){
@@ -385,11 +442,14 @@ function confirmLiveOrder(){
   if(!r||!r.found||!r.canConfirm||!liveOrderToken){alert("확정할 수 있는 라이브 주문이 없습니다. 다시 불러와주세요.");return}
   orderMode="live";liveOrderConfirmed=true;
   orderCart=(r.items||[]).map(x=>({productNo:String(x.productNo),productName:x.productName||"",color:x.color||"",size:x.size||"",quantity:Number(x.quantity||1),price:Number(x.price||0)}));
-  byId("nickname").value=r.nickname||byId("liveLookupNickname").value.trim();
+  byId("nickname").value=r.nickname||byId("liveLookupIdentity").value.trim();
+  byId("phone").value=formatPhoneValueV434(liveLookupPhoneValue||r.phone||"");
   byId("nickname").readOnly=true;
   renderOrderCart();showOrderFormForMode();
   byId("liveLookupPanel").style.display="none";
-  byId("savedNotice").textContent="라이브 주문을 불러왔습니다. 상품은 수정하지 말고 배송정보만 확인해주세요.";byId("savedNotice").classList.add("show");
+  const filled=applyPreviousCustomerFromLiveV434(r.previousCustomer||null);
+  if(!filled){byId("savedNotice").textContent="라이브 주문을 불러왔습니다. 배송정보를 확인하거나 입력해주세요.";byId("savedNotice").classList.add("show");byId("previousCustomerStatus").textContent=liveLookupExistingCustomer?"이전 배송지가 자동 연결되지 않았습니다. 수령인 이름을 입력한 뒤 '기존 고객 배송정보 불러오기'를 눌러주세요.":"처음 주문이라면 배송지를 한 번만 입력해주세요.";useExistingFullAddress=false;byId("detailAddress").required=true;}
+  schedulePaymentPreview();
   byId("orderForm").scrollIntoView({behavior:"smooth",block:"start"});
 }
 
@@ -410,7 +470,7 @@ async function reportNotMineLiveOrder(){
   if(!confirm("불러온 주문이 본인 주문이 아닌가요? 관리자에게 확인요청을 보낼게요."))return;
   try{showLoading("잘못 연결된 주문을 신고하고 있습니다.");await apiPost({action:"liveOrderIssue",liveOrderToken:liveOrderToken,issueType:"내주문아님",message:"고객이 '제 주문이 아니에요'를 선택함"});alert("확인요청을 보냈습니다. 닉네임을 다시 확인하거나 관리자에게 문의해주세요.");resetLiveLookupOnly()}catch(err){alert(err.message)}finally{hideLoading()}
 }
-function resetLiveLookupOnly(){currentLiveLookup=null;liveOrderToken="";liveOrderConfirmed=false;byId("liveOrderResult").style.display="none";byId("liveOrderIssueBox").style.display="none";byId("liveLookupStatus").textContent="닉네임을 다시 확인해주세요.";byId("liveLookupNickname").focus()}
+function resetLiveLookupOnly(){currentLiveLookup=null;liveOrderToken="";liveOrderConfirmed=false;byId("liveOrderResult").style.display="none";byId("liveOrderIssueBox").style.display="none";byId("liveLookupStatus").textContent="닉네임 또는 이름을 다시 확인해주세요.";setLiveEntryStepV434(2);byId("liveLookupIdentity").focus()}
 
 async function loadPreviousCustomerInfo(){
   const nick=(byId("nickname").value||"").trim(), receiver=(byId("receiverName").value||"").trim(), phoneValue=(byId("phone").value||"").replace(/[^0-9]/g,"");
@@ -461,7 +521,7 @@ async function submitOrder(e){
     if(!orderMode)throw new Error("주문방법을 먼저 선택해주세요.");if(orderMode==="live"&&!liveOrderConfirmed)throw new Error("라이브 주문내용이 맞는지 먼저 확인해주세요.");if(!orderCart.length)throw new Error("주문 상품이 없습니다.");
     const data={action:"saveOrder",submissionId:getSubmissionIdV432(),orderMode:orderMode,liveOrderToken:liveOrderToken,liveOrderConfirmed:liveOrderConfirmed,nickname:byId("nickname").value.trim(),receiverName:byId("receiverName").value.trim(),phone:byId("phone").value.trim(),zipcode:byId("zipcode").value.trim(),address:byId("address").value.trim(),detailAddress:byId("detailAddress").value.trim(),useExistingFullAddress:useExistingFullAddress,shippingMemo:byId("shippingMemo").value.trim(),paymentMethod:byId("paymentMethod").value,isRemoteShipping:byId("shippingRegion").value==="remote",products:orderCart.map(x=>({productNo:x.productNo,color:x.color,size:x.size,quantity:x.quantity}))};
     if(!data.nickname||!data.receiverName)throw new Error("닉네임과 수령인 성함을 입력해주세요.");if(data.phone.replace(/[^0-9]/g,"").length<10)throw new Error("연락처를 정확하게 입력해주세요.");if(!data.zipcode||!data.address||(!data.useExistingFullAddress&&!data.detailAddress))throw new Error("주소와 상세주소를 확인해주세요.");
-    if(orderMode==="manual"){try{const live=await apiGet({action:"liveOrderLookup",nickname:data.nickname});if(live&&(live.found||live.requiresCode)){if(!confirm("⚠ 같은 닉네임의 미제출 라이브 주문이 있습니다.\n라이브 주문과 중복될 수 있어요.\n\n그래도 직접 작성 주문을 제출할까요?"))return}}catch(checkError){console.warn("라이브 중복확인:",checkError.message)}}
+    if(orderMode==="manual"){try{const live=await apiGet({action:"liveOrderLookup",phone:data.phone,identity:data.nickname});if(live&&(live.found||live.ambiguous)){if(!confirm("⚠ 같은 닉네임의 미제출 라이브 주문이 있습니다.\n라이브 주문과 중복될 수 있어요.\n\n그래도 직접 작성 주문을 제출할까요?"))return}}catch(checkError){console.warn("라이브 중복확인:",checkError.message)}}
     orderSubmitting=true;showLoading("주문서를 저장하고 있습니다.");byId("submitButton").disabled=true;
     const r=await apiPost(data);sessionStorage.removeItem(SUBMISSION_STORAGE_KEY);paymentPreviewCache.clear();saveCustomerInfo();byId("orderForm").style.display="none";byId("orderModeToolbar").style.display="none";
     lastCompletedAmountDue=Number(r.amountDueNow!==undefined?r.amountDueNow:(r.cumulativeFinalAmount||r.paymentAmount||0));
@@ -481,7 +541,7 @@ async function submitOrder(e){
 function saveCustomerInfo(){localStorage.setItem(CUSTOMER_STORAGE_KEY,JSON.stringify({nickname:byId("nickname").value.trim(),receiverName:byId("receiverName").value.trim(),phone:byId("phone").value.trim(),zipcode:byId("zipcode").value.trim(),address:byId("address").value.trim(),detailAddress:useExistingFullAddress?"":byId("detailAddress").value.trim(),shippingMemo:byId("shippingMemo").value.trim(),shippingRegion:byId("shippingRegion").value}))}
 function loadSavedCustomer(){try{const raw=localStorage.getItem(CUSTOMER_STORAGE_KEY);if(!raw)return;const info=JSON.parse(raw);Object.keys(info).forEach(k=>{const e=byId(k);if(e)e.value=info[k]||""});if(info.nickname||info.phone)byId("savedNotice").classList.add("show");schedulePaymentPreview()}catch(e){console.error(e)}}
 function clearSavedCustomer(){if(!confirm("이 브라우저에 저장된 고객정보를 지울까요?"))return;localStorage.removeItem(CUSTOMER_STORAGE_KEY);["nickname","receiverName","phone","zipcode","address","detailAddress","shippingMemo"].forEach(id=>byId(id).value="");byId("shippingRegion").value="normal";byId("savedNotice").classList.remove("show");byId("previousCustomerStatus").textContent="";useExistingFullAddress=false;byId("detailAddress").required=true;byId("detailAddress").placeholder="상세주소를 입력해주세요";schedulePaymentPreview()}
-function finishOrder(){byId("completeScreen").classList.remove("show");orderCart=[];orderMode="";liveOrderToken="";liveOrderConfirmed=false;currentLiveLookup=null;lastCompletedAmountDue=0;rotateSubmissionIdV432();renderOrderCart();loadSavedCustomer();byId("nickname").readOnly=false;byId("orderModeChooser").style.display="block";byId("liveLookupPanel").style.display="none";byId("orderForm").style.display="none";byId("orderModeToolbar").style.display="none";window.scrollTo({top:0,behavior:"smooth"})}
+function finishOrder(){byId("completeScreen").classList.remove("show");orderCart=[];orderMode="";liveOrderToken="";liveOrderConfirmed=false;currentLiveLookup=null;liveLookupPhoneVerified=false;liveLookupExistingCustomer=false;liveLookupPhoneValue="";lastCompletedAmountDue=0;rotateSubmissionIdV432();renderOrderCart();loadSavedCustomer();byId("nickname").readOnly=false;byId("orderModeChooser").style.display="block";byId("liveLookupPanel").style.display="none";byId("orderForm").style.display="none";byId("orderModeToolbar").style.display="none";window.scrollTo({top:0,behavior:"smooth"})}
 function formatPhoneInput(e){let n=e.target.value.replace(/[^0-9]/g,"").slice(0,11);e.target.value=n.length<=3?n:n.length<=7?n.slice(0,3)+"-"+n.slice(3):n.slice(0,3)+"-"+n.slice(3,7)+"-"+n.slice(7)}
 let postcodeScriptPromise=null;let postcodeEmbedded=false;
 function loadPostcodeScript(){if(window.daum&&window.daum.Postcode)return Promise.resolve();if(postcodeScriptPromise)return postcodeScriptPromise;postcodeScriptPromise=new Promise((resolve,reject)=>{const sc=document.createElement("script");sc.src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";sc.async=true;sc.onload=()=>window.daum&&window.daum.Postcode?resolve():reject(new Error("주소검색 모듈을 초기화하지 못했습니다."));sc.onerror=()=>reject(new Error("주소검색 서비스를 불러오지 못했습니다."));document.head.appendChild(sc)});return postcodeScriptPromise}
@@ -1147,8 +1207,8 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
-  if (version.indexOf("V4.33") !== 0) {
-    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.33 기능을 사용하려면 V4.33 Code.gs를 새 버전으로 배포해야 합니다.");
+  if (version.indexOf("V4.34") !== 0) {
+    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.34 기능을 사용하려면 V4.34 Code.gs를 새 버전으로 배포해야 합니다.");
   }
   return info;
 }
@@ -1537,7 +1597,7 @@ async function lookupCustomerOrders() {
 /* ========================= V2 UI ========================= */
 function renderCustomerOrders(orders){
   document.getElementById("lookupCount").textContent=orders.length+"건";const c=document.getElementById("customerOrderList");
-  if(!orders.length){c.innerHTML='<div class="empty-state">일치하는 주문내역이 없습니다.<br>이름과 연락처 뒤 4자리를 다시 확인해주세요.</div>';return;}
+  if(!orders.length){c.innerHTML='<div class="customer-empty-new"><span>♡</span><strong>일치하는 주문이 없습니다</strong><p>수령인 성함과 연락처 뒤 4자리를<br>다시 확인해주세요.</p></div>';return;}
   c.innerHTML=orders.map(function(o){const tr=o.trackingNumber||"",numeric=String(tr).replace(/[^0-9]/g,""),courier=o.courier||"롯데택배",trackingUrl=courier.indexOf("롯데")>=0?("https://www.lotteglogis.com/home/reservation/tracking/linkView?InvNo="+encodeURIComponent(numeric)):("https://trace.cjlogistics.com/next/tracking.html?wblNo="+encodeURIComponent(numeric));return `<article class="order-result-card v2-order-card">
     <div class="v2-card-head"><div><span>${escapeHtml(o.orderDate||"보관 주문")}</span><h3>주문번호 ${escapeHtml(o.orderNumber||"-")}</h3></div><b class="status-pill ${o.paymentStatus==='미입금'?'unpaid':(o.paymentStatus==='카드결제'?'card-paid':'paid')}">${escapeHtml(o.paymentStatus)}</b></div>
     <div class="order-result-items">${escapeHtml(o.orderItems)}</div><div class="v2-total"><span>총 주문금액</span><strong>${money(o.paymentAmount)}</strong></div>
@@ -3362,7 +3422,7 @@ async function downloadLotteExcelV418() {
       throw new Error("전체주문이력에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
         "전체주문이력 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
         "선택 기간: " + startDate + " ~ " + endDate + "\n" +
-        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.33인지 확인해주세요.");
+        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.34인지 확인해주세요.");
     }
 
     const sortedOrders = sortLotteOrdersV420(orders);

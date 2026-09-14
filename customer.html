@@ -5,65 +5,56 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#ff4f97">
   <title>씬느샵 주문조회</title>
-  <link rel="stylesheet" href="style.css?v=20260914-v4-33-senior-ui-final">
-  <script src="script.js?v=20260914-v4-33-senior-ui-final" defer></script>
+  <link rel="stylesheet" href="style.css?v=20260914-v4-34-phone-first-final">
+  <script src="script.js?v=20260914-v4-34-phone-first-final" defer></script>
 </head>
-<body data-page="customer" class="page-customer">
-  <header class="brand-header">
-    <div class="brand-shell">
-      <div class="brand-mark">S</div>
-      <div class="brand-copy">
-        <h1>씬느샵</h1>
-        <p>Order Tracking</p>
-      </div>
-    </div>
+<body data-page="customer" class="page-customer senior-customer-page">
+  <header class="customer-senior-header">
+    <div class="customer-brand">씬느샵 <span>♡</span></div>
+    <h1>주문조회</h1>
+    <p>주문내역 · 입금상태 · 배송상태를 한 번에 확인하세요.</p>
   </header>
 
-  <main class="page-shell lookup-shell">
-    <section class="hero-card compact-hero">
-      <div>
-        <span class="eyebrow">ORDER LOOKUP</span>
-        <h2>주문내역 조회</h2>
-        <p>오늘 주문과 지난 주문을 함께 검색해 최신순으로 보여드립니다.</p>
+  <main class="customer-senior-shell">
+    <section class="customer-lookup-card-new">
+      <div class="customer-card-title">
+        <span class="customer-title-icon">♡</span>
+        <div><h2>내 주문 찾기</h2><p>수령인 성함과 연락처 뒤 4자리만 입력해주세요.</p></div>
       </div>
-    </section>
 
-    <section class="lookup-card">
-      <div class="form-grid two">
-        <div class="field">
+      <div class="customer-lookup-grid-new">
+        <div class="field customer-big-field">
           <label for="lookupName">수령인 성함</label>
-          <input id="lookupName" type="text" placeholder="예: 유영인">
+          <input id="lookupName" type="text" autocomplete="name" placeholder="예: 김미영">
         </div>
-
-        <div class="field">
+        <div class="field customer-big-field">
           <label for="lookupPhoneLast">연락처 뒤 4자리</label>
-          <input id="lookupPhoneLast" type="text" inputmode="numeric"
-                 maxlength="4" placeholder="예: 6337">
+          <input id="lookupPhoneLast" type="text" inputmode="numeric" maxlength="4" autocomplete="tel" placeholder="예: 5678">
         </div>
       </div>
 
-      <button type="button" class="btn btn-primary full-width lookup-submit-button" id="lookupButton">
-        주문 조회하기
+      <button type="button" class="customer-lookup-main-button" id="lookupButton">
+        <span>🔎</span> 내 주문 조회하기 <b>›</b>
       </button>
+      <div class="customer-lookup-help">전화번호 전체를 입력하지 않아도 됩니다. 뒤 4자리만 입력하세요.</div>
     </section>
 
-    <section id="lookupResultSection" class="lookup-results">
-      <div class="result-head">
-        <div>
-          <span class="eyebrow">MY ORDERS</span>
-          <h2>주문내역</h2>
-        </div>
-        <span class="result-count" id="lookupCount">0건</span>
+    <section id="lookupResultSection" class="customer-results-new">
+      <div class="customer-result-head-new">
+        <div><span>MY ORDERS</span><h2>주문내역</h2></div>
+        <strong id="lookupCount">0건</strong>
       </div>
-
       <div id="customerOrderList">
-        <div class="empty-state">
-          수령인 성함과 연락처 뒤 4자리를 입력해주세요.
+        <div class="customer-empty-new">
+          <span>♡</span>
+          <strong>주문내역을 확인해보세요</strong>
+          <p>수령인 성함과 연락처 뒤 4자리를 입력하면<br>최근 주문부터 보여드립니다.</p>
         </div>
       </div>
     </section>
-  </main>
 
+    <a href="index.html" class="customer-back-order">＋ 새 주문 작성하기</a>
+  </main>
 
   <div class="v2-modal" id="customerEditModal" aria-hidden="true">
     <div class="v2-modal-card">

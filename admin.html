@@ -4,16 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#111827">
-  <title>씬느샵 통합 관리자 V4.33</title>
-  <link rel="stylesheet" href="style.css?v=20260914-v4-33-senior-ui-final">
+  <title>씬느샵 통합 관리자 V4.34</title>
+  <link rel="stylesheet" href="style.css?v=20260914-v4-34-phone-first-final">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="script.js?v=20260914-v4-33-senior-ui-final" defer></script>
+  <script src="script.js?v=20260914-v4-34-phone-first-final" defer></script>
 </head>
 <body data-page="admin" class="page-admin">
   <div class="admin-login-gate" id="adminLoginGate">
     <div class="admin-login-card">
       <div class="admin-login-logo">S</div>
-      <span class="eyebrow dark">SSINNEU ADMIN · V4.33</span>
+      <span class="eyebrow dark">SSINNEU ADMIN · V4.34</span>
       <h1>관리자 로그인</h1>
       <p>관리자 비밀번호를 입력해야 통합관리자에 들어갈 수 있습니다.</p>
       <label for="adminPasswordInput">관리자 비밀번호</label>
@@ -60,15 +60,15 @@
     <main class="admin-main">
       <header class="admin-topbar">
         <div>
-          <span class="eyebrow dark">SSINNEU ADMIN · V4.33</span>
-          <h1>통합 관리자 <small style="font-size:.48em;font-weight:800;vertical-align:middle;opacity:.72;">V4.33</small></h1>
+          <span class="eyebrow dark">SSINNEU ADMIN · V4.34</span>
+          <h1>통합 관리자 <small style="font-size:.48em;font-weight:800;vertical-align:middle;opacity:.72;">V4.34</small></h1>
         </div>
         <div class="topbar-actions">
           <button class="btn btn-dark" type="button" id="rebuildButton">📦 거래처발주 엑셀 다운로드</button>
           <button class="btn btn-dark" type="button" id="combinedShippingButton">🔗 합배송 가능 고객 · 전체주문이력</button>
           <button class="btn btn-primary" type="button" id="archiveHistoryButton">전체주문이력 저장/갱신</button>
           <button class="btn btn-dark" type="button" id="fillLegacyOrderNumbersButton">🔢 기존 주문번호 자동생성</button>
-          <button class="btn btn-primary" type="button" id="lotteExcelButtonV418">🚚 롯데택배 V4.33 · 전체주문이력 날짜선택</button>
+          <button class="btn btn-primary" type="button" id="lotteExcelButtonV418">🚚 롯데택배 V4.34 · 전체주문이력 날짜선택</button>
           <button class="btn btn-dark" type="button" id="lotteTrackingButton">📥 롯데 송장결과 업로드</button>
           <input type="file" id="lotteTrackingFile" accept=".xlsx,.xls" hidden>
           <button class="btn btn-subtle" type="button" id="adminLogoutButton">🔒 로그아웃</button>
@@ -290,7 +290,7 @@
 
       <section id="liveTab" class="tab-section">
         <section class="admin-panel live-admin-hero">
-          <div class="panel-title-row"><div><span class="eyebrow dark">LIVE CONTROL · V4.33</span><h2>🎥 라이브 주문관리</h2><p>현재 판매상품 설정부터 예약·대기·취소·확인필요까지 관리자 페이지에서 처리합니다. 구글시트는 뒤에서 자동 저장됩니다.</p></div><div class="live-admin-head-actions"><button type="button" class="btn btn-primary" id="liveCollectNowButton">채팅 지금 수집</button><button type="button" class="btn btn-subtle" id="liveReloadButton">새로고침</button></div></div>
+          <div class="panel-title-row"><div><span class="eyebrow dark">LIVE CONTROL · V4.34</span><h2>🎥 라이브 주문관리</h2><p>현재 판매상품 설정부터 예약·대기·취소·확인필요까지 관리자 페이지에서 처리합니다. 구글시트는 뒤에서 자동 저장됩니다.</p></div><div class="live-admin-head-actions"><button type="button" class="btn btn-primary" id="liveCollectNowButton">채팅 지금 수집</button><button type="button" class="btn btn-subtle" id="liveReloadButton">새로고침</button></div></div>
           <div class="live-connection-line"><span id="liveConnectionStatus">방송 연결 상태 확인 중...</span><small id="liveAutoRefreshText">이 화면을 열어두면 약 20초 간격으로 자동 갱신합니다.</small></div>
         </section>
         <section class="admin-panel">

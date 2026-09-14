@@ -1181,3 +1181,85 @@ textarea{min-height:92px;resize:vertical}
   .final-order-page .senior-complete-bank>strong{font-size:24px}
   .final-order-page .senior-complete-bank>div{flex-direction:column}
 }
+
+/* =========================================================
+   V4.34 전화번호 우선 라이브 주문 찾기
+========================================================= */
+.final-order-page .phone-first-live-card{max-width:760px}
+.final-order-page .live-lookup-head p{margin:8px 0 0;color:#777;font-size:14px;line-height:1.6}
+.final-order-page .live-entry-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 22px}
+.final-order-page .live-entry-steps span{min-height:44px;padding:10px 8px;border-radius:12px;background:#f3f3f5;color:#9a9ca3;text-align:center;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center}
+.final-order-page .live-entry-steps span.active{background:#fff0f6;color:#e72b70;border:1px solid #ffc9dc}
+.final-order-page .live-big-field label{font-size:21px!important;color:#17191e!important}
+.final-order-page .live-big-field input{min-height:68px!important;padding:16px 18px!important;border:2px solid #e5e5e8!important;border-radius:16px!important;font-size:22px!important;font-weight:750;letter-spacing:-.3px;background:#fff}
+.final-order-page .live-big-field input:focus{border-color:#ed2f7d!important;box-shadow:0 0 0 4px rgba(237,47,125,.09)}
+.final-order-page .live-big-field small{display:block;margin-top:8px;color:#7a7d84;font-size:14px;line-height:1.55}
+.final-order-page .live-entry-button{min-height:68px!important;font-size:22px!important;margin-top:18px}
+.final-order-page .live-entry-button span{font-size:30px;line-height:1}
+.final-order-page .live-customer-check{margin:0 0 16px;padding:15px 16px;border-radius:15px;background:#fff1f6;border:1px solid #ffcfe0;color:#c92463;font-size:16px;font-weight:850;line-height:1.55}
+.final-order-page .live-phone-change-button{width:100%;margin-top:10px;min-height:48px;border:0;background:transparent;color:#777;font-weight:800;text-decoration:underline;text-underline-offset:3px}
+.final-order-page .phone-first-live-card .live-lookup-status{font-size:15px;padding:14px 16px;border-radius:14px}
+
+/* =========================================================
+   V4.34 주문조회 - 고령친화 핑크 UI
+========================================================= */
+.page-customer.senior-customer-page{background:linear-gradient(180deg,#fff 0,#fff8fb 42%,#f8f8fb 100%);min-height:100vh}
+.customer-senior-header{padding:38px 16px 30px;text-align:center;background:linear-gradient(180deg,#ffd6e6 0,#ffeaf2 100%);border-bottom:1px solid #ffd5e4}
+.customer-senior-header .customer-brand{font-size:50px;line-height:1.05;font-weight:950;letter-spacing:-2.2px;color:#111}
+.customer-senior-header .customer-brand span{color:#f1397d;font-weight:600}
+.customer-senior-header h1{margin:8px 0 5px;font-size:30px;letter-spacing:-1px;color:#d92d6c}
+.customer-senior-header p{margin:0;color:#555;font-size:16px;font-weight:650}
+.customer-senior-shell{width:100%;max-width:760px;margin:0 auto;padding:24px 14px 60px}
+.customer-lookup-card-new{padding:26px 24px;border:1px solid #ffcfe0;border-radius:24px;background:#fff;box-shadow:0 14px 34px rgba(176,46,101,.08)}
+.customer-card-title{display:flex;gap:14px;align-items:center;margin-bottom:22px}
+.customer-title-icon{flex:0 0 auto;width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:#fff0f6;color:#ef2e75;border:2px solid #f25b93;font-size:30px;font-weight:900}
+.customer-card-title h2{margin:0 0 4px;font-size:27px;letter-spacing:-.8px;color:#17191e}
+.customer-card-title p{margin:0;color:#70737b;font-size:15px;line-height:1.55}
+.customer-lookup-grid-new{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.customer-big-field label{margin-bottom:9px!important;font-size:19px!important;color:#17191e!important;font-weight:900!important}
+.customer-big-field input{min-height:66px!important;padding:16px 17px!important;border:2px solid #e2e3e7!important;border-radius:15px!important;background:#fff!important;font-size:21px!important;font-weight:700!important}
+.customer-big-field input::placeholder{color:#a7a9ae;font-size:18px}
+.customer-big-field input:focus{outline:none;border-color:#ed2f7d!important;box-shadow:0 0 0 4px rgba(237,47,125,.08)!important}
+.customer-lookup-main-button{width:100%;min-height:68px;margin-top:18px;border:0;border-radius:17px;background:linear-gradient(135deg,#f2387b,#ef2e75);color:#fff;font-size:22px;font-weight:950;box-shadow:0 11px 24px rgba(239,46,117,.22);display:flex;align-items:center;justify-content:center;gap:10px}
+.customer-lookup-main-button b{font-size:32px;line-height:1}
+.customer-lookup-help{margin-top:12px;text-align:center;color:#757880;font-size:14px;line-height:1.55}
+.customer-results-new{margin-top:24px}
+.customer-result-head-new{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:12px;padding:0 4px}
+.customer-result-head-new span{display:block;color:#e32b6c;font-size:11px;font-weight:950;letter-spacing:1.4px}
+.customer-result-head-new h2{margin:3px 0 0;font-size:27px;color:#17191e;letter-spacing:-.7px}
+.customer-result-head-new>strong{padding:8px 13px;border-radius:999px;background:#fff0f6;color:#df2e6b;font-size:15px}
+.customer-empty-new{padding:46px 20px;border:1px dashed #f0b9ce;border-radius:22px;background:#fff;text-align:center;color:#777}
+.customer-empty-new>span{display:flex;width:56px;height:56px;margin:0 auto 11px;border-radius:50%;align-items:center;justify-content:center;background:#fff0f6;color:#ef2e75;font-size:32px}
+.customer-empty-new strong{display:block;margin-bottom:7px;color:#333;font-size:19px}
+.customer-empty-new p{margin:0;font-size:14px;line-height:1.7}
+.page-customer .order-result-card.v2-order-card{margin-bottom:16px;padding:22px;border:1px solid #ffd3e2;border-radius:22px;background:#fff;box-shadow:0 10px 28px rgba(154,48,91,.07)}
+.page-customer .v2-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.page-customer .v2-card-head span{font-size:14px;color:#777;font-weight:700}
+.page-customer .v2-card-head h3{margin:4px 0 0!important;font-size:20px!important;color:#222!important}
+.page-customer .status-pill{padding:8px 11px;border-radius:999px;font-size:13px;font-weight:950;white-space:nowrap}
+.page-customer .order-result-items{margin-top:15px;padding:17px 16px;border-radius:16px;background:#fff2f7;font-size:16px;line-height:1.85;color:#333;font-weight:650}
+.page-customer .v2-total{display:flex;justify-content:space-between;align-items:center;margin-top:13px;padding:15px 16px;border-radius:15px;background:#fafafa}
+.page-customer .v2-total span{font-size:16px;color:#555;font-weight:800}
+.page-customer .v2-total strong{font-size:23px;color:#e62c70}
+.page-customer .customer-delivery-box{margin-top:13px;padding:15px 16px;border-radius:15px;background:#f5f7ff;border:1px solid #e5e9ff}
+.page-customer .customer-delivery-box span{font-size:13px}.page-customer .customer-delivery-box strong{font-size:17px}
+.page-customer .delivery-button{min-height:46px;padding:11px 15px;border-radius:12px;background:#222;font-size:15px}
+.page-customer .v2-actions{margin-top:13px;gap:10px}
+.page-customer .v2-actions .btn{min-height:52px;border-radius:13px;font-size:16px;font-weight:900}
+.page-customer .locked-note{margin-top:13px;padding:14px 15px;border-radius:14px;background:#f7f7f8;color:#6f7279;font-size:14px;line-height:1.55}
+.customer-back-order{display:flex;align-items:center;justify-content:center;min-height:58px;margin-top:18px;border:1.5px solid #ef8caf;border-radius:15px;background:#fff;color:#df2b6a;text-decoration:none;font-size:18px;font-weight:900}
+
+@media(max-width:620px){
+  .final-order-page .live-entry-steps{gap:5px}.final-order-page .live-entry-steps span{padding:9px 4px;font-size:11.5px}
+  .final-order-page .live-big-field label{font-size:19px!important}.final-order-page .live-big-field input{min-height:64px!important;font-size:20px!important}
+  .customer-senior-header{padding:30px 12px 24px}.customer-senior-header .customer-brand{font-size:42px}.customer-senior-header h1{font-size:27px}.customer-senior-header p{font-size:14px}
+  .customer-senior-shell{padding:18px 10px 48px}.customer-lookup-card-new{padding:22px 14px;border-radius:21px}.customer-card-title{align-items:flex-start}
+  .customer-card-title h2{font-size:24px}.customer-card-title p{font-size:14px}.customer-title-icon{width:46px;height:46px;font-size:27px}
+  .customer-lookup-grid-new{grid-template-columns:1fr}.customer-big-field label{font-size:18px!important}.customer-big-field input{min-height:62px!important;font-size:20px!important}
+  .customer-lookup-main-button{min-height:64px;font-size:20px}.customer-result-head-new h2{font-size:24px}
+  .page-customer .order-result-card.v2-order-card{padding:18px 14px}.page-customer .v2-card-head{flex-direction:column}.page-customer .status-pill{align-self:flex-start}
+  .page-customer .order-result-items{font-size:15px}.page-customer .v2-total strong{font-size:21px}
+}
+.page-customer .v2-modal-card .field label{font-size:16px;font-weight:900}
+.page-customer .v2-modal-card .field input,.page-customer .v2-modal-card .field select{min-height:56px;font-size:17px;border-radius:13px}
+.page-customer .v2-modal-card #saveCustomerEdit{min-height:60px;font-size:18px;border-radius:14px}
