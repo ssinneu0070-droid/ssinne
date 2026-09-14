@@ -399,8 +399,8 @@ async function checkLiveCustomerPhoneV434(){
     liveLookupPhoneVerified=true;liveLookupExistingCustomer=!!r.existingCustomer;liveLookupPhoneValue=phone;
     byId("liveCustomerCheckMessage").textContent=r.existingCustomer?"💗 기존 주문고객입니다. 본인 확인 후 이전 배송지를 자동으로 불러옵니다.":"처음 주문하시거나 이 전화번호로 주문한 기록이 없습니다. 유튜브 닉네임을 입력해주세요.";
     byId("liveLookupIdentityLabel").textContent=r.existingCustomer?"유튜브 닉네임 또는 수령인 이름":"유튜브 닉네임";
-    byId("liveLookupIdentity").placeholder=r.existingCustomer?"예: 까미 또는 김미영":"예: 까미sts";
-    byId("liveLookupIdentityHelp").textContent=r.existingCustomer?"닉네임은 일부만 입력해도 됩니다. 수령인 이름을 입력해도 본인 확인이 가능합니다.":"닉네임은 일부만 입력해도 됩니다. 같은 이름이 여러 명이면 조금 더 정확하게 입력해주세요.";
+    byId("liveLookupIdentity").placeholder=r.existingCustomer?"예: 씬느-08s 또는 김미영":"예: 씬느-08s";
+    byId("liveLookupIdentityHelp").textContent=r.existingCustomer?"⚠ 닉네임은 숫자·영문·하이픈(-)까지 정확하게 전체 입력해주세요. 수령인 이름은 정확한 이름으로 조회할 수 있습니다.":"⚠ 닉네임을 정확하게 전체 입력해주세요. 예) 씬느-08s → 씬느-08s";
     byId("liveLookupStatus").textContent="전화번호 확인이 끝났습니다. 닉네임 또는 이름을 입력해주세요.";
     setLiveEntryStepV434(2);setTimeout(()=>byId("liveLookupIdentity").focus(),50);
   }catch(err){byId("liveLookupStatus").textContent=err.message;alert(err.message)}finally{hideLoading();byId("livePhoneNextButton").disabled=false}
@@ -500,7 +500,7 @@ function addSelectedProductToCart(){if(orderMode!=="manual"){alert("라이브 �
 function removeCartItem(i){if(orderMode!=="manual")return;orderCart.splice(i,1);renderOrderCart()}
 function getCurrentCartProductAmount(){return orderCart.reduce((a,x)=>a+Number(x.price||0)*Number(x.quantity||0),0)}
 function renderOrderCart(){const cartList=byId("cartList"),purchaseSummary=byId("purchaseSummary");if(!orderCart.length){cartList.innerHTML='<div class="cart-empty">담긴 상품이 없습니다.</div>';purchaseSummary.textContent="상품을 담으면 구매내역이 자동으로 표시됩니다."}else{cartList.innerHTML=orderCart.map((x,i)=>`<div class="cart-item"><div class="cart-number">${i+1}</div><div class="cart-info"><strong>${escapeHtml(x.productNo)}번 ${escapeHtml(x.productName)}</strong><span>${escapeHtml(x.color)} / ${escapeHtml(x.size)} / ${x.quantity}개</span></div><div class="cart-side"><span class="cart-price">${money(x.price*x.quantity)}</span>${orderMode==="manual"?`<button type="button" class="cart-delete" data-index="${i}">🗑 삭제</button>`:"<span class=\"live-locked-label\">🔒 라이브 주문</span>"}</div></div>`).join("");cartList.querySelectorAll(".cart-delete").forEach(b=>b.addEventListener("click",()=>removeCartItem(Number(b.dataset.index))));purchaseSummary.textContent=orderCart.map(x=>`${x.productNo}번 ${x.productName} / ${x.color} / ${x.size} / ${x.quantity}개 / ${money(x.price*x.quantity)}`).join("\n")}const count=orderCart.reduce((a,x)=>a+Number(x.quantity||0),0),total=getCurrentCartProductAmount();byId("totalItemCount").textContent=count+"개";byId("grandTotal").textContent=money(total);schedulePaymentPreview()}
-function updateCardVatNotice(){const notice=byId("cardVatNotice");if(notice)notice.classList.toggle("show",byId("paymentMethod").value==="카드결제")}
+function updateCardVatNotice(){const isCard=byId("paymentMethod").value==="카드결제",notice=byId("cardVatNotice");if(notice)notice.classList.toggle("show",isCard);renderPaymentPreview(lastPaymentPreview||{});}
 function schedulePaymentPreview(){clearTimeout(orderPreviewTimer);orderPreviewTimer=setTimeout(refreshPaymentPreview,550)}
 async function refreshPaymentPreview(){
   const seq=++paymentPreviewSeq,current=getCurrentCartProductAmount(),receiver=byId("receiverName").value||"",phoneValue=byId("phone").value||"",remote=byId("shippingRegion").value==="remote";
@@ -511,10 +511,12 @@ async function refreshPaymentPreview(){
 }
 function renderPaymentPreview(p){
   const current=Number(p.currentProductAmount||0),existing=Number(p.existingProductAmount||0),cumulative=Number(p.cumulativeProductAmount||0),fee=Number(p.shippingFee||0),finalAmount=Number(p.cumulativeFinalAmount||0),paid=Number(p.alreadyPaidAmount||0),due=Number(p.amountDueNow!==undefined?p.amountDueNow:Math.max(0,finalAmount-paid));
-  const set=(id,val)=>{const el=byId(id);if(el)el.textContent=money(val)};set("currentProductAmount",current);set("existingProductAmount",existing);set("cumulativeProductAmount",cumulative);set("calculatedShippingFee",fee);set("alreadyPaidAmount",paid);set("cumulativeFinalAmount",finalAmount);set("amountDueNow",due);
+  const isCard=byId("paymentMethod")&&byId("paymentMethod").value==="카드결제",cardExtra=isCard?Math.round(due*0.10):0,displayDue=due+cardExtra;
+  const set=(id,val)=>{const el=byId(id);if(el)el.textContent=money(val)};set("currentProductAmount",current);set("existingProductAmount",existing);set("cumulativeProductAmount",cumulative);set("calculatedShippingFee",fee);set("alreadyPaidAmount",paid);set("cumulativeFinalAmount",finalAmount);set("cardExtraAmount",cardExtra);set("amountDueNow",displayDue);
+  const cardRow=byId("cardExtraAmountRow");if(cardRow)cardRow.classList.toggle("show",isCard&&due>0);const dueLabel=byId("amountDueNowLabel");if(dueLabel)dueLabel.textContent=isCard?"카드 최종 결제금액":"결제 예정 금액";
   const existingRow=byId("existingOrderAmountRow");if(existingRow)existingRow.classList.toggle("show",existing>0);const paidRow=byId("alreadyPaidAmountRow");if(paidRow)paidRow.classList.toggle("show",paid>0);
   const msg=byId("shippingMessage");if(msg){if(!current)msg.textContent="상품을 담으면 배송비와 결제 예정 금액이 자동으로 계산됩니다.";else if(paid>0)msg.innerHTML="✅ 이미 결제완료된 <strong>"+money(paid)+"</strong>을 제외한 금액만 입금하시면 됩니다.";else if(cumulative>=200000)msg.innerHTML="🎁 누적 상품금액이 20만원 이상이라 <strong>무료배송</strong>입니다.";else if(existing>0)msg.innerHTML="⭐ 추가 주문입니다. 기존 미결제 주문까지 합친 <strong>현재 미결제 금액</strong>입니다.";else msg.innerHTML=(p.remote?"🚚 제주·도서산간 배송비 7,000원이 적용됩니다.":"🚚 기본 배송비 4,000원이 적용됩니다.")}
-  const hidden=byId("displayPaymentAmount");if(hidden)hidden.value=money(due);const cb=byId("paymentConfirmCheckbox");if(cb)cb.checked=false
+  const hidden=byId("displayPaymentAmount");if(hidden)hidden.value=money(displayDue);const cb=byId("paymentConfirmCheckbox");if(cb)cb.checked=false
 }
 
 async function submitOrder(e){
@@ -526,7 +528,7 @@ async function submitOrder(e){
     if(orderMode==="manual"){try{const live=await apiGet({action:"liveOrderLookup",phone:data.phone,identity:data.nickname});if(live&&(live.found||live.ambiguous)){if(!confirm("⚠ 같은 닉네임의 미제출 라이브 주문이 있습니다.\n라이브 주문과 중복될 수 있어요.\n\n그래도 직접 작성 주문을 제출할까요?"))return}}catch(checkError){console.warn("라이브 중복확인:",checkError.message)}}
     orderSubmitting=true;showLoading("주문서를 저장하고 있습니다.");byId("submitButton").disabled=true;
     const r=await apiPost(data);sessionStorage.removeItem(SUBMISSION_STORAGE_KEY);paymentPreviewCache.clear();saveCustomerInfo();byId("orderForm").style.display="none";byId("orderModeToolbar").style.display="none";
-    lastCompletedAmountDue=Number(r.amountDueNow!==undefined?r.amountDueNow:(r.cumulativeFinalAmount||r.paymentAmount||0));
+    const isCardComplete=byId("paymentMethod").value==="카드결제";lastCompletedAmountDue=Number(isCardComplete?(r.cardPaymentAmount!==undefined?r.cardPaymentAmount:Math.round(Number(r.amountDueNow||0)*1.10)):(r.amountDueNow!==undefined?r.amountDueNow:(r.cumulativeFinalAmount||r.paymentAmount||0)));
     byId("completePaymentAmount").textContent=money(lastCompletedAmountDue);
     const isCard=byId("paymentMethod").value==="카드결제",completeBank=byId("completeBankBox");if(completeBank)completeBank.style.display=isCard?"none":"block";
     const orderNo=byId("completeOrderNumber");if(orderNo)orderNo.textContent=r.orderNumber||"-";
@@ -1197,8 +1199,8 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
-  if (version.indexOf("V4.36") !== 0) {
-    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.36 기능을 사용하려면 V4.36 Code.gs를 새 버전으로 배포해야 합니다.");
+  if (version.indexOf("V4.38") !== 0) {
+    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.38 기능을 사용하려면 V4.38 Code.gs를 새 버전으로 배포해야 합니다.");
   }
   return info;
 }
@@ -3413,7 +3415,7 @@ async function downloadLotteExcelV418() {
       throw new Error("전체주문이력에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
         "전체주문이력 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
         "선택 기간: " + startDate + " ~ " + endDate + "\n" +
-        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.36인지 확인해주세요.");
+        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.38인지 확인해주세요.");
     }
 
     const sortedOrders = sortLotteOrdersV420(orders);
@@ -3583,7 +3585,7 @@ async function uploadLotteTrackingResult(event) {
 }
 
 /* =========================================================
-   V4.36 최종안정화 PC/모바일 통합 관리자 · 방송회차 · 상시상품 · CS
+   V4.38 최종안정화 PC/모바일 통합 관리자 · 방송회차 · 상시상품 · CS
 ========================================================= */
 function applyAdminRoleV435(){
   const role=adminRoleV435||sessionStorage.getItem("ssinne_admin_role_v435")||"admin";
@@ -3618,6 +3620,7 @@ function initAdminV435(){
   if(byId("youtubeApiKeySaveButton")) byId("youtubeApiKeySaveButton").onclick=saveYoutubeApiKeyV435;
   if(byId("securitySaveButtonV436")) byId("securitySaveButtonV436").onclick=saveSecurityV436;
   if(byId("cardPaymentLinkSaveButtonV436")) byId("cardPaymentLinkSaveButtonV436").onclick=saveCardPaymentLinkV436;
+  if(byId("payAppConfigSaveButtonV438")) byId("payAppConfigSaveButtonV438").onclick=savePayAppConfigV438;
   if(byId("clearTodayProductsButton")) byId("clearTodayProductsButton").onclick=clearTodayProductsV435;
   document.querySelectorAll("[data-sheet-mode]").forEach(b=>{b.onclick=()=>changeSheetModeV435(b.dataset.sheetMode);});
   loadCsDashboardV435();
@@ -3687,7 +3690,7 @@ function renderCsCurrentCardV435(o){
   const actions=`<div class="cs-edit-actions">
     <button class="btn btn-subtle cs-toggle-edit" data-row="${o.rowNumber}">배송정보 수정</button>
     ${!["입금완료","카드결제완료","카드결제"].includes(o.paymentStatus)?`<button class="btn btn-primary cs-card-change" data-row="${o.rowNumber}" data-method="카드결제">카드결제로 변경</button><button class="btn btn-subtle cs-bank-change" data-row="${o.rowNumber}" data-method="무통장입금">무통장으로 변경</button>`:""}
-    ${o.paymentStatus==="카드결제대기"?`<button class="btn btn-dark cs-card-link" data-row="${o.rowNumber}">카드링크 발송처리/복사</button>`:""}
+    ${["카드결제대기","카드링크발송"].includes(o.paymentStatus)?`<button class="btn btn-dark cs-payapp-link" data-row="${o.rowNumber}">💳 페이앱 링크 만들기 · 복사</button><button class="btn btn-subtle cs-payapp-sms" data-row="${o.rowNumber}">📱 페이앱 문자로 바로 보내기</button>`:""}
   </div>
   <div class="cs-shipping-edit" data-edit-row="${o.rowNumber}" hidden>
     <div class="form-grid two"><div class="field"><label>수령인</label><input data-f="receiverName" value="${escapeHtml(o.receiverName||"")}"></div><div class="field"><label>연락처</label><input data-f="phone" value="${escapeHtml(o.phone||"")}"></div><div class="field"><label>우편번호</label><input data-f="zipcode" value="${escapeHtml(o.zipcode||"")}"></div><div class="field"><label>배송메모</label><input data-f="shippingMemo" value="${escapeHtml(o.shippingMemo||"")}"></div><div class="field full"><label>주소</label><input data-f="address" value="${escapeHtml(o.address||"")}"></div></div>
@@ -3706,7 +3709,8 @@ function bindCsActionsV435(){
   document.querySelectorAll(".cs-toggle-edit").forEach(b=>b.onclick=()=>{const box=document.querySelector(`[data-edit-row="${b.dataset.row}"]`);if(box)box.hidden=!box.hidden;});
   document.querySelectorAll(".cs-save-shipping").forEach(b=>b.onclick=()=>saveCsShippingV435(Number(b.dataset.row)));
   document.querySelectorAll(".cs-card-change,.cs-bank-change").forEach(b=>b.onclick=()=>changeCsPaymentV435(Number(b.dataset.row),b.dataset.method));
-  document.querySelectorAll(".cs-card-link").forEach(b=>b.onclick=()=>markCardLinkSentV435(Number(b.dataset.row)));
+  document.querySelectorAll(".cs-payapp-link").forEach(b=>b.onclick=()=>createPayAppLinkV438(Number(b.dataset.row),false));
+  document.querySelectorAll(".cs-payapp-sms").forEach(b=>b.onclick=()=>createPayAppLinkV438(Number(b.dataset.row),true));
   document.querySelectorAll(".cs-case-update-button-v436").forEach(b=>b.onclick=()=>updateCsCaseV436(b.dataset.csid));
   if(byId("csSaveNoteButton")) byId("csSaveNoteButton").onclick=saveCsNoteV435;
 }
@@ -3716,8 +3720,11 @@ async function saveCsShippingV435(row){
   try{showLoading("배송정보를 저장하는 중입니다.");await apiPost({action:"adminCsUpdateShipping",rowNumber:row,receiverName:val("receiverName"),phone:val("phone"),zipcode:val("zipcode"),address:val("address"),shippingMemo:val("shippingMemo")});await searchCsV435();}catch(e){alert(e.message);}finally{hideLoading();}
 }
 function phoneDigitsV436(v){return String(v||"").replace(/[^0-9]/g,"");}
-function csPaymentGroupPreviewV436(row){const list=(adminCsDataV435&&adminCsDataV435.current)||[],t=list.find(o=>Number(o.rowNumber)===Number(row));if(!t)return {count:1,total:0};const p=phoneDigitsV436(t.phone),open=["미입금","카드결제대기","카드링크발송"];const g=list.filter(o=>o.orderDate===t.orderDate&&open.includes(o.paymentStatus)&&(p?phoneDigitsV436(o.phone)===p:(o.receiverName===t.receiverName&&o.nickname===t.nickname)));return {count:g.length||1,total:g.reduce((a,o)=>a+Number(o.paymentAmount||0),0)};}
-async function changeCsPaymentV435(row,method){try{const g=await apiPost({action:"adminCsPaymentGroupPreview",rowNumber:row,purpose:"change"});if(!g.count){alert("변경할 미결제 주문이 없습니다.");return;}const msg=`${g.orderDate||"당일"} · ${g.receiverName||"고객"}의 미결제 주문 ${g.count}건 (${money(g.total||0)})을\n${method}으로 변경할까요?`;if(!confirm(msg))return;showLoading("결제방법을 변경하는 중입니다.");const r=await apiPost({action:"adminCsChangePaymentMethod",rowNumber:row,method});alert(r.message||"결제방법을 변경했습니다.");await searchCsV435();}catch(e){alert(e.message);}finally{hideLoading();}}
+function csPaymentGroupPreviewV436(row){const list=(adminCsDataV435&&adminCsDataV435.current)||[],t=list.find(o=>Number(o.rowNumber)===Number(row));if(!t)return {count:1,total:0};const p=phoneDigitsV436(t.phone),open=["미입금","카드결제대기","카드링크발송"];const g=list.filter(o=>open.includes(o.paymentStatus)&&(p?phoneDigitsV436(o.phone)===p:(o.receiverName===t.receiverName&&o.nickname===t.nickname)));const base=g.reduce((a,o)=>a+Number(o.paymentAmount||0),0),extra=Math.round(base*0.10);return {count:g.length||1,total:base,baseTotal:base,cardExtraAmount:extra,cardPaymentAmount:base+extra};}
+async function changeCsPaymentV435(row,method){try{const g=await apiPost({action:"adminCsPaymentGroupPreview",rowNumber:row,purpose:"change"});if(!g.count){alert("변경할 미결제 주문이 없습니다.");return;}const msg=`${g.receiverName||"고객"}의 현재 미결제 주문 ${g.count}건 (${money(g.total||0)})을\n${method}으로 변경할까요?${method==="카드결제"?`\n\n카드결제 추가 10% ${money(g.cardExtraAmount||0)}\n최종 ${money(g.cardPaymentAmount||0)}`:""}`;if(!confirm(msg))return;showLoading("결제방법을 변경하는 중입니다.");const r=await apiPost({action:"adminCsChangePaymentMethod",rowNumber:row,method});alert(r.message||"결제방법을 변경했습니다.");await searchCsV435();}catch(e){alert(e.message);}finally{hideLoading();}}
+async function createPayAppLinkV438(row,sendSms){
+  try{const g=await apiPost({action:"adminCsPaymentGroupPreview",rowNumber:row,purpose:"cardLink"});if(!g.count){alert("카드결제대기 주문이 없습니다.");return;}const text=`현재 미결제 주문 ${g.count}건\n기본금액 ${money(g.baseTotal||g.total||0)}\n카드결제 추가 10% ${money(g.cardExtraAmount||0)}\n최종 결제요청 ${money(g.cardPaymentAmount||0)}\n\n${sendSms?"페이앱에서 고객 휴대폰으로 결제요청 문자를 바로 보낼까요?":"페이앱 결제링크를 만들고 복사할까요?"}`;if(!confirm(text))return;showLoading(sendSms?"페이앱 결제요청 문자를 보내는 중입니다.":"페이앱 결제링크를 만드는 중입니다.");const r=await apiPost({action:"adminCsCreatePayAppLink",rowNumber:row,sendSms:Boolean(sendSms)});if(sendSms){alert((r.message||"문자 발송을 요청했습니다.")+`\n최종금액 ${money(r.cardPaymentAmount||0)}`);}else if(r.link){try{await navigator.clipboard.writeText(r.link);alert(`페이앱 결제링크를 복사했습니다.\n최종금액 ${money(r.cardPaymentAmount||0)}\n채널톡·카톡 등에 붙여넣어 보내주세요.`);}catch(e){prompt("아래 페이앱 링크를 복사해서 고객에게 보내주세요.",r.link);}}await searchCsV435();}catch(e){alert(e.message);}finally{hideLoading();}
+}
 async function markCardLinkSentV435(row){
   try{const g=await apiPost({action:"adminCsPaymentGroupPreview",rowNumber:row,purpose:"cardLink"});if(!g.count){alert("카드결제대기 주문이 없습니다.");return;}if(!confirm(`카드결제대기 ${g.count}건 (${money(g.total||0)})의 결제링크를 복사하고\n링크발송 상태로 변경할까요?`))return;const r=await apiPost({action:"adminCsMarkCardLinkSent",rowNumber:row});if(r.link){const detail=`${Number(r.count||1)}건 · ${money(r.total||0)}`;try{await navigator.clipboard.writeText(r.link);alert("카드결제 링크를 복사했습니다.\n"+detail+"을 링크발송 상태로 변경했습니다.\n고객에게 링크를 붙여넣어 보내주세요.");}catch(e){prompt("아래 카드결제 링크를 복사해서 고객에게 보내주세요. ("+detail+")",r.link);}}await searchCsV435();}catch(e){alert(e.message);}
 }
@@ -3727,10 +3734,11 @@ async function saveCsNoteV435(){const b=byId("csSaveNoteButton"),message=(byId("
 function renderBroadcastPrecheckV436(r){const el=byId("broadcastPrecheckV436");if(!el)return;r=r||{};const errors=r.errors||[],warnings=r.warnings||[];el.classList.toggle("ok",Boolean(r.success));el.classList.toggle("error",!r.success);el.innerHTML=r.success?`<strong>✓ 상품정보 정상 · ${Number(r.productCount||0)}개</strong>${warnings.length?`<small>확인 권장: ${warnings.map(escapeHtml).join(" · ")}</small>`:"<small>중복 · 판매가 · 재고 필수값 검사를 통과했습니다.</small>"}`:`<strong>⚠ 방송 시작 전 수정 필요</strong><small>${errors.slice(0,8).map(escapeHtml).join("<br>")}</small>`;}
 async function validateBroadcastProductsV436(){try{showLoading("방송 상품정보를 검사하는 중입니다.");const r=await apiPost({action:"adminValidateBroadcastProducts"});renderBroadcastPrecheckV436(r);if(r.success)alert(`상품정보 검사 완료\n${Number(r.productCount||0)}개 상품이 방송 시작 가능한 상태입니다.${(r.warnings||[]).length?`\n\n확인 권장 ${r.warnings.length}건이 있습니다.`:""}`);else alert("수정이 필요한 상품정보가 있습니다. 화면의 검사결과를 확인해주세요.");return r;}catch(e){alert(e.message);return {success:false,errors:[e.message]};}finally{hideLoading();}}
 async function saveSecurityV436(){const ap=(byId("newAdminPasswordV436")?.value||"").trim(),cp=(byId("newCsPasswordV436")?.value||"").trim();if(!ap&&!cp){alert("변경할 대표 또는 CS 비밀번호를 입력해주세요.");return;}if(!confirm("입력한 비밀번호로 변경할까요?\n다음 로그인부터 새 비밀번호를 사용합니다."))return;try{const r=await apiPost({action:"adminSaveSecurity",adminPassword:ap,csPassword:cp});byId("newAdminPasswordV436").value="";byId("newCsPasswordV436").value="";alert(r.message||"저장했습니다.");await loadBroadcastStatusV435();}catch(e){alert(e.message);}}
+async function savePayAppConfigV438(){const userid=(byId("payAppUserIdV438")?.value||"").trim(),linkkey=(byId("payAppLinkKeyV438")?.value||"").trim(),linkval=(byId("payAppLinkValV438")?.value||"").trim();if(!userid||!linkkey||!linkval){alert("페이앱 판매자 아이디, 연동 KEY, 연동 VALUE를 모두 입력해주세요.");return;}if(!confirm("페이앱 연결정보를 저장할까요?\n저장 후 KEY/VALUE는 화면에 다시 표시하지 않습니다."))return;try{showLoading("페이앱 연결정보를 저장하는 중입니다.");const r=await apiPost({action:"adminSavePayAppConfig",userid,linkkey,linkval});byId("payAppUserIdV438").value="";byId("payAppLinkKeyV438").value="";byId("payAppLinkValV438").value="";alert(r.message||"저장했습니다.");await loadBroadcastStatusV435();}catch(e){alert(e.message);}finally{hideLoading();}}
 async function saveCardPaymentLinkV436(){const link=(byId("cardPaymentLinkInputV436")?.value||"").trim();const text=link?"카드결제 링크를 저장할까요?":"카드결제 링크 설정을 지울까요?";if(!confirm(text))return;try{const r=await apiPost({action:"adminSaveCardPaymentLink",link});alert(r.message||"저장했습니다.");if(byId("cardPaymentLinkInputV436"))byId("cardPaymentLinkInputV436").value="";await loadBroadcastStatusV435();}catch(e){alert(e.message);}}
 async function saveYoutubeApiKeyV435(){const key=(byId("youtubeApiKeyInput").value||"").trim();if(!key){alert("YouTube API 키를 입력해주세요.");return;}try{showLoading("API 키를 저장하는 중입니다.");const r=await apiPost({action:"adminSaveYouTubeApiKey",apiKey:key});byId("youtubeApiKeyInput").value="";alert(r.message||"저장했습니다.");await loadBroadcastStatusV435();}catch(e){alert(e.message);}finally{hideLoading();}}
 async function startBroadcastV435(){const url=(byId("broadcastYoutubeUrl").value||"").trim();if(!url){alert("YouTube 라이브 URL을 입력해주세요.");return;}const check=await validateBroadcastProductsV436();if(!check.success)return;if(!confirm(`상품 ${Number(check.productCount||0)}개 검사를 통과했습니다.\n새 방송을 시작하고 YouTube에 연결할까요?\n\n※ YouTube 영상 확인이 실패하면 방송회차는 생성되지 않습니다.`))return;try{showLoading("YouTube와 상품정보를 최종 확인한 뒤 방송을 시작하는 중입니다.");const r=await apiPost({action:"adminStartBroadcast",youtubeUrl:url,broadcastName:(byId("broadcastName").value||"").trim()});alert((r.message||"방송을 시작했습니다.")+(r.warnings&&r.warnings.length?"\n\n확인 권장: "+r.warnings.join(" / "):""));await loadAdminLiveDashboardV432(true);await loadBroadcastStatusV435();}catch(e){alert(e.message);}finally{hideLoading();}}
-async function endBroadcastV435(){if(!confirm("방송을 종료할까요?\n방송상품이력과 주문기록은 삭제되지 않습니다."))return;try{showLoading("방송을 종료하는 중입니다.");const r=await apiPost({action:"adminEndBroadcast"});alert(r.message||"방송을 종료했습니다.");await loadBroadcastStatusV435();}catch(e){alert(e.message);}finally{hideLoading();}}
+async function endBroadcastV435(){if(!confirm("방송을 종료할까요?\n\n※ 주문서를 제출하지 않은 임시주문은 자동 삭제되고 예약재고가 즉시 반환됩니다.\n※ 제출완료 고객주문과 방송상품이력은 그대로 보관됩니다."))return;try{showLoading("방송을 종료하는 중입니다.");const r=await apiPost({action:"adminEndBroadcast"});alert(r.message||"방송을 종료했습니다.");await loadBroadcastStatusV435();}catch(e){alert(e.message);}finally{hideLoading();}}
 async function loadBroadcastStatusV435(){try{const d=await apiGet({action:"adminBroadcastStatus"});renderBroadcastStatusV435(d,{});}catch(e){console.warn(e.message);}}
 function renderBroadcastStatusV435(b,y){
   b=b||{};y=y||{}; const active=Boolean(b.active||b.broadcastId), session=b.session||{};
@@ -3740,12 +3748,12 @@ function renderBroadcastStatusV435(b,y){
   const text=active?`<strong>${escapeHtml(b.broadcastId||session.broadcastId||"")}</strong><span>${escapeHtml(session.name||"")}</span><small>YouTube ${b.videoId||session.videoId?"연결 설정됨":"미연결"} · 상품 ${Number(session.productCount||0)}개 스냅샷 저장</small>`:`<strong>진행 중인 방송 없음</strong><span>URL을 입력하고 ‘새 방송 시작 · 연결’을 눌러주세요.</span><small>API 키 ${b.apiKeyConfigured?"설정됨":"미설정"}</small>`;
   if(byId("broadcastStatusCard")) byId("broadcastStatusCard").innerHTML=text;
   if(byId("homeBroadcastCard")) byId("homeBroadcastCard").innerHTML=text;
-  const sec=byId("securityStatusV436");if(sec){sec.textContent=(b.securityConfigured?"비밀번호 설정됨":"초기 비밀번호 사용중")+" · "+(b.cardPaymentLinkConfigured?"카드링크 설정됨":"카드링크 미설정");sec.classList.toggle("ready",Boolean(b.securityConfigured));}
+  const sec=byId("securityStatusV436");if(sec){sec.textContent=(b.securityConfigured?"비밀번호 설정됨":"초기 비밀번호 사용중")+" · "+(b.payAppConfigured?"페이앱 연결됨":(b.cardPaymentLinkConfigured?"고정 카드링크 설정됨":"페이앱 미연결"));sec.classList.toggle("ready",Boolean(b.securityConfigured));}
 }
 async function clearTodayProductsV435(){if(!confirm("오늘상품만 모두 비울까요?\n상시상품은 그대로 유지됩니다."))return;try{showLoading("오늘상품을 정리하는 중입니다.");const r=await apiPost({action:"adminClearTodayProducts"});alert(r.message||"정리했습니다.");await loadAdminProducts();}catch(e){alert(e.message);}finally{hideLoading();}}
 async function changeSheetModeV435(mode){try{showLoading("시트 화면을 정리하는 중입니다.");const r=await apiPost({action:"adminSheetMode",mode});alert(r.message||"시트를 정리했습니다.");}catch(e){alert(e.message);}finally{hideLoading();}}
 
-// V4.36 상품관리: 판매구분은 기존 열을 밀지 않고 맨 뒤 열에 저장합니다.
+// V4.38 상품관리: 판매구분은 기존 열을 밀지 않고 맨 뒤 열에 저장합니다.
 function renderAdminProducts(){
   const tbody=byId("adminProductList"),keyword=(byId("productKeyword").value||"").trim().toLowerCase();
   const filtered=adminProducts.filter(p=>[p.saleType,p.productNo,p.productName,p.color,p.size].join(" ").toLowerCase().includes(keyword));
