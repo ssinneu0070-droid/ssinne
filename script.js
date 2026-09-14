@@ -15,6 +15,8 @@ const CONFIG = {
 const CUSTOMER_STORAGE_KEY = "ssinne_customer_info_v2";
 const ADMIN_SESSION_STORAGE_KEY = "ssinne_admin_session_v427";
 let adminTokenV427 = "";
+let adminRoleV435 = "";
+let adminCsDataV435 = null;
 
 
 function initNoticeGate() {
@@ -585,8 +587,10 @@ function initAdminProtectedPageV427() {
     try {
       const result = await apiPost({action:"adminLogin", password:password});
       adminTokenV427 = String(result && result.token || "");
+      adminRoleV435 = String(result && result.role || "admin");
       if (!adminTokenV427) throw new Error("로그인 토큰을 받지 못했습니다.");
       sessionStorage.setItem(ADMIN_SESSION_STORAGE_KEY, adminTokenV427);
+      sessionStorage.setItem("ssinne_admin_role_v435", adminRoleV435);
       if (input) input.value = "";
       await revealAdmin();
     } catch (error) {
@@ -607,7 +611,7 @@ function initAdminProtectedPageV427() {
   adminTokenV427 = sessionStorage.getItem(ADMIN_SESSION_STORAGE_KEY) || "";
   if (adminTokenV427) {
     apiGet({action:"adminSessionCheck"}).then(function(result){
-      if (result && result.valid) revealAdmin();
+      if (result && result.valid) { adminRoleV435=String(result.role||sessionStorage.getItem("ssinne_admin_role_v435")||"admin"); sessionStorage.setItem("ssinne_admin_role_v435",adminRoleV435); revealAdmin(); }
       else {
         adminTokenV427 = "";
         sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
@@ -629,7 +633,9 @@ async function logoutAdminV427() {
     if (token) await apiPost({action:"adminLogout", adminToken:token});
   } catch (error) {}
   adminTokenV427 = "";
+  adminRoleV435 = "";
   sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+  sessionStorage.removeItem("ssinne_admin_role_v435");
   location.reload();
 }
 
@@ -746,35 +752,20 @@ function initAdminPage() {
   resetAdminOrderDisplay();
   initBankMatchPage();
   initAdminLiveV432();
+  initAdminV435();
 }
 
 function showAdminTab(tabName) {
-  document.querySelectorAll(".side-link[data-tab]")
-    .forEach(function(button) {
-      button.classList.toggle(
-        "active",
-        button.dataset.tab === tabName
-      );
-    });
-
-  document.getElementById("ordersTab")
-    .classList.toggle("active", tabName === "orders");
-
-  document.getElementById("productsTab")
-    .classList.toggle("active", tabName === "products");
-
-  const bankmatchTab = document.getElementById("bankmatchTab");
-  if (bankmatchTab) bankmatchTab.classList.toggle("active", tabName === "bankmatch");
-
-  const cancelledTab = document.getElementById("cancelledTab");
-  if (cancelledTab && tabName !== "cancelled") cancelledTab.classList.remove("active");
-  const liveTab=document.getElementById("liveTab");if(liveTab)liveTab.classList.toggle("active",tabName==="live");
-
-  if (tabName === "products") {
-    loadAdminProducts();
-  }
-  if (tabName === "bankmatch") { loadBankMatchOrders(); }
-  if (tabName === "live") { startAdminLiveAutoV432(); loadAdminLiveDashboardV432(); } else { stopAdminLiveAutoV432(); }
+  if(adminRoleV435==="cs" && ["orders","live","bankmatch","products","cancelled"].includes(tabName)) tabName="cs";
+  document.querySelectorAll(".side-link[data-tab]").forEach(function(button){button.classList.toggle("active",button.dataset.tab===tabName);});
+  document.querySelectorAll(".tab-section").forEach(function(section){section.classList.toggle("active",section.id===tabName+"Tab");});
+  document.querySelectorAll("[data-mobile-tab]").forEach(function(button){button.classList.toggle("active",button.dataset.mobileTab===tabName);});
+  document.body.classList.remove("mobile-sidebar-open");
+  if(tabName==="products")loadAdminProducts();
+  if(tabName==="bankmatch")loadBankMatchOrders();
+  if(tabName==="live"){startAdminLiveAutoV432();loadAdminLiveDashboardV432();loadBroadcastStatusV435();}else stopAdminLiveAutoV432();
+  if(tabName==="cs")loadCsDashboardV435();
+  if(tabName==="home")loadAdminHomeV435();
 }
 
 function setAdminOrderSource(source) {
@@ -879,8 +870,7 @@ async function showAmountOnlyView() {
     const paidOrders = adminOrders.filter(
       function(order) {
         return (
-          order.paymentStatus === "입금완료" ||
-          order.paymentStatus === "카드결제"
+          ["입금완료","카드결제완료","카드결제"].includes(order.paymentStatus)
         );
       }
     );
@@ -1047,15 +1037,13 @@ function renderAdminOrders() {
   document.getElementById("summaryOrderCount").textContent = adminOrders.length;
   document.getElementById("summaryPaidCount").textContent =
     adminOrders.filter(function (order) {
-      return order.paymentStatus === "입금완료" ||
-             order.paymentStatus === "카드결제";
+      return ["입금완료","카드결제완료","카드결제"].includes(order.paymentStatus);
     }).length;
 
   const unpaidSummary = document.getElementById("summaryUnpaidCount");
   if (unpaidSummary) {
     unpaidSummary.textContent = adminOrders.filter(function (order) {
-      return order.paymentStatus === "미입금" ||
-             order.paymentStatus === "카드결제";
+      return ["미입금","카드결제대기","카드링크발송"].includes(order.paymentStatus);
     }).length;
   }
 
@@ -1067,8 +1055,7 @@ function renderAdminOrders() {
 
   const displayOrders = adminPaymentFilter === "unpaid-card"
     ? adminOrders.filter(function(order) {
-        return order.paymentStatus === "미입금" ||
-               order.paymentStatus === "카드결제";
+        return ["미입금","카드결제대기","카드링크발송"].includes(order.paymentStatus);
       })
     : adminOrders;
 
@@ -1084,7 +1071,7 @@ function renderAdminOrders() {
   tbody.innerHTML = displayOrders.map(function (order) {
     const isHistory = adminOrderSource === "history";
     const trackingNumber = order.trackingNumber || "";
-    const courier = order.courier || (isHistory ? "CJ대한통운" : "");
+    const courier = order.courier || (isHistory ? "롯데택배" : "");
 
     return `
       <tr>
@@ -1098,7 +1085,10 @@ function renderAdminOrders() {
                   data-source="${isHistory ? "history" : "current"}">
             <option value="미입금" ${order.paymentStatus === "미입금" ? "selected" : ""}>미입금</option>
             <option value="입금완료" ${order.paymentStatus === "입금완료" ? "selected" : ""}>입금완료</option>
-            <option value="카드결제" ${order.paymentStatus === "카드결제" ? "selected" : ""}>카드결제</option>
+            <option value="카드결제대기" ${order.paymentStatus === "카드결제대기" ? "selected" : ""}>카드결제대기</option>
+            <option value="카드링크발송" ${order.paymentStatus === "카드링크발송" ? "selected" : ""}>카드링크발송</option>
+            <option value="카드결제완료" ${order.paymentStatus === "카드결제완료" ? "selected" : ""}>카드결제완료</option>
+            <option value="카드결제" ${order.paymentStatus === "카드결제" ? "selected" : ""}>카드결제(기존)</option>
           </select>
         </td>
         <td data-label="입금내역">${escapeHtml(order.paymentMemo)}</td>
@@ -1112,7 +1102,7 @@ function renderAdminOrders() {
         <td data-label="내품수량">${escapeHtml(order.itemQuantity)}</td>
         <td data-label="택배사">
           ${isHistory ? `
-            <span class="shipping-badge">${escapeHtml(courier || "CJ대한통운")}</span>
+            <span class="shipping-badge">${escapeHtml(courier || "롯데택배")}</span>
           ` : "-"}
         </td>
         <td data-label="송장번호" class="tracking-cell">
@@ -1123,7 +1113,7 @@ function renderAdminOrders() {
                    placeholder="송장번호 입력">
             ${trackingNumber ? `
               <a class="delivery-button" target="_blank" rel="noopener"
-                 href="https://trace.cjlogistics.com/next/tracking.html?wblNo=${encodeURIComponent(String(trackingNumber).replace(/[^0-9]/g, ""))}">
+                 href="https://www.lotteglogis.com/home/reservation/tracking/linkView?InvNo=${encodeURIComponent(String(trackingNumber).replace(/[^0-9]/g, ""))}">
                 배송조회
               </a>
             ` : ""}
@@ -1160,8 +1150,8 @@ function applyStatusSelectColor(select) {
   if (!select) return;
   select.classList.remove("status-unpaid", "status-paid", "status-card");
   if (select.value === "미입금") select.classList.add("status-unpaid");
-  if (select.value === "입금완료") select.classList.add("status-paid");
-  if (select.value === "카드결제") select.classList.add("status-card");
+  if (["입금완료","카드결제완료"].includes(select.value)) select.classList.add("status-paid");
+  if (["카드결제대기","카드링크발송","카드결제"].includes(select.value)) select.classList.add("status-card");
 }
 
 async function updateAdminPaymentStatus(rowNumber, paymentStatus, source) {
@@ -1191,7 +1181,7 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
     await apiPost({
       action: "updateHistoryTracking",
       rowNumber: rowNumber,
-      courier: "CJ대한통운",
+      courier: "롯데택배",
       trackingNumber: trackingNumber
     });
 
@@ -1207,8 +1197,8 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
-  if (version.indexOf("V4.34") !== 0) {
-    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.34 기능을 사용하려면 V4.34 Code.gs를 새 버전으로 배포해야 합니다.");
+  if (version.indexOf("V4.36") !== 0) {
+    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.36 기능을 사용하려면 V4.36 Code.gs를 새 버전으로 배포해야 합니다.");
   }
   return info;
 }
@@ -1399,7 +1389,7 @@ async function loadAdminProducts() {
   }
 }
 
-function renderAdminProducts() {
+function renderAdminProductsV434Legacy_() {
   const tbody = document.getElementById("adminProductList");
   const keyword = document.getElementById("productKeyword").value.trim().toLowerCase();
 
@@ -1453,7 +1443,7 @@ function renderAdminProducts() {
   });
 }
 
-function editAdminProduct(rowNumber) {
+function editAdminProductV434Legacy_(rowNumber) {
   const product = adminProducts.find(function (item) {
     return Number(item.rowNumber) === rowNumber;
   });
@@ -1473,7 +1463,7 @@ function editAdminProduct(rowNumber) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function resetAdminProductForm() {
+function resetAdminProductFormV434Legacy_() {
   document.getElementById("productFormTitle").textContent = "상품정보 추가";
   document.getElementById("productRowNumber").value = "";
   document.getElementById("adminProductNo").value = "";
@@ -1485,7 +1475,7 @@ function resetAdminProductForm() {
   document.getElementById("adminCurrentStock").value = "";
 }
 
-async function saveAdminProduct() {
+async function saveAdminProductV434Legacy_() {
   const payload = {
     action: "saveProduct",
     rowNumber: Number(document.getElementById("productRowNumber").value || 0),
@@ -2010,6 +2000,7 @@ function renderAdminLiveDashboardV432(d){
   if(body){body.querySelectorAll("[data-live-action]").forEach(btn=>btn.onclick=()=>handleAdminLiveOrderActionV432(btn));}
   const issueBox=byId("liveIssueList"),issues=d.issues||[];if(issueBox)issueBox.innerHTML=issues.length?issues.map(x=>`<article class="live-issue-card"><div><b>${escapeHtml(x.nickname||"")} · ${escapeHtml(x.type||"확인필요")}</b><span>${escapeHtml(x.status||"접수")}</span></div><p>${escapeHtml(x.message||"")}</p>${x.items?`<pre>${escapeHtml(x.items)}</pre>`:""}<button class="btn btn-primary live-issue-done" data-row="${x.rowNumber}">확인완료</button></article>`).join(""):'<div class="empty-state">확인필요 항목이 없습니다.</div>';
   if(issueBox)issueBox.querySelectorAll(".live-issue-done").forEach(b=>b.onclick=()=>handleAdminLiveIssueV432(Number(b.dataset.row)));
+  renderBroadcastStatusV435(d.broadcast||{},d.youtube||{});
 }
 function liveStatusClassV432(s){return s==="예약"?"reserved":s==="대기"?"waiting":s==="확인필요"?"review":s==="취소"?"cancelled":s==="주문서완료"?"submitted":""}
 function liveActionButtonsV432(o){if(o.status==="주문서완료")return '<span class="muted">고객주문에서 관리</span>';let html=`<button class="mini-action" data-live-action="change" data-row="${o.rowNumber}">변경</button>`;if(o.status!=="취소")html+=`<button class="mini-action danger" data-live-action="cancel" data-row="${o.rowNumber}">취소</button>`;if(o.status==="대기"||o.status==="취소"||o.status==="확인필요")html+=`<button class="mini-action good" data-live-action="reserve" data-row="${o.rowNumber}">예약</button>`;return html}
@@ -3422,7 +3413,7 @@ async function downloadLotteExcelV418() {
       throw new Error("전체주문이력에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
         "전체주문이력 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
         "선택 기간: " + startDate + " ~ " + endDate + "\n" +
-        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.34인지 확인해주세요.");
+        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.36인지 확인해주세요.");
     }
 
     const sortedOrders = sortLotteOrdersV420(orders);
@@ -3589,4 +3580,185 @@ async function uploadLotteTrackingResult(event) {
     hideLoading();
     event.target.value = "";
   }
+}
+
+/* =========================================================
+   V4.36 최종안정화 PC/모바일 통합 관리자 · 방송회차 · 상시상품 · CS
+========================================================= */
+function applyAdminRoleV435(){
+  const role=adminRoleV435||sessionStorage.getItem("ssinne_admin_role_v435")||"admin";
+  adminRoleV435=role;
+  document.body.classList.toggle("role-cs",role==="cs");
+  document.body.classList.toggle("role-admin",role!=="cs");
+  document.querySelectorAll(".admin-only").forEach(el=>{el.hidden=role==="cs";});
+  const badge=byId("adminRoleBadge"); if(badge) badge.textContent=role==="cs"?"CS 직원":"대표 관리자";
+  if(role==="cs"){
+    const title=byId("homeWelcomeTitle"), text=byId("homeWelcomeText");
+    if(title) title.textContent="CS 업무를 한 화면에서 처리하세요 💗";
+    if(text) text.textContent="고객검색 · 전체주문이력 · 결제방법 · 배송정보 · CS기록을 시트 없이 처리합니다.";
+  }
+}
+
+function initAdminV435(){
+  applyAdminRoleV435();
+  document.querySelectorAll("[data-go-tab],[data-home-tab]").forEach(b=>{b.onclick=()=>showAdminTab(b.dataset.goTab||b.dataset.homeTab);});
+  document.querySelectorAll("[data-mobile-tab]").forEach(b=>{b.onclick=()=>showAdminTab(b.dataset.mobileTab);});
+  const more=byId("mobileMoreButton"); if(more) more.onclick=()=>document.body.classList.toggle("mobile-sidebar-open");
+  const quick=byId("homeQuickSearch"), quickBtn=byId("homeQuickSearchButton");
+  if(quickBtn) quickBtn.onclick=()=>{const q=(quick&&quick.value||"").trim(); showAdminTab("cs"); if(q){byId("csSearchKeyword").value=q; searchCsV435();}};
+  if(quick) quick.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();quickBtn.click();}});
+  const csBtn=byId("csSearchButton"), csInput=byId("csSearchKeyword");
+  if(csBtn) csBtn.onclick=searchCsV435;
+  if(csInput) csInput.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();searchCsV435();}});
+  document.querySelectorAll("[data-cs-result]").forEach(b=>{b.onclick=()=>showCsResultV435(b.dataset.csResult);});
+  if(byId("broadcastValidateButtonV436")) byId("broadcastValidateButtonV436").onclick=validateBroadcastProductsV436;
+  if(byId("broadcastStartButton")) byId("broadcastStartButton").onclick=startBroadcastV435;
+  if(byId("broadcastEndButton")) byId("broadcastEndButton").onclick=endBroadcastV435;
+  if(byId("broadcastRefreshButton")) byId("broadcastRefreshButton").onclick=loadBroadcastStatusV435;
+  if(byId("youtubeApiKeySaveButton")) byId("youtubeApiKeySaveButton").onclick=saveYoutubeApiKeyV435;
+  if(byId("securitySaveButtonV436")) byId("securitySaveButtonV436").onclick=saveSecurityV436;
+  if(byId("cardPaymentLinkSaveButtonV436")) byId("cardPaymentLinkSaveButtonV436").onclick=saveCardPaymentLinkV436;
+  if(byId("clearTodayProductsButton")) byId("clearTodayProductsButton").onclick=clearTodayProductsV435;
+  document.querySelectorAll("[data-sheet-mode]").forEach(b=>{b.onclick=()=>changeSheetModeV435(b.dataset.sheetMode);});
+  loadCsDashboardV435();
+  showAdminTab(adminRoleV435==="cs"?"cs":"home");
+}
+
+async function loadAdminHomeV435(){
+  try{
+    const cs=await apiGet({action:"adminCsDashboard"}); renderCsCountsV435(cs.counts||{});
+    if(adminRoleV435==="cs") return;
+    const today=todayString();
+    const [ordersData,live,br]=await Promise.all([
+      apiGet({action:"adminOrders",startDate:today,endDate:today,search:""}),
+      apiGet({action:"adminLiveDashboard"}),
+      apiGet({action:"adminBroadcastStatus"})
+    ]);
+    const orders=ordersData.orders||[];
+    if(byId("homeOrderCount")) byId("homeOrderCount").textContent=orders.length;
+    if(byId("homeUnpaidCount")) byId("homeUnpaidCount").textContent=orders.filter(o=>["미입금","카드결제대기","카드링크발송"].includes(o.paymentStatus)).length;
+    if(byId("homeLiveReviewCount")) byId("homeLiveReviewCount").textContent=Number((live.counts||{}).review||0)+Number((live.counts||{}).waiting||0);
+    renderBroadcastStatusV435(br,live.youtube||{});
+  }catch(e){console.warn("홈 현황",e.message);}
+}
+
+function renderCsCountsV435(c){
+  [["csReceivedCount",c.received],["csProgressCount",c.progress],["csDoneCount",c.done],["csHoldCount",c.hold],["homeCsReceived",c.received],["homeCsProgress",c.progress],["homeCsDone",c.done],["homeCsHold",c.hold],["homeCsCount",Number(c.received||0)+Number(c.progress||0)+Number(c.hold||0)]].forEach(x=>{const el=byId(x[0]);if(el)el.textContent=Number(x[1]||0);});
+  const badge=byId("csNavBadge"); if(badge) badge.textContent=Number(c.received||0)+Number(c.progress||0);
+}
+async function loadCsDashboardV435(){try{const d=await apiGet({action:"adminCsDashboard"});renderCsCountsV435(d.counts||{});}catch(e){console.warn(e.message);}}
+
+async function searchCsV435(){
+  const q=(byId("csSearchKeyword").value||"").trim();
+  if(!q){alert("닉네임, 수령인, 전화번호 또는 주문번호를 입력해주세요.");return;}
+  showLoading("고객의 현재 주문과 전체주문이력을 찾는 중입니다.");
+  try{
+    const d=await apiGet({action:"adminCsSearch",search:q}); adminCsDataV435=d; renderCsSearchV435(d,q); await loadCsDashboardV435();
+  }catch(e){alert(e.message);}finally{hideLoading();}
+}
+function firstCsIdentityV435(d,q){
+  const all=[...(d.current||[]),...(d.history||[]),...(d.cancelled||[])],o=all[0]||{};
+  return {nickname:o.nickname||q,receiverName:o.receiverName||"",phone:o.phone||"",orderNumber:o.orderNumber||""};
+}
+function renderCsSearchV435(d,q){
+  const current=d.current||[],history=d.history||[],notes=d.notes||[],cancelled=d.cancelled||[],ident=firstCsIdentityV435(d,q);
+  byId("csEmptyState").hidden=true; byId("csCustomerPanel").hidden=false;
+  byId("csCustomerTitle").textContent=(ident.nickname||"고객")+(ident.receiverName?" · "+ident.receiverName:"");
+  byId("csCustomerSub").textContent=ident.phone||"";
+  [["csCurrentCount",current.length],["csHistoryCount",history.length],["csNotesCount",notes.length],["csCancelledCount",cancelled.length]].forEach(x=>byId(x[0]).textContent=x[1]);
+  byId("csCurrentResults").innerHTML=current.length?current.map(renderCsCurrentCardV435).join(""):'<div class="empty-state">현재 진행 중인 주문이 없습니다.</div>';
+  byId("csHistoryResults").innerHTML=history.length?history.map(o=>renderCsOrderCardV435(o,false)).join(""):'<div class="empty-state">전체주문이력에서 찾은 주문이 없습니다.</div>';
+  byId("csCancelledResults").innerHTML=cancelled.length?cancelled.map(o=>renderCsOrderCardV435(o,false,"취소")).join(""):'<div class="empty-state">취소이력이 없습니다.</div>';
+  byId("csNotesResults").innerHTML=(notes.length?notes.map(renderCsNoteV435).join(""):'<div class="empty-state">저장된 CS 기록이 없습니다.</div>')+renderCsComposerV435(ident);
+  bindCsActionsV435(); showCsResultV435("current");
+}
+function paymentBadgeClassV435(s){return ["입금완료","카드결제완료","카드결제"].includes(s)?"paid":s==="미입금"?"unpaid":"card";}
+function renderCsOrderCardV435(o,editable,label){
+  const tr=o.trackingNumber||"",trackingUrl=tr?"https://www.lotteglogis.com/home/reservation/tracking/linkView?InvNo="+encodeURIComponent(String(tr).replace(/[^0-9]/g,"")):"";
+  return `<article class="cs-order-card ${editable?'editable':''}">
+    <div class="cs-order-card-head"><div><b>${escapeHtml(o.orderDate||"")}${label?" · "+escapeHtml(label):""}</b><span>주문번호 ${escapeHtml(o.orderNumber||"-")}</span></div><span class="payment-badge-v435 ${paymentBadgeClassV435(o.paymentStatus)}">${escapeHtml(o.paymentStatus||"미입금")}</span></div>
+    <div class="cs-items-v435">${escapeHtml(o.orderItems||"주문상품 없음").replace(/\n/g,"<br>")}</div>
+    <div class="cs-order-meta"><span>💰 ${money(o.paymentAmount||0)}</span><span>📦 ${Number(o.itemQuantity||0)}개</span>${tr?`<a target="_blank" rel="noopener" href="${trackingUrl}">🚚 배송조회</a>`:""}</div>
+    <div class="cs-address-view"><b>${escapeHtml(o.receiverName||"")}</b> · ${escapeHtml(o.phone||"")}<br>${escapeHtml((o.zipcode?"["+o.zipcode+"] ":"")+(o.address||""))}${o.shippingMemo?`<br><small>메모: ${escapeHtml(o.shippingMemo)}</small>`:""}</div>
+  </article>`;
+}
+function renderCsCurrentCardV435(o){
+  const base=renderCsOrderCardV435(o,true);
+  const actions=`<div class="cs-edit-actions">
+    <button class="btn btn-subtle cs-toggle-edit" data-row="${o.rowNumber}">배송정보 수정</button>
+    ${!["입금완료","카드결제완료","카드결제"].includes(o.paymentStatus)?`<button class="btn btn-primary cs-card-change" data-row="${o.rowNumber}" data-method="카드결제">카드결제로 변경</button><button class="btn btn-subtle cs-bank-change" data-row="${o.rowNumber}" data-method="무통장입금">무통장으로 변경</button>`:""}
+    ${o.paymentStatus==="카드결제대기"?`<button class="btn btn-dark cs-card-link" data-row="${o.rowNumber}">카드링크 발송처리/복사</button>`:""}
+  </div>
+  <div class="cs-shipping-edit" data-edit-row="${o.rowNumber}" hidden>
+    <div class="form-grid two"><div class="field"><label>수령인</label><input data-f="receiverName" value="${escapeHtml(o.receiverName||"")}"></div><div class="field"><label>연락처</label><input data-f="phone" value="${escapeHtml(o.phone||"")}"></div><div class="field"><label>우편번호</label><input data-f="zipcode" value="${escapeHtml(o.zipcode||"")}"></div><div class="field"><label>배송메모</label><input data-f="shippingMemo" value="${escapeHtml(o.shippingMemo||"")}"></div><div class="field full"><label>주소</label><input data-f="address" value="${escapeHtml(o.address||"")}"></div></div>
+    <button class="btn btn-primary cs-save-shipping" data-row="${o.rowNumber}">배송정보 저장</button>
+  </div>`;
+  return base.replace('</article>',actions+'</article>');
+}
+function renderCsNoteV435(n){const opts=["접수","진행","완료","보류"].map(v=>`<option ${v===n.status?"selected":""}>${v}</option>`).join("");return `<article class="cs-note-card"><div><b>${escapeHtml(n.type||"CS")} · ${escapeHtml(n.csId||"")}</b><span>${escapeHtml(n.updated||n.created||"")} · ${escapeHtml(n.actor||"")}</span></div><p>${escapeHtml(n.message||"").replace(/\n/g,"<br>")}</p>${n.note?`<small>${escapeHtml(n.note).replace(/\n/g,"<br>")}</small>`:""}<div class="cs-case-update-v436"><select class="cs-case-status-v436" data-csid="${escapeHtml(n.csId||"")}">${opts}</select><button class="btn btn-subtle cs-case-update-button-v436" type="button" data-csid="${escapeHtml(n.csId||"")}">상태 저장</button></div></article>`;}
+function renderCsComposerV435(i){return `<div class="cs-composer-v435"><h3>새 CS 기록</h3><div class="form-grid two"><div class="field"><label>문의유형</label><select id="csNewType"><option>배송문의</option><option>결제문의</option><option>상품문의</option><option>주소변경</option><option>주문변경</option><option>기타</option></select></div><div class="field"><label>상태</label><select id="csNewStatus"><option>접수</option><option>진행</option><option>완료</option><option>보류</option></select></div><div class="field full"><label>내용</label><textarea id="csNewMessage" rows="4" placeholder="고객 요청사항과 처리내용을 입력하세요."></textarea></div></div><button class="btn btn-primary" id="csSaveNoteButton" data-nick="${escapeHtml(i.nickname||"")}" data-name="${escapeHtml(i.receiverName||"")}" data-phone="${escapeHtml(i.phone||"")}" data-order="${escapeHtml(i.orderNumber||"")}">CS 저장</button></div>`;}
+function showCsResultV435(name){
+  document.querySelectorAll("[data-cs-result]").forEach(b=>b.classList.toggle("active",b.dataset.csResult===name));
+  const map={current:"csCurrentResults",history:"csHistoryResults",notes:"csNotesResults",cancelled:"csCancelledResults"};
+  document.querySelectorAll(".cs-result-panel").forEach(p=>p.classList.toggle("active",p.id===map[name]));
+}
+function bindCsActionsV435(){
+  document.querySelectorAll(".cs-toggle-edit").forEach(b=>b.onclick=()=>{const box=document.querySelector(`[data-edit-row="${b.dataset.row}"]`);if(box)box.hidden=!box.hidden;});
+  document.querySelectorAll(".cs-save-shipping").forEach(b=>b.onclick=()=>saveCsShippingV435(Number(b.dataset.row)));
+  document.querySelectorAll(".cs-card-change,.cs-bank-change").forEach(b=>b.onclick=()=>changeCsPaymentV435(Number(b.dataset.row),b.dataset.method));
+  document.querySelectorAll(".cs-card-link").forEach(b=>b.onclick=()=>markCardLinkSentV435(Number(b.dataset.row)));
+  document.querySelectorAll(".cs-case-update-button-v436").forEach(b=>b.onclick=()=>updateCsCaseV436(b.dataset.csid));
+  if(byId("csSaveNoteButton")) byId("csSaveNoteButton").onclick=saveCsNoteV435;
+}
+async function saveCsShippingV435(row){
+  const box=document.querySelector(`[data-edit-row="${row}"]`); if(!box)return;
+  const val=f=>{const e=box.querySelector(`[data-f="${f}"]`);return e?e.value.trim():"";};
+  try{showLoading("배송정보를 저장하는 중입니다.");await apiPost({action:"adminCsUpdateShipping",rowNumber:row,receiverName:val("receiverName"),phone:val("phone"),zipcode:val("zipcode"),address:val("address"),shippingMemo:val("shippingMemo")});await searchCsV435();}catch(e){alert(e.message);}finally{hideLoading();}
+}
+function phoneDigitsV436(v){return String(v||"").replace(/[^0-9]/g,"");}
+function csPaymentGroupPreviewV436(row){const list=(adminCsDataV435&&adminCsDataV435.current)||[],t=list.find(o=>Number(o.rowNumber)===Number(row));if(!t)return {count:1,total:0};const p=phoneDigitsV436(t.phone),open=["미입금","카드결제대기","카드링크발송"];const g=list.filter(o=>o.orderDate===t.orderDate&&open.includes(o.paymentStatus)&&(p?phoneDigitsV436(o.phone)===p:(o.receiverName===t.receiverName&&o.nickname===t.nickname)));return {count:g.length||1,total:g.reduce((a,o)=>a+Number(o.paymentAmount||0),0)};}
+async function changeCsPaymentV435(row,method){try{const g=await apiPost({action:"adminCsPaymentGroupPreview",rowNumber:row,purpose:"change"});if(!g.count){alert("변경할 미결제 주문이 없습니다.");return;}const msg=`${g.orderDate||"당일"} · ${g.receiverName||"고객"}의 미결제 주문 ${g.count}건 (${money(g.total||0)})을\n${method}으로 변경할까요?`;if(!confirm(msg))return;showLoading("결제방법을 변경하는 중입니다.");const r=await apiPost({action:"adminCsChangePaymentMethod",rowNumber:row,method});alert(r.message||"결제방법을 변경했습니다.");await searchCsV435();}catch(e){alert(e.message);}finally{hideLoading();}}
+async function markCardLinkSentV435(row){
+  try{const g=await apiPost({action:"adminCsPaymentGroupPreview",rowNumber:row,purpose:"cardLink"});if(!g.count){alert("카드결제대기 주문이 없습니다.");return;}if(!confirm(`카드결제대기 ${g.count}건 (${money(g.total||0)})의 결제링크를 복사하고\n링크발송 상태로 변경할까요?`))return;const r=await apiPost({action:"adminCsMarkCardLinkSent",rowNumber:row});if(r.link){const detail=`${Number(r.count||1)}건 · ${money(r.total||0)}`;try{await navigator.clipboard.writeText(r.link);alert("카드결제 링크를 복사했습니다.\n"+detail+"을 링크발송 상태로 변경했습니다.\n고객에게 링크를 붙여넣어 보내주세요.");}catch(e){prompt("아래 카드결제 링크를 복사해서 고객에게 보내주세요. ("+detail+")",r.link);}}await searchCsV435();}catch(e){alert(e.message);}
+}
+async function updateCsCaseV436(csId){const sel=document.querySelector(`.cs-case-status-v436[data-csid="${CSS.escape(csId)}"]`);if(!sel)return;const memo=prompt("상태 변경과 함께 남길 처리내용이 있으면 입력하세요.\n내용 없이 상태만 변경해도 됩니다.","");if(memo===null)return;try{await apiPost({action:"adminCsUpdateCase",csId,status:sel.value,message:memo,note:""});await searchCsV435();}catch(e){alert(e.message);}}
+async function saveCsNoteV435(){const b=byId("csSaveNoteButton"),message=(byId("csNewMessage").value||"").trim();if(!message){alert("CS 내용을 입력해주세요.");return;}try{await apiPost({action:"adminCsSaveNote",nickname:b.dataset.nick,receiverName:b.dataset.name,phone:b.dataset.phone,orderNumber:b.dataset.order,type:byId("csNewType").value,status:byId("csNewStatus").value,message,note:"관리자페이지 CS"});await searchCsV435();}catch(e){alert(e.message);}}
+
+function renderBroadcastPrecheckV436(r){const el=byId("broadcastPrecheckV436");if(!el)return;r=r||{};const errors=r.errors||[],warnings=r.warnings||[];el.classList.toggle("ok",Boolean(r.success));el.classList.toggle("error",!r.success);el.innerHTML=r.success?`<strong>✓ 상품정보 정상 · ${Number(r.productCount||0)}개</strong>${warnings.length?`<small>확인 권장: ${warnings.map(escapeHtml).join(" · ")}</small>`:"<small>중복 · 판매가 · 재고 필수값 검사를 통과했습니다.</small>"}`:`<strong>⚠ 방송 시작 전 수정 필요</strong><small>${errors.slice(0,8).map(escapeHtml).join("<br>")}</small>`;}
+async function validateBroadcastProductsV436(){try{showLoading("방송 상품정보를 검사하는 중입니다.");const r=await apiPost({action:"adminValidateBroadcastProducts"});renderBroadcastPrecheckV436(r);if(r.success)alert(`상품정보 검사 완료\n${Number(r.productCount||0)}개 상품이 방송 시작 가능한 상태입니다.${(r.warnings||[]).length?`\n\n확인 권장 ${r.warnings.length}건이 있습니다.`:""}`);else alert("수정이 필요한 상품정보가 있습니다. 화면의 검사결과를 확인해주세요.");return r;}catch(e){alert(e.message);return {success:false,errors:[e.message]};}finally{hideLoading();}}
+async function saveSecurityV436(){const ap=(byId("newAdminPasswordV436")?.value||"").trim(),cp=(byId("newCsPasswordV436")?.value||"").trim();if(!ap&&!cp){alert("변경할 대표 또는 CS 비밀번호를 입력해주세요.");return;}if(!confirm("입력한 비밀번호로 변경할까요?\n다음 로그인부터 새 비밀번호를 사용합니다."))return;try{const r=await apiPost({action:"adminSaveSecurity",adminPassword:ap,csPassword:cp});byId("newAdminPasswordV436").value="";byId("newCsPasswordV436").value="";alert(r.message||"저장했습니다.");await loadBroadcastStatusV435();}catch(e){alert(e.message);}}
+async function saveCardPaymentLinkV436(){const link=(byId("cardPaymentLinkInputV436")?.value||"").trim();const text=link?"카드결제 링크를 저장할까요?":"카드결제 링크 설정을 지울까요?";if(!confirm(text))return;try{const r=await apiPost({action:"adminSaveCardPaymentLink",link});alert(r.message||"저장했습니다.");if(byId("cardPaymentLinkInputV436"))byId("cardPaymentLinkInputV436").value="";await loadBroadcastStatusV435();}catch(e){alert(e.message);}}
+async function saveYoutubeApiKeyV435(){const key=(byId("youtubeApiKeyInput").value||"").trim();if(!key){alert("YouTube API 키를 입력해주세요.");return;}try{showLoading("API 키를 저장하는 중입니다.");const r=await apiPost({action:"adminSaveYouTubeApiKey",apiKey:key});byId("youtubeApiKeyInput").value="";alert(r.message||"저장했습니다.");await loadBroadcastStatusV435();}catch(e){alert(e.message);}finally{hideLoading();}}
+async function startBroadcastV435(){const url=(byId("broadcastYoutubeUrl").value||"").trim();if(!url){alert("YouTube 라이브 URL을 입력해주세요.");return;}const check=await validateBroadcastProductsV436();if(!check.success)return;if(!confirm(`상품 ${Number(check.productCount||0)}개 검사를 통과했습니다.\n새 방송을 시작하고 YouTube에 연결할까요?\n\n※ YouTube 영상 확인이 실패하면 방송회차는 생성되지 않습니다.`))return;try{showLoading("YouTube와 상품정보를 최종 확인한 뒤 방송을 시작하는 중입니다.");const r=await apiPost({action:"adminStartBroadcast",youtubeUrl:url,broadcastName:(byId("broadcastName").value||"").trim()});alert((r.message||"방송을 시작했습니다.")+(r.warnings&&r.warnings.length?"\n\n확인 권장: "+r.warnings.join(" / "):""));await loadAdminLiveDashboardV432(true);await loadBroadcastStatusV435();}catch(e){alert(e.message);}finally{hideLoading();}}
+async function endBroadcastV435(){if(!confirm("방송을 종료할까요?\n방송상품이력과 주문기록은 삭제되지 않습니다."))return;try{showLoading("방송을 종료하는 중입니다.");const r=await apiPost({action:"adminEndBroadcast"});alert(r.message||"방송을 종료했습니다.");await loadBroadcastStatusV435();}catch(e){alert(e.message);}finally{hideLoading();}}
+async function loadBroadcastStatusV435(){try{const d=await apiGet({action:"adminBroadcastStatus"});renderBroadcastStatusV435(d,{});}catch(e){console.warn(e.message);}}
+function renderBroadcastStatusV435(b,y){
+  b=b||{};y=y||{}; const active=Boolean(b.active||b.broadcastId), session=b.session||{};
+  const badge=byId("broadcastStateBadge"),mini=byId("adminBroadcastMini");
+  if(badge){badge.textContent=active?"● 방송 진행중":"방송 대기";badge.classList.toggle("active",active);}
+  if(mini) mini.textContent=active?(b.broadcastId||session.broadcastId||"방송중"):"방송 대기";
+  const text=active?`<strong>${escapeHtml(b.broadcastId||session.broadcastId||"")}</strong><span>${escapeHtml(session.name||"")}</span><small>YouTube ${b.videoId||session.videoId?"연결 설정됨":"미연결"} · 상품 ${Number(session.productCount||0)}개 스냅샷 저장</small>`:`<strong>진행 중인 방송 없음</strong><span>URL을 입력하고 ‘새 방송 시작 · 연결’을 눌러주세요.</span><small>API 키 ${b.apiKeyConfigured?"설정됨":"미설정"}</small>`;
+  if(byId("broadcastStatusCard")) byId("broadcastStatusCard").innerHTML=text;
+  if(byId("homeBroadcastCard")) byId("homeBroadcastCard").innerHTML=text;
+  const sec=byId("securityStatusV436");if(sec){sec.textContent=(b.securityConfigured?"비밀번호 설정됨":"초기 비밀번호 사용중")+" · "+(b.cardPaymentLinkConfigured?"카드링크 설정됨":"카드링크 미설정");sec.classList.toggle("ready",Boolean(b.securityConfigured));}
+}
+async function clearTodayProductsV435(){if(!confirm("오늘상품만 모두 비울까요?\n상시상품은 그대로 유지됩니다."))return;try{showLoading("오늘상품을 정리하는 중입니다.");const r=await apiPost({action:"adminClearTodayProducts"});alert(r.message||"정리했습니다.");await loadAdminProducts();}catch(e){alert(e.message);}finally{hideLoading();}}
+async function changeSheetModeV435(mode){try{showLoading("시트 화면을 정리하는 중입니다.");const r=await apiPost({action:"adminSheetMode",mode});alert(r.message||"시트를 정리했습니다.");}catch(e){alert(e.message);}finally{hideLoading();}}
+
+// V4.36 상품관리: 판매구분은 기존 열을 밀지 않고 맨 뒤 열에 저장합니다.
+function renderAdminProducts(){
+  const tbody=byId("adminProductList"),keyword=(byId("productKeyword").value||"").trim().toLowerCase();
+  const filtered=adminProducts.filter(p=>[p.saleType,p.productNo,p.productName,p.color,p.size].join(" ").toLowerCase().includes(keyword));
+  if(!filtered.length){tbody.innerHTML='<tr><td colspan="12" class="empty-cell">표시할 상품정보가 없습니다.</td></tr>';return;}
+  tbody.innerHTML=filtered.map(p=>`<tr><td data-label="구분"><span class="sale-type-badge ${p.saleType==="상시"?"permanent":"today"}">${escapeHtml(p.saleType||"오늘")}</span></td><td data-label="상품번호">${escapeHtml(p.productNo)}</td><td data-label="상품명">${escapeHtml(p.productName)}</td><td data-label="칼라">${escapeHtml(p.color)}</td><td data-label="사이즈">${escapeHtml(p.size)}</td><td data-label="판매가">${money(p.salePrice)}</td><td data-label="입금가">${money(p.depositPrice)}</td><td data-label="현재재고">${p.stockManaged?Number(p.currentStock).toLocaleString("ko-KR")+"개":"미설정"}</td><td data-label="라이브예약">${p.stockManaged?Number(p.reservedStock||0).toLocaleString("ko-KR")+"개":"-"}</td><td data-label="판매가능"><strong>${p.stockManaged?Number(p.availableStock||0).toLocaleString("ko-KR")+"개":"미설정"}</strong></td><td data-label="상태"><span class="stock-status ${["품절","예약품절"].includes(p.status)?"soldout":""}">${escapeHtml(p.status||"재고미설정")}</span></td><td data-label="관리"><button type="button" class="button dark small edit-product" data-row="${p.rowNumber}">수정</button> <button type="button" class="button danger small delete-product" data-row="${p.rowNumber}">삭제</button></td></tr>`).join("");
+  tbody.querySelectorAll(".edit-product").forEach(b=>b.onclick=()=>editAdminProduct(Number(b.dataset.row)));
+  tbody.querySelectorAll(".delete-product").forEach(b=>b.onclick=()=>deleteAdminProduct(Number(b.dataset.row)));
+}
+function editAdminProduct(rowNumber){const p=adminProducts.find(x=>Number(x.rowNumber)===rowNumber);if(!p)return;byId("productFormTitle").textContent="상품정보 수정";byId("productRowNumber").value=rowNumber;byId("adminProductNo").value=p.productNo||"";byId("adminProductName").value=p.productName||"";byId("adminProductColor").value=p.color||"";byId("adminProductSize").value=p.size||"";byId("adminSalePrice").value=p.salePrice||"";byId("adminDepositPrice").value=p.depositPrice||"";byId("adminCurrentStock").value=p.stockManaged?p.currentStock:"";if(byId("adminSaleType"))byId("adminSaleType").value=p.saleType||"오늘";window.scrollTo({top:0,behavior:"smooth"});}
+function resetAdminProductForm(){byId("productFormTitle").textContent="상품정보 추가";["productRowNumber","adminProductNo","adminProductName","adminProductColor","adminProductSize","adminSalePrice","adminDepositPrice","adminCurrentStock"].forEach(id=>{if(byId(id))byId(id).value="";});if(byId("adminSaleType"))byId("adminSaleType").value="오늘";}
+async function saveAdminProduct(){
+  const payload={action:"saveProduct",rowNumber:Number(byId("productRowNumber").value||0),productNo:byId("adminProductNo").value.trim(),productName:byId("adminProductName").value.trim(),color:byId("adminProductColor").value.trim(),size:byId("adminProductSize").value.trim(),salePrice:Number(byId("adminSalePrice").value||0),depositPrice:Number(byId("adminDepositPrice").value||0),currentStock:byId("adminCurrentStock").value.trim(),saleType:(byId("adminSaleType")||{}).value||"오늘"};
+  if(!payload.productNo||!payload.productName||!payload.color||!payload.size){alert("상품번호, 상품명, 칼라, 사이즈를 모두 입력해주세요.");return;}
+  if(!/^\d{1,4}$/.test(payload.productNo)||Number(payload.productNo)<1||Number(payload.productNo)>9999){alert("상품번호는 1~9999 사이의 숫자로 입력해주세요.");return;}
+  try{showLoading("상품정보를 저장하는 중입니다.");await apiPost(payload);resetAdminProductForm();await loadAdminProducts();}catch(e){alert(e.message);}finally{hideLoading();}
 }
