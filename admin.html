@@ -4,15 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#111827">
-  <title>씬느샵 통합 관리자 V4.40.5</title>
-  <link rel="stylesheet" href="style.css?v=20260915-v4-40-5-card-customers">
-  <script src="script.js?v=20260915-v4-40-5-card-customers" defer></script>
+  <title>씬느샵 통합 관리자 V4.40.7</title>
+  <link rel="stylesheet" href="style.css?v=20260915-v4-40-7-b-profile-home">
+  <script src="script.js?v=20260915-v4-40-7-b-profile-home" defer></script>
 </head>
 <body data-page="admin" class="page-admin">
   <div class="admin-login-gate" id="adminLoginGate">
     <div class="admin-login-card">
       <div class="admin-login-logo">S</div>
-      <span class="eyebrow dark">SSINNEU ADMIN · V4.40.5</span>
+      <span class="eyebrow dark">SSINNEU ADMIN · V4.40.7</span>
       <h1>관리자 로그인</h1>
       <p>대표 관리자 또는 CS 직원 비밀번호로 로그인하세요.</p>
       <label for="adminPasswordInput">로그인 비밀번호</label>
@@ -51,28 +51,39 @@
     </aside>
 
     <main class="admin-main">
-      <header class="admin-topbar">
-        <div>
-          <span class="eyebrow dark">SSINNEU ADMIN · V4.40.5</span>
-          <h1>통합 관리자 <small style="font-size:.48em;font-weight:800;vertical-align:middle;opacity:.72;">V4.40.5</small></h1>
-          <div class="topbar-role"><span id="adminRoleBadge">로그인 확인중</span><span id="adminBroadcastMini">방송 대기</span></div>
+      <header class="admin-topbar home-only-topbar-v4406 b-profile-topbar-v4407" id="adminHomeTopbarV4406">
+        <div class="b-profile-main-v4407">
+          <div class="b-profile-avatar-v4407" aria-hidden="true">S</div>
+          <div class="b-profile-copy-v4407">
+            <strong>씬느샵</strong>
+            <span>관리자 · V4.40.7</span>
+          </div>
+          <div class="topbar-role b-status-badges-v4407">
+            <span id="adminRoleBadge">로그인 확인중</span>
+            <span id="adminBroadcastMini">방송 대기</span>
+          </div>
         </div>
-        <div class="topbar-actions admin-only">
-          <button class="btn btn-dark" type="button" id="rebuildButton">📦 거래처발주 엑셀 다운로드</button>
-          <button class="btn btn-dark" type="button" id="combinedShippingButton">🔗 합배송 가능 고객 · 전체주문이력</button>
-          <button class="btn btn-primary" type="button" id="archiveHistoryButton">전체주문이력 저장/갱신</button>
-          <button class="btn btn-dark" type="button" id="fillLegacyOrderNumbersButton">🔢 기존 주문번호 자동생성</button>
-          <button class="btn btn-primary" type="button" id="lotteExcelButtonV418">🚚 롯데택배 · 전체주문이력 날짜선택</button>
-          <button class="btn btn-dark" type="button" id="lotteTrackingButton">📥 롯데 송장결과 업로드</button>
-          <input type="file" id="lotteTrackingFile" accept=".xlsx,.xls" hidden>
-        </div>
-        <button class="btn btn-subtle logout-standalone" type="button" id="adminLogoutButton">🔒 로그아웃</button>
+        <button class="btn btn-subtle logout-standalone b-logout-v4407" type="button" id="adminLogoutButton">🔒 로그아웃</button>
       </header>
 
 
       <section id="homeTab" class="tab-section active v435-home">
+        <section class="b-quick-menu-v4407 admin-only" aria-label="빠른 실행 메뉴">
+          <div class="b-quick-menu-head-v4407">
+            <div><h2>빠른 실행 메뉴</h2><p>자주 사용하는 기능을 홈에서 바로 실행합니다.</p></div>
+          </div>
+          <div class="topbar-actions b-quick-grid-v4407">
+            <button class="b-quick-button-v4407" type="button" id="rebuildButton"><span class="b-quick-icon-v4407">📦</span><b>거래처발주 엑셀 다운로드</b><em>›</em></button>
+            <button class="b-quick-button-v4407" type="button" id="combinedShippingButton"><span class="b-quick-icon-v4407">🔗</span><b>합배송 가능 고객 · 전체주문이력</b><em>›</em></button>
+            <button class="b-quick-button-v4407 accent" type="button" id="archiveHistoryButton"><span class="b-quick-icon-v4407">🔄</span><b>전체주문이력 저장/갱신</b><em>›</em></button>
+            <button class="b-quick-button-v4407" type="button" id="fillLegacyOrderNumbersButton"><span class="b-quick-icon-v4407">＋</span><b>기존 주문번호 자동생성</b><em>›</em></button>
+            <button class="b-quick-button-v4407 accent" type="button" id="lotteExcelButtonV418"><span class="b-quick-icon-v4407">🚚</span><b>롯데택배 · 전체주문이력 날짜선택</b><em>›</em></button>
+            <button class="b-quick-button-v4407 dark" type="button" id="lotteTrackingButton"><span class="b-quick-icon-v4407">⇧</span><b>롯데 송장결과 업로드</b><em>›</em></button>
+            <input type="file" id="lotteTrackingFile" accept=".xlsx,.xls" hidden>
+          </div>
+        </section>
         <section class="v435-welcome">
-          <div><span class="eyebrow dark">TODAY · V4.40.5</span><h2 id="homeWelcomeTitle">오늘도 좋은 하루 되세요 💗</h2><p id="homeWelcomeText">방송 · 주문 · CS · 출고까지 필요한 업무만 한눈에 확인하세요.</p></div>
+          <div><span class="eyebrow dark">TODAY · V4.40.7</span><h2 id="homeWelcomeTitle">오늘도 좋은 하루 되세요 💗</h2><p id="homeWelcomeText">방송 · 주문 · CS · 출고까지 필요한 업무만 한눈에 확인하세요.</p></div>
           <div class="home-quick-search"><input id="homeQuickSearch" placeholder="닉네임 · 이름 · 전화번호 · 주문번호"><button class="btn btn-primary" id="homeQuickSearchButton" type="button">고객 찾기</button></div>
         </section>
         <div class="summary-grid premium v435-home-summary">
@@ -100,6 +111,7 @@
           </div>
         </section>
         <section class="admin-panel admin-only security-panel-v436">
+          <button class="mobile-settings-close-v4406" type="button" id="mobileSettingsCloseV4406">← 설정 닫기</button>
           <div class="panel-title-row"><div><h2>🔐 보안 · 카드결제 설정</h2><p>대표/CS 비밀번호와 고객에게 보낼 카드결제 링크를 관리자 화면에서 설정합니다.</p></div><span id="securityStatusV436" class="security-status-v436">설정 확인중</span></div>
           <div class="form-grid two security-grid-v436">
             <div class="field"><label for="newAdminPasswordV436">새 대표 관리자 비밀번호</label><input id="newAdminPasswordV436" type="password" autocomplete="new-password" placeholder="4자리 이상"></div>
@@ -395,7 +407,7 @@
 
       <section id="liveTab" class="tab-section">
         <section class="admin-panel broadcast-control-v435">
-          <div class="panel-title-row"><div><span class="eyebrow dark">BROADCAST SETUP · V4.40.5</span><h2>🎥 라이브 방송 설정</h2><p>새 방송을 시작하면 오늘 상품과 상시상품이 방송상품이력에 자동 저장됩니다.</p></div><span id="broadcastStateBadge" class="broadcast-state-badge">방송 대기</span></div>
+          <div class="panel-title-row"><div><span class="eyebrow dark">BROADCAST SETUP · V4.40.7</span><h2>🎥 라이브 방송 설정</h2><p>새 방송을 시작하면 오늘 상품과 상시상품이 방송상품이력에 자동 저장됩니다.</p></div><span id="broadcastStateBadge" class="broadcast-state-badge">방송 대기</span></div>
           <div class="broadcast-grid-v435">
             <div class="field"><label for="broadcastYoutubeUrl">YouTube 라이브 URL</label><input id="broadcastYoutubeUrl" placeholder="https://www.youtube.com/watch?v=..."></div>
             <div class="field"><label for="broadcastName">방송명</label><input id="broadcastName" placeholder="예: 9월 14일 라이브"></div>
@@ -406,7 +418,7 @@
           <details class="api-key-details"><summary>YouTube API 키 설정 (처음 1회)</summary><div class="api-key-row"><input id="youtubeApiKeyInput" type="password" placeholder="YouTube Data API v3 키"><button class="btn btn-subtle" type="button" id="youtubeApiKeySaveButton">API 키 저장</button></div><small>API 키는 GitHub 파일이 아니라 Apps Script 속성에 저장됩니다.</small></details>
         </section>
         <section class="admin-panel live-admin-hero">
-          <div class="panel-title-row"><div><span class="eyebrow dark">LIVE CONTROL · V4.40.5</span><h2>실시간 주문관리</h2><p>현재 판매상품 설정부터 예약 · 대기 · 취소 · 확인필요까지 한 화면에서 처리합니다.</p></div><div class="live-admin-head-actions"><button type="button" class="btn btn-primary" id="liveCollectNowButton">채팅 지금 수집</button><button type="button" class="btn btn-subtle" id="liveReloadButton">새로고침</button></div></div>
+          <div class="panel-title-row"><div><span class="eyebrow dark">LIVE CONTROL · V4.40.7</span><h2>실시간 주문관리</h2><p>현재 판매상품 설정부터 예약 · 대기 · 취소 · 확인필요까지 한 화면에서 처리합니다.</p></div><div class="live-admin-head-actions"><button type="button" class="btn btn-primary" id="liveCollectNowButton">채팅 지금 수집</button><button type="button" class="btn btn-subtle" id="liveReloadButton">새로고침</button></div></div>
           <div class="live-connection-line"><span id="liveConnectionStatus">방송 연결 상태 확인 중...</span><small id="liveAutoRefreshText">이 화면을 열어두면 약 20초 간격으로 자동 갱신합니다.</small></div>
         </section>
         <section class="admin-panel">
@@ -533,6 +545,24 @@
       <button type="button" data-mobile-tab="live" class="admin-only"><span>🎥</span><b>라이브</b></button>
       <button type="button" id="mobileMoreButton"><span>☰</span><b>더보기</b></button>
     </nav>
+
+    <div class="mobile-more-overlay-v4406" id="mobileMoreOverlayV4406"></div>
+    <aside class="mobile-more-sheet-v4406" id="mobileMoreSheetV4406" aria-label="더보기 메뉴" aria-hidden="true">
+      <div class="mobile-more-handle-v4406"></div>
+      <div class="mobile-more-title-v4406">
+        <div><strong>더보기</strong><span>자주 쓰지 않는 관리 기능</span></div>
+        <button type="button" id="mobileMoreCloseV4406" aria-label="닫기">×</button>
+      </div>
+      <div class="mobile-more-grid-v4406">
+        <button type="button" class="admin-only" data-more-tab="bankmatch"><span>₩</span><b>입금 관리</b></button>
+        <button type="button" class="admin-only" data-more-tab="products"><span>◇</span><b>상품 관리</b></button>
+        <button type="button" class="admin-only" data-more-tab="cancelled"><span>↶</span><b>취소 주문</b></button>
+        <button type="button" class="admin-only" id="mobileSettingsButtonV4406"><span>⚙</span><b>보안 · 결제설정</b></button>
+        <a class="admin-only" href="customer.html"><span>⌕</span><b>고객 주문조회</b></a>
+        <a class="admin-only" href="index.html"><span>＋</span><b>주문서 열기</b></a>
+      </div>
+      <button type="button" class="mobile-more-logout-v4406" id="mobileLogoutButtonV4406">🔒 로그아웃</button>
+    </aside>
   </div>
 
   <div class="v2-modal" id="lotteDownloadModal" aria-hidden="true">

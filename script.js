@@ -1,4 +1,4 @@
-// V4.40.5 - CS 카드결제 고객 모아보기 + 페이앱/토스페이먼츠 듀얼결제 / V4.39.2 속도·중복·안정화 유지
+// V4.40.7 - CS 카드결제 고객 모아보기 + 페이앱/토스페이먼츠 듀얼결제 / V4.39.2 속도·중복·안정화 유지
 // V4.00 - 수령인+닉네임 포함 자동일치 / 분할입금 조합합산 / 부족·초과 / 중복입금 방지
 // V3.30 - 입금 자동대조 시 수령인 + 닉네임 함께 조회
 // V3.29 - 단일 script.js 운영 + 토스뱅크/하나은행 통합 입금대조 + 입금완료 2차 재검사
@@ -802,7 +802,11 @@ function showAdminTab(tabName) {
   document.querySelectorAll(".side-link[data-tab]").forEach(function(button){button.classList.toggle("active",button.dataset.tab===tabName);});
   document.querySelectorAll(".tab-section").forEach(function(section){section.classList.toggle("active",section.id===tabName+"Tab");});
   document.querySelectorAll("[data-mobile-tab]").forEach(function(button){button.classList.toggle("active",button.dataset.mobileTab===tabName);});
-  document.body.classList.remove("mobile-sidebar-open");
+  document.body.dataset.adminTab=tabName;
+  const homeTopbarV4406=byId("adminHomeTopbarV4406");
+  if(homeTopbarV4406) homeTopbarV4406.hidden=(tabName!=="home");
+  document.body.classList.remove("mobile-sidebar-open","mobile-more-open-v4406","mobile-settings-open-v4406");
+  const moreSheetV4406=byId("mobileMoreSheetV4406"); if(moreSheetV4406) moreSheetV4406.setAttribute("aria-hidden","true");
   if(tabName==="products")loadAdminProducts();
   if(tabName==="bankmatch")loadBankMatchOrders();
   if(tabName==="live"){startAdminLiveAutoV432();loadAdminLiveDashboardV432();loadBroadcastStatusV435();}else stopAdminLiveAutoV432();
@@ -1252,8 +1256,8 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
-  if (version.indexOf("V4.40.5") !== 0) {
-    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.40.5 기능을 사용하려면 V4.40.5 Code.gs를 새 버전으로 배포해야 합니다.");
+  if (version.indexOf("V4.40.7") !== 0) {
+    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.40.7 기능을 사용하려면 V4.40.7 Code.gs를 새 버전으로 배포해야 합니다.");
   }
   return info;
 }
@@ -3486,7 +3490,7 @@ async function downloadLotteExcelV418() {
       throw new Error("전체주문이력에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
         "전체주문이력 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
         "선택 기간: " + startDate + " ~ " + endDate + "\n" +
-        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.40.5인지 확인해주세요.");
+        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.40.7인지 확인해주세요.");
     }
 
     const sortedOrders = sortLotteOrdersV420(orders);
@@ -3654,7 +3658,7 @@ async function uploadLotteTrackingResult(event) {
 }
 
 /* =========================================================
-   V4.40.5 카드결제 고객 모아보기 · 페이앱+토스페이먼츠 듀얼결제 · PC/모바일 통합 관리자 · 방송회차 · 상시상품 · CS
+   V4.40.7 카드결제 고객 모아보기 · 페이앱+토스페이먼츠 듀얼결제 · PC/모바일 통합 관리자 · 방송회차 · 상시상품 · CS
 ========================================================= */
 function applyAdminRoleV435(){
   const role=adminRoleV435||sessionStorage.getItem("ssinne_admin_role_v435")||"admin";
@@ -3678,7 +3682,14 @@ function initAdminV435(){
   const homeCs=byId("homeCsCardV4404");if(homeCs)homeCs.onclick=async()=>{showAdminTab("cs");await loadCsCasesByStatusV4403("received");};
   const homeLive=byId("homeLiveCardV4404");if(homeLive)homeLive.onclick=async()=>{showAdminTab("live");await loadAdminLiveDashboardV432();setLiveSummaryFilterV4404("확인필요");};
   document.querySelectorAll("[data-mobile-tab]").forEach(b=>{b.onclick=()=>showAdminTab(b.dataset.mobileTab);});
-  const more=byId("mobileMoreButton"); if(more) more.onclick=()=>document.body.classList.toggle("mobile-sidebar-open");
+  const closeMobileMoreV4406=()=>{document.body.classList.remove("mobile-more-open-v4406");const sh=byId("mobileMoreSheetV4406");if(sh)sh.setAttribute("aria-hidden","true");};
+  const more=byId("mobileMoreButton"); if(more) more.onclick=()=>{document.body.classList.remove("mobile-settings-open-v4406");document.body.classList.toggle("mobile-more-open-v4406");const sh=byId("mobileMoreSheetV4406");if(sh)sh.setAttribute("aria-hidden",document.body.classList.contains("mobile-more-open-v4406")?"false":"true");};
+  const moreClose=byId("mobileMoreCloseV4406"), moreOverlay=byId("mobileMoreOverlayV4406");
+  if(moreClose) moreClose.onclick=closeMobileMoreV4406; if(moreOverlay) moreOverlay.onclick=closeMobileMoreV4406;
+  document.querySelectorAll("[data-more-tab]").forEach(b=>{b.onclick=()=>{const t=b.dataset.moreTab;closeMobileMoreV4406();showAdminTab(t);};});
+  const mobileSettings=byId("mobileSettingsButtonV4406"); if(mobileSettings) mobileSettings.onclick=()=>{closeMobileMoreV4406();showAdminTab("home");document.body.classList.add("mobile-settings-open-v4406");};
+  const mobileSettingsClose=byId("mobileSettingsCloseV4406"); if(mobileSettingsClose) mobileSettingsClose.onclick=()=>document.body.classList.remove("mobile-settings-open-v4406");
+  const mobileLogout=byId("mobileLogoutButtonV4406"); if(mobileLogout) mobileLogout.onclick=()=>{closeMobileMoreV4406();const b=byId("adminLogoutButton");if(b)b.click();};
   const quick=byId("homeQuickSearch"), quickBtn=byId("homeQuickSearchButton");
   if(quickBtn) quickBtn.onclick=()=>{const q=(quick&&quick.value||"").trim(); showAdminTab("cs"); if(q){byId("csSearchKeyword").value=q; searchCsV435();}};
   if(quick) quick.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();quickBtn.click();}});
