@@ -1,4 +1,4 @@
-// V4.40.7 - CS 카드결제 고객 모아보기 + 페이앱/토스페이먼츠 듀얼결제 / V4.39.2 속도·중복·안정화 유지
+// V4.41.0 - CS 카드결제 고객 모아보기 + 페이앱/토스페이먼츠 듀얼결제 / V4.39.2 속도·중복·안정화 유지
 // V4.00 - 수령인+닉네임 포함 자동일치 / 분할입금 조합합산 / 부족·초과 / 중복입금 방지
 // V3.30 - 입금 자동대조 시 수령인 + 닉네임 함께 조회
 // V3.29 - 단일 script.js 운영 + 토스뱅크/하나은행 통합 입금대조 + 입금완료 2차 재검사
@@ -22,6 +22,7 @@ let adminCsPaymentFilterV440 = "all";
 let adminCsCardPaymentsV4405 = [];
 let adminCsCardListFilterV4405 = "all";
 let adminCsActiveStatusV4403 = "";
+let adminCsCurrentOnlyV441 = false;
 
 // V4.39.2: 관리자 첫 화면에서는 무거운 XLSX 라이브러리를 받지 않습니다.
 // 은행 엑셀/롯데 엑셀/발주 엑셀 기능을 실제로 누를 때 한 번만 동적으로 로드합니다.
@@ -560,7 +561,7 @@ async function submitOrder(e){
     if(!orderMode)throw new Error("주문방법을 먼저 선택해주세요.");if(orderMode==="live"&&!liveOrderConfirmed)throw new Error("라이브 주문내용이 맞는지 먼저 확인해주세요.");if(!orderCart.length)throw new Error("주문 상품이 없습니다.");
     const data={action:"saveOrder",submissionId:getSubmissionIdV432(),orderMode:orderMode,liveOrderToken:liveOrderToken,liveOrderConfirmed:liveOrderConfirmed,nickname:byId("nickname").value.trim(),receiverName:byId("receiverName").value.trim(),phone:byId("phone").value.trim(),zipcode:byId("zipcode").value.trim(),address:byId("address").value.trim(),detailAddress:byId("detailAddress").value.trim(),useExistingFullAddress:useExistingFullAddress,shippingMemo:byId("shippingMemo").value.trim(),paymentMethod:byId("paymentMethod").value,isRemoteShipping:byId("shippingRegion").value==="remote",products:orderCart.map(x=>({productNo:x.productNo,color:x.color,size:x.size,quantity:x.quantity}))};
     if(!data.nickname||!data.receiverName)throw new Error("닉네임과 수령인 성함을 입력해주세요.");if(data.phone.replace(/[^0-9]/g,"").length<10)throw new Error("연락처를 정확하게 입력해주세요.");if(!data.zipcode||!data.address||(!data.useExistingFullAddress&&!data.detailAddress))throw new Error("주소와 상세주소를 확인해주세요.");
-    if(orderMode==="manual"){try{const live=await apiGet({action:"liveOrderLookup",phone:data.phone,identity:data.nickname});if(live&&(live.found||live.ambiguous)){if(!confirm("⚠ 같은 닉네임의 미제출 라이브 주문이 있습니다.\n라이브 주문과 중복될 수 있어요.\n\n그래도 직접 작성 주문을 제출할까요?"))return}}catch(checkError){console.warn("라이브 중복확인:",checkError.message)}}
+    // V4.41.0: 직접 주문 제출 전 별도 라이브 조회를 하지 않습니다. 서버가 한 번의 제출 요청에서 예약/재고를 최종 확인합니다.
     orderSubmitting=true;showLoading("주문서를 저장하고 있습니다.");byId("submitButton").disabled=true;
     const r=await apiPost(data);sessionStorage.removeItem(SUBMISSION_STORAGE_KEY);paymentPreviewCache.clear();saveCustomerInfo();byId("orderForm").style.display="none";byId("orderModeToolbar").style.display="none";
     const isCardComplete=byId("paymentMethod").value==="카드결제";lastCompletedAmountDue=Number(isCardComplete?(r.cardPaymentAmount!==undefined?r.cardPaymentAmount:Math.round(Number(r.amountDueNow||0)*1.10)):(r.amountDueNow!==undefined?r.amountDueNow:(r.cumulativeFinalAmount||r.paymentAmount||0)));
@@ -1256,8 +1257,8 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
-  if (version.indexOf("V4.40.7") !== 0) {
-    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.40.7 기능을 사용하려면 V4.40.7 Code.gs를 새 버전으로 배포해야 합니다.");
+  if (version.indexOf("V4.41.0") !== 0) {
+    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.41.0 기능을 사용하려면 V4.41.0 Code.gs를 새 버전으로 배포해야 합니다.");
   }
   return info;
 }
@@ -3490,7 +3491,7 @@ async function downloadLotteExcelV418() {
       throw new Error("전체주문이력에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
         "전체주문이력 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
         "선택 기간: " + startDate + " ~ " + endDate + "\n" +
-        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.40.7인지 확인해주세요.");
+        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.41.0인지 확인해주세요.");
     }
 
     const sortedOrders = sortLotteOrdersV420(orders);
@@ -3658,7 +3659,7 @@ async function uploadLotteTrackingResult(event) {
 }
 
 /* =========================================================
-   V4.40.7 카드결제 고객 모아보기 · 페이앱+토스페이먼츠 듀얼결제 · PC/모바일 통합 관리자 · 방송회차 · 상시상품 · CS
+   V4.41.0 카드결제 고객 모아보기 · 페이앱+토스페이먼츠 듀얼결제 · PC/모바일 통합 관리자 · 방송회차 · 상시상품 · CS
 ========================================================= */
 function applyAdminRoleV435(){
   const role=adminRoleV435||sessionStorage.getItem("ssinne_admin_role_v435")||"admin";
@@ -3781,7 +3782,7 @@ function renderCsCardPaymentsV4405(){
     const searchKey=g.phone||g.nickname||g.receiverName||((g.orders[0]&&g.orders[0].orderNumber)||"");
     return `<article class="cs-card-payment-customer-v4405"><div class="cs-card-payment-customer-head-v4405"><div><h3>${escapeHtml(g.nickname||"고객")}${g.receiverName?` · ${escapeHtml(g.receiverName)}`:""}</h3><p>${escapeHtml(g.phone||"연락처 없음")}</p></div><strong>${g.orders.length}건 · ${money(g.total)}</strong></div><div class="cs-card-payment-statuses-v4405">${statusHtml}</div><div class="cs-card-payment-orders-v4405">${orderHtml}</div><button type="button" class="btn btn-primary cs-card-customer-open-v4405" data-search="${escapeHtml(searchKey)}">고객 카드주문 상세보기</button></article>`;
   }).join("");
-  document.querySelectorAll(".cs-card-customer-open-v4405").forEach(b=>b.onclick=async()=>{const q=b.dataset.search||"";if(!q)return;byId("csSearchKeyword").value=q;setCsPaymentFilterV440("card");await searchCsV435();const p=byId("csCustomerPanel");if(p)p.scrollIntoView({behavior:"smooth",block:"start"});});
+  document.querySelectorAll(".cs-card-customer-open-v4405").forEach(b=>b.onclick=async()=>{const q=b.dataset.search||"";if(!q)return;byId("csSearchKeyword").value=q;setCsPaymentFilterV440("card");await searchCsCurrentOnlyV441(q);const p=byId("csCustomerPanel");if(p)p.scrollIntoView({behavior:"smooth",block:"start"});});
 }
 function setCsCardListFilterV4405(name){adminCsCardListFilterV4405=name||"all";renderCsCardPaymentsV4405();}
 async function loadCsCardPaymentsV4405(){
@@ -3790,7 +3791,14 @@ async function loadCsCardPaymentsV4405(){
   try{const d=await apiGet({action:"adminCsCardPayments",_ts:Date.now()});adminCsCardPaymentsV4405=d.orders||[];renderCsCardPaymentsV4405();if(panel)panel.scrollIntoView({behavior:"smooth",block:"start"});}catch(e){if(list)list.innerHTML=`<div class="empty-state">${escapeHtml(e.message)}</div>`;}
 }
 
-async function searchCsV435(){
+async function searchCsCurrentOnlyV441(q){adminCsCurrentOnlyV441=true;
+  q=(q||(byId("csSearchKeyword")&&byId("csSearchKeyword").value)||"").trim();
+  if(!q)return;
+  showLoading("오늘 카드 주문만 빠르게 불러오는 중입니다.");
+  try{const d=await apiGet({action:"adminCsCurrentSearch",search:q,_ts:Date.now()});adminCsDataV435=d;renderCsSearchV435(d,q);await loadCsDashboardV435();}
+  catch(e){alert(e.message);}finally{hideLoading();}
+}
+async function searchCsV435(){adminCsCurrentOnlyV441=false;
   const q=(byId("csSearchKeyword").value||"").trim();
   if(!q){alert("닉네임, 수령인, 전화번호 또는 주문번호를 입력해주세요.");return;}
   showLoading("고객의 현재 주문과 전체주문이력을 찾는 중입니다.");
@@ -3896,9 +3904,14 @@ async function saveCsShippingV435(row){
 }
 function phoneDigitsV436(v){return String(v||"").replace(/[^0-9]/g,"");}
 function csPaymentGroupPreviewV436(row){const list=(adminCsDataV435&&adminCsDataV435.current)||[],t=list.find(o=>Number(o.rowNumber)===Number(row));if(!t)return {count:1,total:0};const p=phoneDigitsV436(t.phone),open=["미입금","카드결제대기","카드링크발송"];const g=list.filter(o=>open.includes(o.paymentStatus)&&(p?phoneDigitsV436(o.phone)===p:(o.receiverName===t.receiverName&&o.nickname===t.nickname)));const base=g.reduce((a,o)=>a+Number(o.paymentAmount||0),0),extra=Math.round(base*0.10);return {count:g.length||1,total:base,baseTotal:base,cardExtraAmount:extra,cardPaymentAmount:base+extra};}
-async function changeCsPaymentV435(row,method){try{const g=await apiPost({action:"adminCsPaymentGroupPreview",rowNumber:row,purpose:"change"});if(!g.count){alert("변경할 미결제 주문이 없습니다.");return;}const msg=`${g.receiverName||"고객"}의 현재 미결제 주문 ${g.count}건 (${money(g.total||0)})을\n${method}으로 변경할까요?${method==="카드결제"?`\n\n카드결제 추가 10% ${money(g.cardExtraAmount||0)}\n최종 ${money(g.cardPaymentAmount||0)}`:""}`;if(!confirm(msg))return;showLoading("결제방법을 변경하는 중입니다.");const r=await apiPost({action:"adminCsChangePaymentMethod",rowNumber:row,method});alert(r.message||"결제방법을 변경했습니다.");await searchCsV435();}catch(e){alert(e.message);}finally{hideLoading();}}
+async function refreshCsAfterPaymentV441(){
+  const q=(byId("csSearchKeyword")&&byId("csSearchKeyword").value||"").trim();
+  if(adminCsCurrentOnlyV441 && q)return searchCsCurrentOnlyV441(q);
+  return searchCsV435();
+}
+async function changeCsPaymentV435(row,method){try{const g=await apiPost({action:"adminCsPaymentGroupPreview",rowNumber:row,purpose:"change"});if(!g.count){alert("변경할 미결제 주문이 없습니다.");return;}const msg=`${g.receiverName||"고객"}의 현재 미결제 주문 ${g.count}건 (${money(g.total||0)})을\n${method}으로 변경할까요?${method==="카드결제"?`\n\n카드결제 추가 10% ${money(g.cardExtraAmount||0)}\n최종 ${money(g.cardPaymentAmount||0)}`:""}`;if(!confirm(msg))return;showLoading("결제방법을 변경하는 중입니다.");const r=await apiPost({action:"adminCsChangePaymentMethod",rowNumber:row,method});alert(r.message||"결제방법을 변경했습니다.");await refreshCsAfterPaymentV441();}catch(e){alert(e.message);}finally{hideLoading();}}
 async function createPayAppLinkV438(row,sendSms){
-  try{const g=await apiPost({action:"adminCsPaymentGroupPreview",rowNumber:row,purpose:"cardLink"});if(!g.count){alert("카드결제대기 주문이 없습니다.");return;}const text=`현재 미결제 주문 ${g.count}건\n기본금액 ${money(g.baseTotal||g.total||0)}\n카드결제 추가 10% ${money(g.cardExtraAmount||0)}\n최종 결제요청 ${money(g.cardPaymentAmount||0)}\n\n${sendSms?"페이앱에서 고객 휴대폰으로 결제요청 문자를 바로 보낼까요?":"페이앱 결제링크를 만들고 복사할까요?"}`;if(!confirm(text))return;showLoading(sendSms?"페이앱 결제요청 문자를 보내는 중입니다.":"페이앱 결제링크를 만드는 중입니다.");const r=await apiPost({action:"adminCsCreatePayAppLink",rowNumber:row,sendSms:Boolean(sendSms)});if(sendSms){alert((r.message||"문자 발송을 요청했습니다.")+`\n최종금액 ${money(r.cardPaymentAmount||0)}`);}else if(r.link){try{await navigator.clipboard.writeText(r.link);alert(`페이앱 결제링크를 복사했습니다.\n최종금액 ${money(r.cardPaymentAmount||0)}\n채널톡·카톡 등에 붙여넣어 보내주세요.`);}catch(e){prompt("아래 페이앱 링크를 복사해서 고객에게 보내주세요.",r.link);}}await searchCsV435();}catch(e){alert(e.message);}finally{hideLoading();}
+  try{const g=await apiPost({action:"adminCsPaymentGroupPreview",rowNumber:row,purpose:"cardLink"});if(!g.count){alert("카드결제대기 주문이 없습니다.");return;}const text=`현재 미결제 주문 ${g.count}건\n기본금액 ${money(g.baseTotal||g.total||0)}\n카드결제 추가 10% ${money(g.cardExtraAmount||0)}\n최종 결제요청 ${money(g.cardPaymentAmount||0)}\n\n${sendSms?"페이앱에서 고객 휴대폰으로 결제요청 문자를 바로 보낼까요?":"페이앱 결제링크를 만들고 복사할까요?"}`;if(!confirm(text))return;showLoading(sendSms?"페이앱 결제요청 문자를 보내는 중입니다.":"페이앱 결제링크를 만드는 중입니다.");const r=await apiPost({action:"adminCsCreatePayAppLink",rowNumber:row,sendSms:Boolean(sendSms)});if(sendSms){alert((r.message||"문자 발송을 요청했습니다.")+`\n최종금액 ${money(r.cardPaymentAmount||0)}`);}else if(r.link){try{await navigator.clipboard.writeText(r.link);alert(`페이앱 결제링크를 복사했습니다.\n최종금액 ${money(r.cardPaymentAmount||0)}\n채널톡·카톡 등에 붙여넣어 보내주세요.`);}catch(e){prompt("아래 페이앱 링크를 복사해서 고객에게 보내주세요.",r.link);}}await refreshCsAfterPaymentV441();}catch(e){alert(e.message);}finally{hideLoading();}
 }
 async function createTossLinkV440(row){
   try{
@@ -3909,11 +3922,11 @@ async function createTossLinkV440(row){
     showLoading("토스페이먼츠 결제링크를 만드는 중입니다.");
     const r=await apiPost({action:"adminCsCreateTossLink",rowNumber:row});
     if(r.link){try{await navigator.clipboard.writeText(r.link);alert(`토스페이먼츠 결제링크를 복사했습니다.\n최종금액 ${money(r.cardPaymentAmount||0)}\n채널톡·카톡·문자에 붙여넣어 보내주세요.`);}catch(e){prompt("아래 토스페이먼츠 링크를 복사해서 고객에게 보내주세요.",r.link);}}
-    await searchCsV435();
+    await refreshCsAfterPaymentV441();
   }catch(e){alert(e.message);}finally{hideLoading();}
 }
 async function markCardLinkSentV435(row){
-  try{const g=await apiPost({action:"adminCsPaymentGroupPreview",rowNumber:row,purpose:"cardLink"});if(!g.count){alert("카드결제대기 주문이 없습니다.");return;}if(!confirm(`카드결제대기 ${g.count}건 (${money(g.total||0)})의 결제링크를 복사하고\n링크발송 상태로 변경할까요?`))return;const r=await apiPost({action:"adminCsMarkCardLinkSent",rowNumber:row});if(r.link){const detail=`${Number(r.count||1)}건 · ${money(r.total||0)}`;try{await navigator.clipboard.writeText(r.link);alert("카드결제 링크를 복사했습니다.\n"+detail+"을 링크발송 상태로 변경했습니다.\n고객에게 링크를 붙여넣어 보내주세요.");}catch(e){prompt("아래 카드결제 링크를 복사해서 고객에게 보내주세요. ("+detail+")",r.link);}}await searchCsV435();}catch(e){alert(e.message);}
+  try{const g=await apiPost({action:"adminCsPaymentGroupPreview",rowNumber:row,purpose:"cardLink"});if(!g.count){alert("카드결제대기 주문이 없습니다.");return;}if(!confirm(`카드결제대기 ${g.count}건 (${money(g.total||0)})의 결제링크를 복사하고\n링크발송 상태로 변경할까요?`))return;const r=await apiPost({action:"adminCsMarkCardLinkSent",rowNumber:row});if(r.link){const detail=`${Number(r.count||1)}건 · ${money(r.total||0)}`;try{await navigator.clipboard.writeText(r.link);alert("카드결제 링크를 복사했습니다.\n"+detail+"을 링크발송 상태로 변경했습니다.\n고객에게 링크를 붙여넣어 보내주세요.");}catch(e){prompt("아래 카드결제 링크를 복사해서 고객에게 보내주세요. ("+detail+")",r.link);}}await refreshCsAfterPaymentV441();}catch(e){alert(e.message);}
 }
 async function updateCsCaseV436(csId){const sel=document.querySelector(`.cs-case-status-v436[data-csid="${CSS.escape(csId)}"]`);if(!sel)return;const memo=prompt("상태 변경과 함께 남길 처리내용이 있으면 입력하세요.\n내용 없이 상태만 변경해도 됩니다.","");if(memo===null)return;try{await apiPost({action:"adminCsUpdateCase",csId,status:sel.value,message:memo,note:""});await loadCsDashboardV435();if(adminCsActiveStatusV4403)await loadCsCasesByStatusV4403(adminCsActiveStatusV4403,{noScroll:true});const q=(byId("csSearchKeyword")&&byId("csSearchKeyword").value||"").trim();if(q&&adminCsDataV435)await searchCsV435();}catch(e){alert(e.message);}}
 async function saveCsNoteV435(){const b=byId("csSaveNoteButton"),message=(byId("csNewMessage").value||"").trim();if(!message){alert("CS 내용을 입력해주세요.");return;}try{await apiPost({action:"adminCsSaveNote",nickname:b.dataset.nick,receiverName:b.dataset.name,phone:b.dataset.phone,orderNumber:b.dataset.order,type:byId("csNewType").value,status:byId("csNewStatus").value,message,note:"관리자페이지 CS"});await searchCsV435();}catch(e){alert(e.message);}}
@@ -3930,15 +3943,21 @@ async function saveTossConfigV440(){
 }
 async function saveCardPaymentLinkV436(){const link=(byId("cardPaymentLinkInputV436")?.value||"").trim();const text=link?"카드결제 링크를 저장할까요?":"카드결제 링크 설정을 지울까요?";if(!confirm(text))return;try{const r=await apiPost({action:"adminSaveCardPaymentLink",link});alert(r.message||"저장했습니다.");if(byId("cardPaymentLinkInputV436"))byId("cardPaymentLinkInputV436").value="";await loadBroadcastStatusV435();}catch(e){alert(e.message);}}
 async function saveYoutubeApiKeyV435(){const key=(byId("youtubeApiKeyInput").value||"").trim();if(!key){alert("YouTube API 키를 입력해주세요.");return;}try{showLoading("API 키를 저장하는 중입니다.");const r=await apiPost({action:"adminSaveYouTubeApiKey",apiKey:key});byId("youtubeApiKeyInput").value="";alert(r.message||"저장했습니다.");await loadBroadcastStatusV435();}catch(e){alert(e.message);}finally{hideLoading();}}
-async function startBroadcastV435(){const url=(byId("broadcastYoutubeUrl").value||"").trim();if(!url){alert("YouTube 라이브 URL을 입력해주세요.");return;}const check=await validateBroadcastProductsV436();if(!check.success)return;if(!confirm(`상품 ${Number(check.productCount||0)}개 검사를 통과했습니다.\n새 방송을 시작하고 YouTube에 연결할까요?\n\n※ YouTube 영상 확인이 실패하면 방송회차는 생성되지 않습니다.`))return;try{showLoading("YouTube와 상품정보를 최종 확인한 뒤 방송을 시작하는 중입니다.");const r=await apiPost({action:"adminStartBroadcast",youtubeUrl:url,broadcastName:(byId("broadcastName").value||"").trim()});alert((r.message||"방송을 시작했습니다.")+(r.warnings&&r.warnings.length?"\n\n확인 권장: "+r.warnings.join(" / "):""));await loadAdminLiveDashboardV432(true);await loadBroadcastStatusV435();}catch(e){alert(e.message);}finally{hideLoading();}}
-async function endBroadcastV435(){if(!confirm("방송을 종료할까요?\n\n※ 주문서를 제출하지 않은 임시주문은 자동 삭제되고 예약재고가 즉시 반환됩니다.\n※ 제출완료 고객주문과 방송상품이력은 그대로 보관됩니다."))return;try{showLoading("방송을 종료하는 중입니다.");const r=await apiPost({action:"adminEndBroadcast"});alert(r.message||"방송을 종료했습니다.");await loadBroadcastStatusV435();}catch(e){alert(e.message);}finally{hideLoading();}}
+async function startBroadcastV435(){
+  return (async function(){
+    const url=(byId("broadcastYoutubeUrl").value||"").trim();if(!url){alert("YouTube 라이브 URL을 입력해주세요.");return;}
+    if(!confirm("상품정보 사전 저장 없이 바로 방송을 시작하고 YouTube에 연결할까요?\n\n방송 중 상품정보는 그대로 추가·수정할 수 있습니다."))return;
+    try{showLoading("YouTube 방송에 연결하는 중입니다.");const r=await apiPost({action:"adminStartBroadcast",youtubeUrl:url,broadcastName:(byId("broadcastName").value||"").trim()});alert(r.message||"방송을 시작했습니다.");await loadAdminLiveDashboardV432(true);await loadBroadcastStatusV435();}catch(e){alert(e.message);}finally{hideLoading();}
+  })();
+}
+async function endBroadcastV435(){if(!confirm("방송을 종료할까요?\n\n※ 주문서를 아직 작성하지 않은 댓글 예약은 그대로 유지됩니다.\n※ 실제 재고는 고객이 주문서를 제출할 때만 차감됩니다."))return;try{showLoading("방송을 종료하는 중입니다.");const r=await apiPost({action:"adminEndBroadcast"});alert(r.message||"방송을 종료했습니다.");await loadBroadcastStatusV435();}catch(e){alert(e.message);}finally{hideLoading();}}
 async function loadBroadcastStatusV435(){try{const d=await apiGet({action:"adminBroadcastStatus"});renderBroadcastStatusV435(d,{});}catch(e){console.warn(e.message);}}
 function renderBroadcastStatusV435(b,y){
   b=b||{};y=y||{}; const active=Boolean(b.active||b.broadcastId), session=b.session||{};
   const badge=byId("broadcastStateBadge"),mini=byId("adminBroadcastMini");
   if(badge){badge.textContent=active?"● 방송 진행중":"방송 대기";badge.classList.toggle("active",active);}
   if(mini) mini.textContent=active?(b.broadcastId||session.broadcastId||"방송중"):"방송 대기";
-  const text=active?`<strong>${escapeHtml(b.broadcastId||session.broadcastId||"")}</strong><span>${escapeHtml(session.name||"")}</span><small>YouTube ${b.videoId||session.videoId?"연결 설정됨":"미연결"} · 상품 ${Number(session.productCount||0)}개 스냅샷 저장</small>`:`<strong>진행 중인 방송 없음</strong><span>URL을 입력하고 ‘새 방송 시작 · 연결’을 눌러주세요.</span><small>API 키 ${b.apiKeyConfigured?"설정됨":"미설정"}</small>`;
+  const text=active?`<strong>${escapeHtml(b.broadcastId||session.broadcastId||"")}</strong><span>${escapeHtml(session.name||"")}</span><small>YouTube ${b.videoId||session.videoId?"연결 설정됨":"미연결"} · 상품정보 사전저장 없음</small>`:`<strong>진행 중인 방송 없음</strong><span>URL을 입력하고 ‘새 방송 시작 · 연결’을 눌러주세요.</span><small>API 키 ${b.apiKeyConfigured?"설정됨":"미설정"}</small>`;
   if(byId("broadcastStatusCard")) byId("broadcastStatusCard").innerHTML=text;
   if(byId("homeBroadcastCard")) byId("homeBroadcastCard").innerHTML=text;
   const sec=byId("securityStatusV436");if(sec){const providers=[];if(b.payAppConfigured)providers.push("페이앱 연결");if(b.tossConfigured)providers.push("토스 연결");if(!providers.length&&b.cardPaymentLinkConfigured)providers.push("고정 카드링크");if(!providers.length)providers.push("카드 PG 미연결");sec.textContent=(b.securityConfigured?"비밀번호 설정됨":"초기 비밀번호 사용중")+" · "+providers.join(" · ");sec.classList.toggle("ready",Boolean(b.securityConfigured));}
