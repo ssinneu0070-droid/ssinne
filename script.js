@@ -1,4 +1,4 @@
-// V4.42.2 - CS 카드결제 고객 모아보기 + 페이앱/토스페이먼츠 듀얼결제 / V4.39.2 속도·중복·안정화 유지
+// V4.42.3 - CS 카드결제 고객 모아보기 + 페이앱/토스페이먼츠 듀얼결제 / V4.39.2 속도·중복·안정화 유지
 // V4.00 - 수령인+닉네임 포함 자동일치 / 분할입금 조합합산 / 부족·초과 / 중복입금 방지
 // V3.30 - 입금 자동대조 시 수령인 + 닉네임 함께 조회
 // V3.29 - 단일 script.js 운영 + 토스뱅크/하나은행 통합 입금대조 + 입금완료 2차 재검사
@@ -362,7 +362,7 @@ async function initOrderPage(){
   if(savedPhone)byId("liveLookupPhone").value=savedPhone;
   renderOrderCart();
   updatePaymentMethodUIV432();
-  // V4.42.2: 직접입력 화면 진입 시 전체 상품목록을 미리 받지 않습니다. 상품번호 검색 시 해당 상품만 조회합니다.
+  // V4.42.3: 직접입력 화면 진입 시 전체 상품목록을 미리 받지 않습니다. 상품번호 검색 시 해당 상품만 조회합니다.
 }
 
 function selectOrderMode(mode){
@@ -577,7 +577,7 @@ async function submitOrder(e){
     if(!orderMode)throw new Error("주문방법을 먼저 선택해주세요.");if(orderMode==="live"&&!liveOrderConfirmed)throw new Error("라이브 주문내용이 맞는지 먼저 확인해주세요.");if(!orderCart.length)throw new Error("주문 상품이 없습니다.");
     const data={action:"saveOrder",submissionId:getSubmissionIdV432(),orderMode:orderMode,liveOrderToken:liveOrderToken,liveOrderConfirmed:liveOrderConfirmed,nickname:byId("nickname").value.trim(),receiverName:byId("receiverName").value.trim(),phone:byId("phone").value.trim(),zipcode:byId("zipcode").value.trim(),address:byId("address").value.trim(),detailAddress:byId("detailAddress").value.trim(),useExistingFullAddress:useExistingFullAddress,shippingMemo:byId("shippingMemo").value.trim(),paymentMethod:byId("paymentMethod").value,isRemoteShipping:byId("shippingRegion").value==="remote",products:orderCart.map(x=>({productNo:x.productNo,color:x.color,size:x.size,quantity:x.quantity}))};
     if(!data.nickname||!data.receiverName)throw new Error("닉네임과 수령인 성함을 입력해주세요.");if(data.phone.replace(/[^0-9]/g,"").length<10)throw new Error("연락처를 정확하게 입력해주세요.");if(!data.zipcode||!data.address||(!data.useExistingFullAddress&&!data.detailAddress))throw new Error("주소와 상세주소를 확인해주세요.");
-    // V4.42.2: 직접 주문 제출 전 별도 라이브 조회를 하지 않습니다. 서버가 한 번의 제출 요청에서 예약/재고를 최종 확인합니다.
+    // V4.42.3: 직접 주문 제출 전 별도 라이브 조회를 하지 않습니다. 서버가 한 번의 제출 요청에서 예약/재고를 최종 확인합니다.
     orderSubmitting=true;showLoading("주문서를 저장하고 있습니다.");byId("submitButton").disabled=true;
     const r=await apiPost(data);sessionStorage.removeItem(SUBMISSION_STORAGE_KEY);paymentPreviewCache.clear();saveCustomerInfo();byId("orderForm").style.display="none";byId("orderModeToolbar").style.display="none";
     const isCardComplete=byId("paymentMethod").value==="카드결제";lastCompletedAmountDue=Number(isCardComplete?(r.cardPaymentAmount!==undefined?r.cardPaymentAmount:Math.round(Number(r.amountDueNow||0)*1.10)):(r.amountDueNow!==undefined?r.amountDueNow:(r.cumulativeFinalAmount||r.paymentAmount||0)));
@@ -1276,8 +1276,8 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
-  if (version.indexOf("V4.42.2") !== 0) {
-    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.42.2 기능을 사용하려면 V4.42.2 Code.gs를 새 버전으로 배포해야 합니다.");
+  if (version.indexOf("V4.42.3") !== 0) {
+    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.42.3 기능을 사용하려면 V4.42.3 Code.gs를 새 버전으로 배포해야 합니다.");
   }
   return info;
 }
@@ -3524,7 +3524,7 @@ async function downloadLotteExcelV418() {
       throw new Error("전체주문이력에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
         "전체주문이력 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
         "선택 기간: " + startDate + " ~ " + endDate + "\n" +
-        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.42.2인지 확인해주세요.");
+        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.42.3인지 확인해주세요.");
     }
 
     const sortedOrders = sortLotteOrdersV420(orders);
@@ -3692,7 +3692,7 @@ async function uploadLotteTrackingResult(event) {
 }
 
 /* =========================================================
-   V4.42.2 카드결제 고객 모아보기 · 페이앱+토스페이먼츠 듀얼결제 · PC/모바일 통합 관리자 · 방송회차 · 상시상품 · CS
+   V4.42.3 카드결제 고객 모아보기 · 페이앱+토스페이먼츠 듀얼결제 · PC/모바일 통합 관리자 · 방송회차 · 상시상품 · CS
 ========================================================= */
 function applyAdminRoleV435(){
   const role=adminRoleV435||sessionStorage.getItem("ssinne_admin_role_v435")||"admin";
