@@ -1433,7 +1433,7 @@ textarea{min-height:92px;resize:vertical}
 @media (max-width:640px){.cs-payment-filters-v440{gap:8px;}.cs-payment-filters-v440 button{font-size:13px;padding:9px 12px;}}
 
 
-/* V4.41.7 CS 상태카드 + 카드결제 고객 모아보기 */
+/* V4.42.1 CS 상태카드 + 카드결제 고객 모아보기 */
 .cs-status-summary-v4403{appearance:none;border:0;text-align:left;cursor:pointer;width:100%;font:inherit;color:inherit;transition:transform .15s ease,box-shadow .15s ease;}
 .cs-status-summary-v4403:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(15,23,42,.12);}
 .cs-status-summary-v4403.active{outline:3px solid rgba(255,79,161,.22);box-shadow:0 10px 26px rgba(255,79,161,.18);}
@@ -1444,7 +1444,7 @@ textarea{min-height:92px;resize:vertical}
 
 
 /* =========================
-   V4.41.7 요약카드 컴팩트 + 전체 클릭 + 카드결제 고객
+   V4.42.1 요약카드 컴팩트 + 전체 클릭 + 카드결제 고객
 ========================= */
 @media (min-width:901px){
   .v435-home-summary,.v2-summary,.cs-summary-v435,.bankmatch-summary,.live-summary-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;margin-bottom:14px!important;}
@@ -1463,7 +1463,7 @@ button.metric-card.active-filter,button.metric-card.active-summary-v4404{box-sha
 
 
 /* =========================
-   V4.41.7 CS 카드결제 고객 모아보기
+   V4.42.1 CS 카드결제 고객 모아보기
 ========================= */
 .cs-card-payment-summary-v4405{background:linear-gradient(135deg,#eef4ff,#e8efff)!important;color:#24428a!important;border:1px solid #cddcff!important;}
 .cs-card-payment-summary-v4405 span,.cs-card-payment-summary-v4405 small{color:#5e70a5!important;}
@@ -1490,7 +1490,7 @@ button.metric-card.active-filter,button.metric-card.active-summary-v4404{box-sha
 
 
 /* =========================================================
-   V4.41.7 모바일 최적화 + PC 홈 상단 정렬
+   V4.42.1 모바일 최적화 + PC 홈 상단 정렬
    - PC 상단 업무바는 홈에서만 표시
    - 모바일 상단 통합관리자 카드 완전 숨김
    - 보안/결제 설정은 더보기 > 설정에서만 표시
@@ -1631,7 +1631,7 @@ button.metric-card.active-filter,button.metric-card.active-summary-v4404{box-sha
 
 
 /* =========================================================
-   V4.41.7 B안 프로필형 홈 헤더 + 빠른 실행 메뉴
+   V4.42.1 B안 프로필형 홈 헤더 + 빠른 실행 메뉴
    - PC 홈: 아이콘/씬느샵/상태 배지를 한 줄에 정렬
    - 빠른 실행 6개 기능을 3열 x 2행으로 정돈
    - 다른 탭에서는 기존처럼 상단 헤더 숨김
@@ -1702,7 +1702,7 @@ button.metric-card.active-filter,button.metric-card.active-summary-v4404{box-sha
   .b-quick-menu-v4407{display:none!important}
 }
 
-/* V4.41.7 라이브 주문 전체선택 / 상태 일괄변경 */
+/* V4.42.1 라이브 주문 전체선택 / 상태 일괄변경 */
 .live-bulk-toolbar-v4411{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:11px 12px;border:1px solid #e8ebf0;border-radius:12px;background:#f8fafc}
 .live-select-all-v4411{display:inline-flex;align-items:center;gap:7px;font-weight:800;cursor:pointer;white-space:nowrap}
 .live-select-all-v4411 input,.live-row-check-v4411{width:18px;height:18px;accent-color:#ff4f97;cursor:pointer}
@@ -1711,7 +1711,7 @@ button.metric-card.active-filter,button.metric-card.active-summary-v4404{box-sha
 .live-check-col-v4411{width:54px;text-align:center!important}
 @media(max-width:700px){.live-bulk-toolbar-v4411{align-items:stretch}.live-bulk-toolbar-v4411>*{flex:1 1 auto}.live-select-all-v4411{min-width:100%}.live-bulk-toolbar-v4411 select,.live-bulk-toolbar-v4411 .btn{min-height:44px}}
 
-/* V4.41.7 CS 카드결제 즉시처리 */
+/* V4.42.1 CS 카드결제 즉시처리 */
 .cs-card-payment-order-v4416{border:1px solid #eef1f7;border-radius:14px;padding:12px;margin-top:10px;background:#fff}
 .cs-card-payment-order-top-v4416{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:13px}
 .cs-card-items-v4416{margin-top:9px;padding:10px 12px;border-radius:10px;background:#fff6fa;line-height:1.55;font-size:13px}

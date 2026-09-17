@@ -1,4 +1,4 @@
-// V4.41.7 - CS 카드결제 고객 모아보기 + 페이앱/토스페이먼츠 듀얼결제 / V4.39.2 속도·중복·안정화 유지
+// V4.42.1 - CS 카드결제 고객 모아보기 + 페이앱/토스페이먼츠 듀얼결제 / V4.39.2 속도·중복·안정화 유지
 // V4.00 - 수령인+닉네임 포함 자동일치 / 분할입금 조합합산 / 부족·초과 / 중복입금 방지
 // V3.30 - 입금 자동대조 시 수령인 + 닉네임 함께 조회
 // V3.29 - 단일 script.js 운영 + 토스뱅크/하나은행 통합 입금대조 + 입금완료 2차 재검사
@@ -362,8 +362,7 @@ async function initOrderPage(){
   if(savedPhone)byId("liveLookupPhone").value=savedPhone;
   renderOrderCart();
   updatePaymentMethodUIV432();
-  const warm=()=>ensureOrderProductsLoaded().catch(function(e){console.warn("상품정보 사전 로딩:",e.message)});
-  if("requestIdleCallback" in window) requestIdleCallback(warm,{timeout:2500}); else setTimeout(warm,1200);
+  // V4.42.1: 직접입력 화면 진입 시 전체 상품목록을 미리 받지 않습니다. 상품번호 검색 시 해당 상품만 조회합니다.
 }
 
 function selectOrderMode(mode){
@@ -539,8 +538,8 @@ async function searchSingleProduct(){
   if(!no){byId("singleProductMessage").className="product-message error";byId("singleProductMessage").textContent="상품번호를 입력해주세요.";return}
   if(!/^\d{1,4}$/.test(no)||Number(no)<1||Number(no)>9999){byId("singleProductMessage").className="product-message error";byId("singleProductMessage").textContent="상품번호는 1~9999 사이로 입력해주세요.";return}
   byId("singleProductMessage").className="product-message";byId("singleProductMessage").textContent="상품정보와 댓글 예약수량을 확인하는 중입니다...";
-  try{await ensureOrderProductsLoaded()}catch(e){byId("singleProductMessage").className="product-message error";byId("singleProductMessage").textContent=e.message;return}
-  const p=orderProducts.find(x=>String(x.productNo)===no);
+  let p=null;
+  try{const d=await apiGet({action:"productLookup",productNo:no,nickname:nickname});p=d.product||null;}catch(e){byId("singleProductMessage").className="product-message error";byId("singleProductMessage").textContent=e.message;return}
   if(!p){resetSingleProductSelection();byId("singleProductMessage").className="product-message error";byId("singleProductMessage").textContent="등록되지 않은 상품번호입니다.";return}
   selectedOrderProduct=p;byId("singleProductName").value=p.productName||"";byId("singleProductColor").innerHTML='<option value="">칼라를 선택하세요</option>';
   Object.keys(p.colors||{}).forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;byId("singleProductColor").appendChild(o)});
@@ -578,7 +577,7 @@ async function submitOrder(e){
     if(!orderMode)throw new Error("주문방법을 먼저 선택해주세요.");if(orderMode==="live"&&!liveOrderConfirmed)throw new Error("라이브 주문내용이 맞는지 먼저 확인해주세요.");if(!orderCart.length)throw new Error("주문 상품이 없습니다.");
     const data={action:"saveOrder",submissionId:getSubmissionIdV432(),orderMode:orderMode,liveOrderToken:liveOrderToken,liveOrderConfirmed:liveOrderConfirmed,nickname:byId("nickname").value.trim(),receiverName:byId("receiverName").value.trim(),phone:byId("phone").value.trim(),zipcode:byId("zipcode").value.trim(),address:byId("address").value.trim(),detailAddress:byId("detailAddress").value.trim(),useExistingFullAddress:useExistingFullAddress,shippingMemo:byId("shippingMemo").value.trim(),paymentMethod:byId("paymentMethod").value,isRemoteShipping:byId("shippingRegion").value==="remote",products:orderCart.map(x=>({productNo:x.productNo,color:x.color,size:x.size,quantity:x.quantity}))};
     if(!data.nickname||!data.receiverName)throw new Error("닉네임과 수령인 성함을 입력해주세요.");if(data.phone.replace(/[^0-9]/g,"").length<10)throw new Error("연락처를 정확하게 입력해주세요.");if(!data.zipcode||!data.address||(!data.useExistingFullAddress&&!data.detailAddress))throw new Error("주소와 상세주소를 확인해주세요.");
-    // V4.41.7: 직접 주문 제출 전 별도 라이브 조회를 하지 않습니다. 서버가 한 번의 제출 요청에서 예약/재고를 최종 확인합니다.
+    // V4.42.1: 직접 주문 제출 전 별도 라이브 조회를 하지 않습니다. 서버가 한 번의 제출 요청에서 예약/재고를 최종 확인합니다.
     orderSubmitting=true;showLoading("주문서를 저장하고 있습니다.");byId("submitButton").disabled=true;
     const r=await apiPost(data);sessionStorage.removeItem(SUBMISSION_STORAGE_KEY);paymentPreviewCache.clear();saveCustomerInfo();byId("orderForm").style.display="none";byId("orderModeToolbar").style.display="none";
     const isCardComplete=byId("paymentMethod").value==="카드결제";lastCompletedAmountDue=Number(isCardComplete?(r.cardPaymentAmount!==undefined?r.cardPaymentAmount:Math.round(Number(r.amountDueNow||0)*1.10)):(r.amountDueNow!==undefined?r.amountDueNow:(r.cumulativeFinalAmount||r.paymentAmount||0)));
@@ -815,6 +814,9 @@ function initAdminPage() {
   initAdminV435();
 }
 
+const adminTabLoadedAtV442={};
+function adminTabNeedsLoadV442(key,maxAgeMs){const now=Date.now(),last=Number(adminTabLoadedAtV442[key]||0);if(now-last<maxAgeMs)return false;adminTabLoadedAtV442[key]=now;return true;}
+
 function showAdminTab(tabName) {
   if(adminRoleV435==="cs" && ["orders","live","bankmatch","products","cancelled"].includes(tabName)) tabName="cs";
   document.querySelectorAll(".side-link[data-tab]").forEach(function(button){button.classList.toggle("active",button.dataset.tab===tabName);});
@@ -825,11 +827,11 @@ function showAdminTab(tabName) {
   if(homeTopbarV4406) homeTopbarV4406.hidden=(tabName!=="home");
   document.body.classList.remove("mobile-sidebar-open","mobile-more-open-v4406","mobile-settings-open-v4406");
   const moreSheetV4406=byId("mobileMoreSheetV4406"); if(moreSheetV4406) moreSheetV4406.setAttribute("aria-hidden","true");
-  if(tabName==="products")loadAdminProducts();
-  if(tabName==="bankmatch")loadBankMatchOrders();
-  if(tabName==="live"){startAdminLiveAutoV432();loadAdminLiveDashboardV432();loadBroadcastStatusV435();}else stopAdminLiveAutoV432();
-  if(tabName==="cs")loadCsDashboardV435();
-  if(tabName==="home")loadAdminHomeV435();
+  if(tabName==="products"&&adminTabNeedsLoadV442("products",30000))loadAdminProducts();
+  if(tabName==="bankmatch"&&adminTabNeedsLoadV442("bankmatch",30000))loadBankMatchOrders();
+  if(tabName==="live"){startAdminLiveAutoV432();if(adminTabNeedsLoadV442("live",15000))loadAdminLiveDashboardV432();if(adminTabNeedsLoadV442("broadcast",30000))loadBroadcastStatusV435();}else stopAdminLiveAutoV432();
+  if(tabName==="cs"&&adminTabNeedsLoadV442("cs",20000))loadCsDashboardV435();
+  if(tabName==="home"&&adminTabNeedsLoadV442("home",20000))loadAdminHomeV435();
 }
 
 function setAdminOrderSource(source) {
@@ -1274,8 +1276,8 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
-  if (version.indexOf("V4.41.7") !== 0) {
-    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.41.7 기능을 사용하려면 V4.41.7 Code.gs를 새 버전으로 배포해야 합니다.");
+  if (version.indexOf("V4.42.1") !== 0) {
+    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.42.1 기능을 사용하려면 V4.42.1 Code.gs를 새 버전으로 배포해야 합니다.");
   }
   return info;
 }
@@ -2068,7 +2070,7 @@ function initAdminLiveV432(){
   if(selectAll)selectAll.onchange=()=>toggleLiveSelectAllV4411(selectAll.checked);
   if(bulkApply)bulkApply.onclick=applyLiveBulkStatusV4411;
 }
-function startAdminLiveAutoV432(){stopAdminLiveAutoV432();adminLiveTimerV432=setInterval(async()=>{if(!byId("liveTab")||!byId("liveTab").classList.contains("active")||document.hidden)return;try{await apiPost({action:"adminLiveCollect"});await loadAdminLiveDashboardV432(true)}catch(e){console.warn("라이브 자동갱신",e.message)}},20000)}
+function startAdminLiveAutoV432(){stopAdminLiveAutoV432();adminLiveTimerV432=setInterval(async()=>{if(!byId("liveTab")||!byId("liveTab").classList.contains("active")||document.hidden)return;try{await loadAdminLiveDashboardV432(true)}catch(e){console.warn("라이브 자동갱신",e.message)}},30000)}
 function stopAdminLiveAutoV432(){if(adminLiveTimerV432){clearInterval(adminLiveTimerV432);adminLiveTimerV432=null}}
 async function loadAdminLiveDashboardV432(silent){try{if(!silent)showLoading("라이브 주문을 불러오는 중입니다.");const d=await apiGet({action:"adminLiveDashboard"});renderAdminLiveDashboardV432(d)}catch(e){if(!silent)alert(e.message)}finally{if(!silent)hideLoading()}}
 function renderAdminLiveDashboardV432(d){
@@ -3522,7 +3524,7 @@ async function downloadLotteExcelV418() {
       throw new Error("전체주문이력에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
         "전체주문이력 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
         "선택 기간: " + startDate + " ~ " + endDate + "\n" +
-        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.41.7인지 확인해주세요.");
+        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.42.1인지 확인해주세요.");
     }
 
     const sortedOrders = sortLotteOrdersV420(orders);
@@ -3690,7 +3692,7 @@ async function uploadLotteTrackingResult(event) {
 }
 
 /* =========================================================
-   V4.41.7 카드결제 고객 모아보기 · 페이앱+토스페이먼츠 듀얼결제 · PC/모바일 통합 관리자 · 방송회차 · 상시상품 · CS
+   V4.42.1 카드결제 고객 모아보기 · 페이앱+토스페이먼츠 듀얼결제 · PC/모바일 통합 관리자 · 방송회차 · 상시상품 · CS
 ========================================================= */
 function applyAdminRoleV435(){
   const role=adminRoleV435||sessionStorage.getItem("ssinne_admin_role_v435")||"admin";
@@ -3747,25 +3749,17 @@ function initAdminV435(){
   if(byId("tossConfigSaveButtonV440")) byId("tossConfigSaveButtonV440").onclick=saveTossConfigV440;
   if(byId("clearTodayProductsButton")) byId("clearTodayProductsButton").onclick=clearTodayProductsV435;
   document.querySelectorAll("[data-sheet-mode]").forEach(b=>{b.onclick=()=>changeSheetModeV435(b.dataset.sheetMode);});
-  loadCsDashboardV435();
   showAdminTab(adminRoleV435==="cs"?"cs":"home");
 }
 
 async function loadAdminHomeV435(){
   try{
-    const cs=await apiGet({action:"adminCsDashboard"}); renderCsCountsV435(cs.counts||{});
+    const d=await apiGet({action:"adminHomeSummary"});
+    renderCsCountsV435(d.cs||{});
     if(adminRoleV435==="cs") return;
-    const today=todayString();
-    const [ordersData,live,br]=await Promise.all([
-      apiGet({action:"adminOrders",startDate:today,endDate:today,search:""}),
-      apiGet({action:"adminLiveDashboard"}),
-      apiGet({action:"adminBroadcastStatus"})
-    ]);
-    const orders=ordersData.orders||[];
-    if(byId("homeOrderCount")) byId("homeOrderCount").textContent=orders.length;
-    if(byId("homeUnpaidCount")) byId("homeUnpaidCount").textContent=orders.filter(o=>["미입금","카드결제대기","카드링크발송"].includes(o.paymentStatus)).length;
-    if(byId("homeLiveReviewCount")) byId("homeLiveReviewCount").textContent=Number((live.counts||{}).review||0)+Number((live.counts||{}).waiting||0);
-    renderBroadcastStatusV435(br,live.youtube||{});
+    if(byId("homeOrderCount")) byId("homeOrderCount").textContent=Number(d.orderCount||0);
+    if(byId("homeUnpaidCount")) byId("homeUnpaidCount").textContent=Number(d.unpaidCount||0);
+    if(byId("homeLiveReviewCount")) byId("homeLiveReviewCount").textContent=Number(d.liveReviewCount||0);
   }catch(e){console.warn("홈 현황",e.message);}
 }
 
