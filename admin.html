@@ -4,26 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <meta name="theme-color" content="#111827">
-<title>씬느샵 통합 관리자 V4.50.4</title>
-<link rel="stylesheet" href="style.css?v=v4-50-4-final">
-<script src="script.js?v=v4-50-4-final" defer></script>
+<title>씬느샵 통합 관리자 V4.52.0</title>
+<link rel="stylesheet" href="style.css?v=v4-52-0-clean">
+<script src="script.js?v=v4-52-0-clean" defer></script>
 </head>
-<body data-page="admin" class="page-admin v450-admin">
+<body data-page="admin" class="page-admin v450-admin shop-admin-v451 shop-admin-v452">
 <div class="admin-login-gate" id="adminLoginGate">
-  <div class="admin-login-card"><div class="admin-login-logo">S</div><span class="eyebrow dark">SSINNEU ADMIN · V4.50.4</span><h1>관리자 로그인</h1><p>대표 관리자 또는 CS 비밀번호를 입력하세요.</p><label for="adminPasswordInput">비밀번호</label><input type="password" id="adminPasswordInput" autocomplete="current-password" placeholder="비밀번호 입력"><button type="button" class="btn btn-primary full-width" id="adminLoginButton">로그인</button><div class="admin-login-error" id="adminLoginError"></div><small>비밀번호·API 키는 GitHub가 아니라 Apps Script 속성에 저장됩니다.</small></div>
+  <div class="admin-login-card"><div class="admin-login-logo">S</div><span class="eyebrow dark">SSINNEU ADMIN · V4.52.0</span><h1>관리자 로그인</h1><p>대표 관리자 또는 CS 비밀번호를 입력하세요.</p><label for="adminPasswordInput">비밀번호</label><input type="password" id="adminPasswordInput" autocomplete="current-password" placeholder="비밀번호 입력"><button type="button" class="btn btn-primary full-width" id="adminLoginButton">로그인</button><div class="admin-login-error" id="adminLoginError"></div><small>비밀번호·API 키는 GitHub가 아니라 Apps Script 속성에 저장됩니다.</small></div>
 </div>
 <div class="admin-app" id="adminApp" style="display:none">
 <aside class="admin-sidebar">
-  <div class="admin-brand"><div class="brand-mark small">S</div><div><strong>씬느샵</strong><span>관리자 V4.50.4</span></div></div>
-  <nav class="side-nav">
-    <button class="side-link active" data-v450-tab="home">⌂ <span>홈</span></button>
-    <button class="side-link admin-only" data-v450-tab="orders">▣ <span>주문관리</span></button>
-    <button class="side-link admin-only" data-v450-tab="lookup">⌕ <span>주문조회</span></button>
-    <button class="side-link admin-only" data-v450-tab="live">🎥 <span>라이브관리</span></button>
-    <button class="side-link" data-v450-tab="cs">💬 <span>CS관리</span></button>
-    <button class="side-link admin-only" data-v450-tab="bankmatch">₩ <span>입금관리</span></button>
-    <button class="side-link admin-only" data-v450-tab="products">◇ <span>상품관리</span></button>
-    <button class="side-link admin-only" data-v450-tab="payments">💳 <span>결제연동</span></button>
+  <div class="admin-brand"><div class="brand-mark small">S</div><div><strong>씬느샵</strong><span>관리자 V4.52.0</span></div></div>
+  <nav class="side-nav" aria-label="관리자 메뉴">
+    <button class="side-link active" data-v450-tab="home"><span class="nav-dot-v452"></span><span>홈</span></button>
+    <button class="side-link admin-only" data-v450-tab="orders"><span class="nav-dot-v452"></span><span>주문관리</span></button>
+    <button class="side-link admin-only" data-v450-tab="lookup"><span class="nav-dot-v452"></span><span>주문조회</span></button>
+    <button class="side-link admin-only" data-v450-tab="live"><span class="nav-dot-v452"></span><span>라이브관리</span></button>
+    <button class="side-link" data-v450-tab="cs"><span class="nav-dot-v452"></span><span>CS관리</span></button>
+    <button class="side-link admin-only" data-v450-tab="bankmatch"><span class="nav-dot-v452"></span><span>입금관리</span></button>
+    <button class="side-link admin-only" data-v450-tab="products"><span class="nav-dot-v452"></span><span>상품관리</span></button>
+    <button class="side-link admin-only" data-v450-tab="payments"><span class="nav-dot-v452"></span><span>결제·보안 설정</span></button>
   </nav>
   <div class="side-foot"><a href="customer.html">고객용 주문조회</a><a href="index.html">고객 주문서</a></div>
 </aside>
@@ -31,7 +31,7 @@
 <header class="admin-topbar v450-topbar"><div class="v450-brandline"><div class="brand-mark small">S</div><div><strong>씬느샵 통합관리자</strong><span id="adminRoleBadge">로그인 확인중</span></div></div><button class="btn btn-subtle" id="adminLogoutButton">로그아웃</button></header>
 
 <section id="v450Tab-home" class="v450-tab active">
-  <section class="v450-hero"><div><span class="eyebrow dark">TODAY</span><h1>오늘 운영현황</h1><p>홈에서는 숫자만 빠르게 불러오고, 상세목록은 카드를 눌렀을 때만 조회합니다.</p></div></section>
+  <section class="v450-hero"><div><span class="eyebrow dark">SSINNEU SHOP</span><h1>오늘 운영현황</h1><p>주문·결제·출고 상태를 한눈에 확인하고 필요한 업무만 바로 실행합니다.</p></div></section>
   <div class="v450-metrics" id="homeMetricsV450">
     <button data-home-filter="all"><span>오늘 주문 건수</span><strong id="hTodayOrders">-</strong></button>
     <button data-home-filter="shipping"><span>오늘 택배 건수</span><strong id="hShipping">-</strong></button>
@@ -45,11 +45,13 @@
   </div>
   <section class="admin-panel admin-only"><div class="panel-title-row"><div><h2>빠른 실행</h2><p>필요한 기능만 홈에서 바로 실행합니다.</p></div></div>
     <div class="v450-quick-grid">
-      <button class="v450-quick" id="rebuildButton">📦 <b>거래처발주</b></button>
-      <button class="v450-quick" id="combinedShippingButton">🔗 <b>합배송가능 고객조회</b></button>
-      <button class="v450-quick" id="archiveHistoryButton">🔄 <b>전체주문이력 저장/갱신</b></button>
-      <button class="v450-quick" id="lotteExcelButtonV418">🚚 <b>롯데택배 송장뽑기</b></button>
-      <button class="v450-quick" id="lotteTrackingButton">⇧ <b>롯데택배 송장번호 업로드</b></button>
+      <button class="v450-quick" id="rebuildButton"><span class="quick-kicker-v452">업무</span><b>거래처발주</b><small>발주·3PL 정리</small></button>
+      <button class="v450-quick" id="combinedShippingButton"><span class="quick-kicker-v452">업무</span><b>합배송 고객조회</b><small>날짜 범위 조회</small></button>
+      <button class="v450-quick" id="archiveHistoryButton"><span class="quick-kicker-v452">업무</span><b>전체주문이력 저장</b><small>3PL 기준 갱신</small></button>
+      <button class="v450-quick" id="lotteExcelButtonV418"><span class="quick-kicker-v452">업무</span><b>롯데택배 송장뽑기</b><small>ALPS 엑셀</small></button>
+      <button class="v450-quick" id="lotteTrackingButton"><span class="quick-kicker-v452">업무</span><b>송장번호 업로드</b><small>결과 자동매칭</small></button>
+      <button class="v450-quick v451-mobile-only admin-only" data-v450-tab="bankmatch"><span class="quick-kicker-v452">업무</span><b>입금 확인</b><small>은행 엑셀 대조</small></button>
+      <button class="v450-quick v451-mobile-only admin-only" data-v450-tab="products"><span class="quick-kicker-v452">업무</span><b>상품·재고</b><small>상품정보 확인</small></button>
       <input type="file" id="lotteTrackingFile" accept=".xlsx,.xls" hidden>
     </div>
   </section>
@@ -81,7 +83,7 @@
     <div id="youtubeApiSetupV450" class="v450-api-once"><input id="youtubeApiKeyInput" type="password" placeholder="YouTube API 키 (처음 1회)"><button class="btn btn-subtle" id="youtubeApiKeySaveButton">API 키 저장</button></div>
   </section>
   <div class="v450-metrics compact"><button data-live-list="reserved" class="success"><span>댓글예약</span><strong id="lReserved">0</strong></button><button data-live-list="submitted"><span>주문서작성</span><strong id="lSubmitted">0</strong></button><button data-live-list="unsubmitted" class="danger"><span>주문서미작성</span><strong id="lUnsubmitted">0</strong></button><button data-live-list="review" class="warning"><span>확인필요</span><strong id="lReview">0</strong></button></div>
-  <section class="admin-panel" id="liveListPanelV450" hidden><div class="panel-title-row"><div><h2 id="liveListTitleV450">실시간 임시주문</h2><p>카드를 누른 경우에만 목록을 불러옵니다.</p></div></div><div class="v450-bulk"><label><input type="checkbox" id="liveSelectAllV450"> 전체선택</label><select id="liveBulkStatusV450"><option value="">상태 선택</option><option>예약</option><option>대기</option><option>취소</option></select><button class="btn btn-primary" id="liveBulkApplyV450">선택 상태변경</button><button class="btn btn-danger-soft" id="liveDeleteSelectedV450">선택 삭제</button></div><div class="table-wrap"><table class="data-table"><thead><tr><th>선택</th><th>시간</th><th>닉네임</th><th>상품번호</th><th>상품명</th><th>칼라</th><th>사이즈</th><th>수량</th><th>상태</th></tr></thead><tbody id="liveListBodyV450"></tbody></table></div></section>
+  <section class="admin-panel" id="liveListPanelV450" hidden><div class="panel-title-row"><div><h2 id="liveListTitleV450">라이브임시주문</h2><p>댓글 예약 원본은 라이브임시주문에 저장되며, 카드를 누른 경우에만 목록을 불러옵니다.</p></div></div><div class="v450-bulk"><label><input type="checkbox" id="liveSelectAllV450"> 전체선택</label><select id="liveBulkStatusV450"><option value="">상태 선택</option><option>예약</option><option>대기</option><option>취소</option></select><button class="btn btn-primary" id="liveBulkApplyV450">선택 상태변경</button><button class="btn btn-danger-soft" id="liveDeleteSelectedV450">선택 삭제</button></div><div class="table-wrap"><table class="data-table v451-responsive-table"><thead><tr><th>선택</th><th>시간</th><th>닉네임</th><th>상품번호</th><th>상품명</th><th>칼라</th><th>사이즈</th><th>수량</th><th>상태</th></tr></thead><tbody id="liveListBodyV450"></tbody></table></div></section>
 </section>
 
 <section id="v450Tab-cs" class="v450-tab">
@@ -97,20 +99,25 @@
   </section>
   <div class="v450-metrics compact"><button data-bank-result-target="bankMatchedSectionV4404"><span>자동일치</span><strong id="bankMatchedCount">0</strong></button><button data-bank-result-target="bankReviewSectionV4404"><span>확인필요</span><strong id="bankReviewCount">0</strong></button><button data-bank-result-target="bankUnpaidSectionV4404"><span>미입금</span><strong id="bankUnpaidCount">0</strong></button><button data-bank-result-target="bankOrphanSectionV4404"><span>주문 미발견</span><strong id="bankOrphanCount">0</strong></button></div>
   <section class="admin-panel" id="bankMatchResultPanel"><button class="btn btn-primary" id="bankBulkPaidButton" disabled>자동일치 전체 입금완료</button><div id="bankMatchNotice" class="bankmatch-notice">은행 파일을 선택해주세요.</div>
-    <div id="bankMatchedSectionV4404"><h3>자동일치</h3><table class="data-table"><tbody id="bankMatchedList"></tbody></table></div>
-    <div id="bankReviewSectionV4404"><div class="button-row"><h3>확인필요</h3><button class="btn btn-primary" id="bankReviewBulkPaidButton" disabled>선택 입금완료</button><input type="checkbox" id="bankReviewSelectAll"></div><table class="data-table"><tbody id="bankReviewList"></tbody></table></div>
-    <div id="bankUnpaidSectionV4404"><h3>미입금</h3><table class="data-table"><tbody id="bankUnpaidList"></tbody></table></div>
-    <div id="bankOrphanSectionV4404"><h3>주문 미발견</h3><table class="data-table"><tbody id="bankOrphanList"></tbody></table></div>
+    <div id="bankMatchedSectionV4404" hidden><h3>자동일치</h3><table class="data-table"><tbody id="bankMatchedList"></tbody></table></div>
+    <div id="bankReviewSectionV4404" hidden><div class="button-row"><h3>확인필요</h3><button class="btn btn-primary" id="bankReviewBulkPaidButton" disabled>선택 입금완료</button><input type="checkbox" id="bankReviewSelectAll"></div><table class="data-table"><tbody id="bankReviewList"></tbody></table></div>
+    <div id="bankUnpaidSectionV4404" hidden><h3>미입금</h3><table class="data-table"><tbody id="bankUnpaidList"></tbody></table></div>
+    <div id="bankOrphanSectionV4404" hidden><h3>주문 미발견</h3><table class="data-table"><tbody id="bankOrphanList"></tbody></table></div>
   </section>
 </section>
 
 <section id="v450Tab-products" class="v450-tab">
-  <section class="admin-panel"><div class="panel-title-row"><div><h2>상품정보 등록</h2><p>기본정보는 한 번, 칼라·사이즈·현재재고는 + 옵션추가로 입력합니다.</p></div></div>
-    <div class="form-grid three"><div class="field"><label>상품번호</label><input id="pNoV450" inputmode="numeric"></div><div class="field"><label>상품명</label><input id="pNameV450"></div><div class="field"><label>판매구분</label><select id="pTypeV450"><option>오늘상품</option><option>상시상품</option></select></div><div class="field"><label>판매가</label><input id="pSaleV450" type="number"></div><div class="field"><label>입금가</label><input id="pDepositV450" type="number"></div></div>
-    <div id="productOptionsV450" class="v450-options"></div><div class="button-row"><button class="btn btn-subtle" id="addProductOptionV450">＋ 옵션 추가</button><button class="btn btn-primary" id="saveProductV450">상품 저장</button></div>
+  <section class="admin-panel product-entry-panel-v451"><div class="panel-title-row"><div><h2>상품정보 등록</h2><p>기본정보는 한 번, 칼라·사이즈·현재재고는 + 옵션추가로 입력합니다.</p></div></div>
+    <div class="form-grid three product-basic-grid-v451"><div class="field"><label>상품번호</label><input id="pNoV450" inputmode="numeric"></div><div class="field"><label>상품명</label><input id="pNameV450"></div><div class="field"><label>판매구분</label><select id="pTypeV450"><option>오늘상품</option><option>상시상품</option></select></div><div class="field"><label>판매가</label><input id="pSaleV450" type="number"></div><div class="field"><label>입금가</label><input id="pDepositV450" type="number"></div></div>
+    <div class="product-options-head-v451"><span>칼라</span><span>사이즈</span><span>현재재고</span><span></span></div>
+    <div id="productOptionsV450" class="v450-options"></div><div class="button-row product-actions-v451"><button class="btn btn-subtle" id="addProductOptionV450">＋ 옵션 추가</button><button class="btn btn-primary" id="saveProductV450">상품 저장</button></div>
   </section>
-  <section class="admin-panel"><div class="panel-title-row"><div><h2>상품정보 저장하기</h2><p>현재 상품정보를 날짜별상품정보 시트에 한 덩어리 색상으로 저장합니다.</p></div><button class="btn btn-primary" id="saveProductArchiveV450">오늘 상품정보 저장</button></div><div class="v450-search"><select id="archiveDateV450"><option value="">날짜별 상품정보 선택</option></select><button class="btn btn-subtle" id="viewArchiveV450">조회</button></div><div id="archiveResultV450"></div></section>
-  <section class="admin-panel"><div class="panel-title-row"><div><h2>현재 상품정보</h2><p>상품정보는 이 탭을 눌렀을 때만 불러옵니다.</p></div><button class="btn btn-subtle" id="reloadProductsV450">새로고침</button></div><div class="table-wrap"><table class="data-table"><thead><tr><th>번호</th><th>상품명</th><th>칼라</th><th>사이즈</th><th>판매가</th><th>입금가</th><th>현재재고</th><th>예약</th><th>주문서접수</th><th>대기</th><th>추가가능</th></tr></thead><tbody id="productsBodyV450"></tbody></table></div></section>
+  <section class="admin-panel product-archive-panel-v451"><div class="panel-title-row"><div><h2>날짜별 상품정보 저장</h2><p>원하는 날짜를 지정해 현재 상품정보 전체를 스냅샷으로 저장합니다.</p></div></div>
+    <div class="archive-tools-v451">
+      <div class="archive-tool-v451"><label for="archiveSaveDateV451">저장 날짜</label><div><input type="date" id="archiveSaveDateV451"><button class="btn btn-primary" id="saveProductArchiveV450">선택 날짜에 저장</button></div><small>같은 날짜가 있으면 확인 후 기존 저장본을 갱신합니다.</small></div>
+      <div class="archive-tool-v451"><label for="archiveDateV450">저장본 조회</label><div><select id="archiveDateV450"><option value="">날짜별 상품정보 선택</option></select><button class="btn btn-subtle" id="viewArchiveV450">조회</button></div><small>선택한 날짜의 상품정보만 불러옵니다.</small></div>
+    </div><div id="archiveResultV450"></div></section>
+  <section class="admin-panel"><div class="panel-title-row"><div><h2>현재 상품정보</h2><p>상품정보는 이 탭을 눌렀을 때만 불러옵니다.</p></div><button class="btn btn-subtle" id="reloadProductsV450">새로고침</button></div><div class="table-wrap"><table class="data-table v451-responsive-table"><thead><tr><th>번호</th><th>상품명</th><th>칼라</th><th>사이즈</th><th>판매가</th><th>입금가</th><th>현재재고</th><th>예약</th><th>주문서접수</th><th>대기</th><th>추가가능</th></tr></thead><tbody id="productsBodyV450"></tbody></table></div></section>
 </section>
 
 <section id="v450Tab-payments" class="v450-tab">
@@ -120,6 +127,14 @@
 </section>
 </main>
 </div>
+
+<nav class="mobile-tabbar-v451" aria-label="모바일 관리자 메뉴">
+  <button class="active" data-v450-tab="home"><span>홈</span><b>현황</b></button>
+  <button class="admin-only" data-v450-tab="orders"><span>주문</span><b>관리</b></button>
+  <button class="admin-only" data-v450-tab="lookup"><span>조회</span><b>검색</b></button>
+  <button class="admin-only" data-v450-tab="live"><span>LIVE</span><b>예약</b></button>
+  <button data-v450-tab="cs"><span>CS</span><b>고객</b></button>
+</nav>
 
 <!-- 공통 주문 상세 팝업 -->
 <div class="v450-modal" id="orderModalV450" aria-hidden="true"><div class="v450-modal-card wide"><div class="v450-modal-head"><h2>주문 상세</h2><button id="orderModalCloseV450">✕</button></div><div id="orderModalBodyV450"></div></div></div>

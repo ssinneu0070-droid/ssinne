@@ -1,4 +1,4 @@
-// V4.50.4 - setupSystem 데이터확인 오류 수정 · 최종연결검사 완료본
+// V4.52.0 - 클린 통합 · 라이브임시주문 · 쇼핑몰형 PC/모바일 관리자
 // V4.00 - 수령인+닉네임 포함 자동일치 / 분할입금 조합합산 / 부족·초과 / 중복입금 방지
 // V3.30 - 입금 자동대조 시 수령인 + 닉네임 함께 조회
 // V3.29 - 단일 script.js 운영 + 토스뱅크/하나은행 통합 입금대조 + 입금완료 2차 재검사
@@ -436,7 +436,7 @@ async function checkLiveCustomerPhoneV434(){
   byId("liveCustomerCheckMessage").textContent="전화번호 확인이 끝났습니다. 현재 방송에서 사용한 유튜브 닉네임을 입력해주세요.";
   byId("liveLookupIdentityLabel").textContent="유튜브 닉네임";
   byId("liveLookupIdentity").placeholder="예: 씬느-08s";
-  byId("liveLookupIdentityHelp").textContent="닉네임 앞의 @는 입력해도 되고 빼도 됩니다. 현재 방송 임시주문에서만 빠르게 찾습니다.";
+  byId("liveLookupIdentityHelp").textContent="닉네임 앞의 @는 입력해도 되고 빼도 됩니다. 현재 방송의 라이브임시주문에서만 빠르게 찾습니다.";
   byId("liveLookupStatus").textContent="전화번호 확인이 끝났습니다. 닉네임을 입력해주세요.";
   setLiveEntryStepV434(2);setTimeout(()=>byId("liveLookupIdentity").focus(),50);
 }
@@ -713,7 +713,7 @@ const adminTabLoadedAtV442={};
 function adminTabNeedsLoadV442(key,maxAgeMs){const now=Date.now(),last=Number(adminTabLoadedAtV442[key]||0);if(now-last<maxAgeMs)return false;adminTabLoadedAtV442[key]=now;return true;}
 
 function showAdminTab(tabName) {
-  if(adminRoleV435==="cs" && ["orders","live","bankmatch","products","cancelled"].includes(tabName)) tabName="cs";
+  if(adminRoleV435==="cs" && ["orders","live","bankmatch","products"].includes(tabName)) tabName="cs";
   document.querySelectorAll(".side-link[data-tab]").forEach(function(button){button.classList.toggle("active",button.dataset.tab===tabName);});
   document.querySelectorAll(".tab-section").forEach(function(section){section.classList.toggle("active",section.id===tabName+"Tab");});
   document.querySelectorAll("[data-mobile-tab]").forEach(function(button){button.classList.toggle("active",button.dataset.mobileTab===tabName);});
@@ -1171,8 +1171,8 @@ async function updateHistoryTrackingNumber(rowNumber, trackingNumber) {
 async function ensureBackendV414() {
   const info = await apiGet({ action: "systemInfo", _ts: Date.now() });
   const version = String(info && info.version || "");
-  if (version.indexOf("V4.50.4") !== 0) {
-    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.50.4 기능을 사용하려면 V4.50.4 Code.gs를 새 버전으로 배포해야 합니다.");
+  if (version.indexOf("V4.52.0") !== 0) {
+    throw new Error("Apps Script 서버 버전을 확인해주세요.\n현재 서버: " + (version || "확인불가") + "\n\nV4.52.0 기능을 사용하려면 V4.52.0 Code.gs를 새 버전으로 배포해야 합니다.");
   }
   return info;
 }
@@ -1994,12 +1994,6 @@ function liveActionButtonsV432(o){if(o.status==="주문서완료")return '<span 
 async function handleAdminLiveOrderActionV432(btn){const row=Number(btn.dataset.row),action=btn.dataset.liveAction;let payload={action:"adminLiveOrderAction",rowNumber:row,actionType:action};if(action==="change"){const no=prompt("변경할 상품번호를 입력하세요.");if(no===null)return;const color=prompt("변경할 칼라를 입력하세요.");if(color===null)return;const size=prompt("변경할 사이즈를 입력하세요.");if(size===null)return;const qty=prompt("수량을 입력하세요.","1");if(qty===null)return;Object.assign(payload,{productNo:no,color:color,size:size,quantity:Number(qty||1)})}else if(action==="cancel"&&!confirm("이 임시주문을 취소할까요?"))return;try{showLoading("라이브 주문 처리 중입니다.");await apiPost(payload);await loadAdminLiveDashboardV432(true)}catch(e){alert(e.message)}finally{hideLoading()}}
 async function handleAdminLiveIssueV432(row){if(!confirm("이 확인필요 항목을 완료 처리할까요? 주문내용 수정이 필요하면 먼저 위 임시주문에서 변경해주세요."))return;try{await apiPost({action:"adminLiveIssueAction",rowNumber:row,status:"완료",note:"관리자 페이지 확인완료"});await loadAdminLiveDashboardV432(true)}catch(e){alert(e.message)}}
 
-function initCancelledV2(){const summary=document.getElementById("cancelledSummaryCardV4404");if(summary)summary.onclick=()=>{const list=document.getElementById("cancelledOrderList");if(list)list.scrollIntoView({behavior:"smooth",block:"start"});};const btn=document.getElementById('cancelledSideButton');if(btn)btn.addEventListener('click',function(){document.querySelectorAll('.tab-section').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.side-link').forEach(x=>x.classList.remove('active'));document.getElementById('cancelledTab').classList.add('active');btn.classList.add('active');loadCancelledOrders();});const search=document.getElementById('searchCancelledButton');if(search)search.onclick=loadCancelledOrders;}
-async function loadCancelledOrders(){showLoading("취소주문을 조회하는 중입니다.");try{const d=await apiGet({action:"cancelledOrders",search:(document.getElementById('cancelKeyword')||{}).value||""});renderCancelledOrders(d.orders||[]);}catch(e){alert(e.message)}finally{hideLoading()}}
-function renderCancelledOrders(orders){document.getElementById('cancelledCount').textContent=orders.length;const c=document.getElementById('cancelledOrderList');if(!orders.length){c.innerHTML='<div class="empty-state">취소된 주문이 없습니다.</div>';return;}c.innerHTML=orders.map(o=>`<article class="cancel-card"><div class="v2-card-head"><div><span>취소일 ${escapeHtml(o.cancelDate)}</span><h3>${escapeHtml(o.nickname)} · ${escapeHtml(o.receiverName)}</h3></div><b class="status-pill cancelled">고객취소</b></div><p>${escapeHtml(o.phone)} · ${money(o.paymentAmount)}</p><div class="order-result-items">${escapeHtml(o.orderItems)}</div><div class="cancel-reason">취소사유: ${escapeHtml(o.reason||'-')}</div><button class="btn btn-success restore-btn" data-row="${o.rowNumber}">복구</button></article>`).join('');c.querySelectorAll('.restore-btn').forEach(b=>b.onclick=()=>restoreCancelled(Number(b.dataset.row)));}
-async function restoreCancelled(rowNumber){if(!confirm("이 주문을 고객주문으로 복구할까요?\n복구 후 입금상태는 미입금으로 설정됩니다."))return;showLoading("주문을 복구하고 있습니다.");try{await apiPost({action:"restoreCancelledOrder",rowNumber});await loadCancelledOrders();alert("주문이 복구되었습니다.");}catch(e){alert(e.message)}finally{hideLoading()}}
-
-
 /* V3.11 주문 전 안내 - 계좌번호 복사 */
 (function(){
   const ACCOUNT_NUMBER = "100257908378";
@@ -2700,6 +2694,7 @@ function reconcileBankData(groups, transactions) {
 function scrollBankResultV4404(targetId,card){
   const target=document.getElementById(targetId);if(!target)return;
   document.querySelectorAll("[data-bank-result-target]").forEach(function(x){x.classList.toggle("active-summary-v4404",x===card);});
+  ["bankMatchedSectionV4404","bankReviewSectionV4404","bankUnpaidSectionV4404","bankOrphanSectionV4404"].forEach(function(id){const el=document.getElementById(id);if(el)el.hidden=(id!==targetId);});
   target.classList.remove("flash-v4404");void target.offsetWidth;target.classList.add("flash-v4404");
   target.scrollIntoView({behavior:"smooth",block:"start"});
 }
@@ -2776,6 +2771,9 @@ function renderBankMatchResults() {
   orphan.innerHTML = r.orphan.length ? r.orphan.map(function(tx){
     return `<tr><td>${escapeHtml(tx.bank)}</td><td>${escapeHtml(tx.time)}</td><td>${escapeHtml(tx.depositor)}</td><td>${money(tx.amount)}</td></tr>`;
   }).join("") : '<tr><td colspan="4" class="empty-cell">미매칭 은행 입금이 없습니다.</td></tr>';
+  const firstTarget=r.matched.length?"bankMatchedSectionV4404":(r.review.length?"bankReviewSectionV4404":(r.unpaid.length?"bankUnpaidSectionV4404":"bankOrphanSectionV4404"));
+  ["bankMatchedSectionV4404","bankReviewSectionV4404","bankUnpaidSectionV4404","bankOrphanSectionV4404"].forEach(function(id){const el=document.getElementById(id);if(el)el.hidden=(id!==firstTarget);});
+  document.querySelectorAll("[data-bank-result-target]").forEach(function(x){x.classList.toggle("active-summary-v4404",x.dataset.bankResultTarget===firstTarget);});
 }
 
 
@@ -3406,7 +3404,7 @@ async function downloadLotteExcelV418() {
       throw new Error("전체주문이력에서 롯데택배로 변환 가능한 주문을 찾지 못했습니다.\n" +
         "전체주문이력 시트 마지막행: " + (meta.lastRow || 0) + " / 마지막열: " + (meta.lastCol || 0) + "\n" +
         "선택 기간: " + startDate + " ~ " + endDate + "\n" +
-        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.50.4인지 확인해주세요.");
+        "시트에 주문이 보이는데 0건이면 전체주문이력의 주문날짜를 확인하고 Code.gs가 V4.52.0인지 확인해주세요.");
     }
 
     const sortedOrders = sortLotteOrdersV420(orders);
@@ -3687,7 +3685,7 @@ function renderCsCardPaymentsV4405(){
     const statusHtml=Object.keys(statuses).map(s=>`<span class="payment-badge-v435 ${paymentBadgeClassV435(s)}">${escapeHtml(s)} ${statuses[s]}건</span>`).join("");
     const orderHtml=g.orders.map(o=>{
       const open=["카드결제대기","카드링크발송"].includes(o.paymentStatus),paid=["카드결제완료","카드결제"].includes(o.paymentStatus);
-      return `<div class="cs-card-payment-order-v4416"><div class="cs-card-payment-order-top-v4416"><span>${escapeHtml(o.orderDate||"")} · ${escapeHtml(o.orderNumber||"-")}</span><b>${money(o.paymentAmount||0)}</b></div><div class="cs-card-items-v4416">${escapeHtml(o.orderItems||"주문상품 없음").replace(/\n/g,"<br>")}</div><div class="cs-card-direct-actions-v4416">${open?`<button class="btn btn-dark cs-card-payapp-link-v4416" data-row="${o.rowNumber}">💳 링크 만들기·복사</button><button class="btn btn-primary cs-card-payapp-sms-v4416" data-row="${o.rowNumber}">📱 페이앱 문자 바로 보내기</button>`:""}<button class="btn btn-subtle cs-card-edit-items-v4416" data-row="${o.rowNumber}" data-items="${escapeHtml(o.orderItems||"")}">주문상품 수정</button><button class="btn btn-subtle cs-card-shipping-v4416" data-search="${escapeHtml(g.phone||g.nickname||g.receiverName||"")}">배송정보 수정</button>${!paid?`<button class="btn btn-danger cs-card-cancel-v4416" data-row="${o.rowNumber}">주문 취소</button><button class="btn btn-danger ghost cs-card-delete-v4416" data-row="${o.rowNumber}">삭제</button>`:""}</div></div>`;
+      return `<div class="cs-card-payment-order-v4416"><div class="cs-card-payment-order-top-v4416"><span>${escapeHtml(o.orderDate||"")} · ${escapeHtml(o.orderNumber||"-")}</span><b>${money(o.paymentAmount||0)}</b></div><div class="cs-card-items-v4416">${escapeHtml(o.orderItems||"주문상품 없음").replace(/\n/g,"<br>")}</div><div class="cs-card-direct-actions-v4416">${open?`<button class="btn btn-dark cs-card-payapp-link-v4416" data-row="${o.rowNumber}">💳 링크 만들기·복사</button><button class="btn btn-primary cs-card-payapp-sms-v4416" data-row="${o.rowNumber}">📱 페이앱 문자 바로 보내기</button>`:""}<button class="btn btn-subtle cs-card-edit-items-v4416" data-row="${o.rowNumber}" data-items="${escapeHtml(o.orderItems||"")}">주문상품 수정</button><button class="btn btn-subtle cs-card-shipping-v4416" data-search="${escapeHtml(g.phone||g.nickname||g.receiverName||"")}">배송정보 수정</button>${!paid?`<button class="btn btn-danger cs-card-delete-v4416" data-row="${o.rowNumber}">주문 삭제</button>`:""}</div></div>`;
     }).join("");
     return `<article class="cs-card-payment-customer-v4405"><div class="cs-card-payment-customer-head-v4405"><div><h3>${escapeHtml(g.nickname||"고객")}${g.receiverName?` · ${escapeHtml(g.receiverName)}`:""}</h3><p>${escapeHtml(g.phone||"연락처 없음")}</p></div><strong>${g.orders.length}건 · ${money(g.total)}</strong></div><div class="cs-card-payment-statuses-v4405">${statusHtml}</div><div class="cs-card-payment-orders-v4405">${orderHtml}</div></article>`;
   }).join("");
@@ -3701,7 +3699,6 @@ function bindCsCardDirectActionsV4416(){
   document.querySelectorAll(".cs-card-payapp-sms-v4416").forEach(b=>b.onclick=()=>createPayAppFromCardV4416(Number(b.dataset.row),true));
   document.querySelectorAll(".cs-card-shipping-v4416").forEach(b=>b.onclick=async()=>{const q=b.dataset.search||"";if(!q)return;byId("csSearchKeyword").value=q;setCsPaymentFilterV440("card");await searchCsCurrentOnlyV441(q);const p=byId("csCustomerPanel");if(p)p.scrollIntoView({behavior:"smooth",block:"start"});});
   document.querySelectorAll(".cs-card-edit-items-v4416").forEach(b=>b.onclick=()=>editCardOrderItemsV4416(Number(b.dataset.row),b.dataset.items||""));
-  document.querySelectorAll(".cs-card-cancel-v4416").forEach(b=>b.onclick=()=>cancelCardOrderV4416(Number(b.dataset.row)));
   document.querySelectorAll(".cs-card-delete-v4416").forEach(b=>b.onclick=()=>deleteCardOrderV4416(Number(b.dataset.row)));
 }
 async function createPayAppFromCardV4416(row,sendSms){
@@ -3710,8 +3707,7 @@ async function createPayAppFromCardV4416(row,sendSms){
 async function editCardOrderItemsV4416(row,current){
   const sample="예: 900 / 레이스나시 / 블랙 / M / 1개 / 15,000원";const text=prompt("주문상품을 수정하세요.\n한 상품당 한 줄로 입력합니다.\n"+sample,current||"");if(text===null)return;const products=parseEditableOrderItemsV4416(text);if(!products.length){alert("상품 형식을 확인해주세요.");return;}if(!confirm("이 주문상품을 수정하고 재고도 자동 조정할까요?"))return;try{showLoading("주문상품을 수정하는 중입니다.");const r=await apiPost({action:"adminCsEditOrderItems",rowNumber:row,products});alert(r.message||"수정했습니다.");await loadCsCardPaymentsV4405();}catch(e){alert(e.message);}finally{hideLoading();}
 }
-async function cancelCardOrderV4416(row){if(!confirm("이 주문을 취소할까요?\n취소주문 시트에 보관되고 재고가 복구됩니다."))return;try{showLoading("주문을 취소하는 중입니다.");const r=await apiPost({action:"adminCsCancelOrder",rowNumber:row,reason:"CS 카드결제 화면 취소"});alert(r.message||"취소했습니다.");await loadCsCardPaymentsV4405();await loadCsDashboardV435();}catch(e){alert(e.message);}finally{hideLoading();}}
-async function deleteCardOrderV4416(row){if(!confirm("정말 삭제할까요?\n취소주문 이력에도 남지 않고 재고만 복구됩니다. 이 작업은 되돌리기 어렵습니다."))return;try{showLoading("주문을 삭제하는 중입니다.");const r=await apiPost({action:"adminCsDeleteOrder",rowNumber:row});alert(r.message||"삭제했습니다.");await loadCsCardPaymentsV4405();await loadCsDashboardV435();}catch(e){alert(e.message);}finally{hideLoading();}}
+async function deleteCardOrderV4416(row){if(!confirm("정말 삭제할까요?\n삭제하면 복구할 수 없으며 재고만 복구됩니다."))return;try{showLoading("주문을 삭제하는 중입니다.");const r=await apiPost({action:"adminCsDeleteOrder",rowNumber:row});alert(r.message||"삭제했습니다.");await loadCsCardPaymentsV4405();await loadCsDashboardV435();}catch(e){alert(e.message);}finally{hideLoading();}}
 
 function setCsCardListFilterV4405(name){adminCsCardListFilterV4405=name||"all";renderCsCardPaymentsV4405();}
 async function loadCsCardPaymentsV4405(){
@@ -3736,7 +3732,7 @@ async function searchCsV435(){adminCsCurrentOnlyV441=false;
   }catch(e){alert(e.message);}finally{hideLoading();}
 }
 function firstCsIdentityV435(d,q){
-  const all=[...(d.current||[]),...(d.history||[]),...(d.cancelled||[])],o=all[0]||{};
+  const all=[...(d.current||[]),...(d.history||[])],o=all[0]||{};
   return {nickname:o.nickname||q,receiverName:o.receiverName||"",phone:o.phone||"",orderNumber:o.orderNumber||""};
 }
 function isCardStatusV440(status){return String(status||"").indexOf("카드")===0;}
@@ -3762,19 +3758,17 @@ function setCsPaymentFilterV440(name){
 }
 
 function renderCsSearchV435(d,q){
-  const current=d.current||[],history=d.history||[],notes=d.notes||[],cancelled=d.cancelled||[],ident=firstCsIdentityV435(d,q);
+  const current=d.current||[],history=d.history||[],notes=d.notes||[],ident=firstCsIdentityV435(d,q);
   byId("csEmptyState").hidden=true; byId("csCustomerPanel").hidden=false;
   byId("csCustomerTitle").textContent=(ident.nickname||"고객")+(ident.receiverName?" · "+ident.receiverName:"");
   byId("csCustomerSub").textContent=ident.phone||"";
-  [["csCurrentCount",current.length],["csHistoryCount",history.length],["csNotesCount",notes.length],["csCancelledCount",cancelled.length]].forEach(x=>byId(x[0]).textContent=x[1]);
+  [["csCurrentCount",current.length],["csHistoryCount",history.length],["csNotesCount",notes.length]].forEach(x=>{const el=byId(x[0]);if(el)el.textContent=x[1]});
   const filterName=adminCsPaymentFilterV440||"all";
   const filterLabel=getCsPaymentFilterLabelV440(filterName);
   const filteredCurrent=current.filter(o=>matchCsPaymentFilterV440(o,filterName));
   const filteredHistory=history.filter(o=>matchCsPaymentFilterV440(o,filterName));
-  const filteredCancelled=cancelled.filter(o=>matchCsPaymentFilterV440(o,filterName));
   byId("csCurrentResults").innerHTML=filteredCurrent.length?filteredCurrent.map(renderCsCurrentCardV435).join(""):`<div class="empty-state">${escapeHtml(filterLabel)} 주문이 없습니다.</div>`;
   byId("csHistoryResults").innerHTML=filteredHistory.length?filteredHistory.map(o=>renderCsOrderCardV435(o,false)).join(""):`<div class="empty-state">${escapeHtml(filterLabel)} 주문이 없습니다.</div>`;
-  byId("csCancelledResults").innerHTML=filteredCancelled.length?filteredCancelled.map(o=>renderCsOrderCardV435(o,false,"취소")).join(""):`<div class="empty-state">${escapeHtml(filterLabel)} 취소이력이 없습니다.</div>`;
   byId("csNotesResults").innerHTML=(notes.length?notes.map(renderCsNoteV435).join(""):'<div class="empty-state">저장된 CS 기록이 없습니다.</div>')+renderCsComposerV435(ident);
   bindCsActionsV435(); showCsResultV435("current");
 }
@@ -3813,7 +3807,7 @@ function renderCsNoteV435(n){const opts=["접수","진행","완료","보류"].ma
 function renderCsComposerV435(i){return `<div class="cs-composer-v435"><h3>새 CS 기록</h3><div class="form-grid two"><div class="field"><label>문의유형</label><select id="csNewType"><option>배송문의</option><option>결제문의</option><option>상품문의</option><option>주소변경</option><option>주문변경</option><option>기타</option></select></div><div class="field"><label>상태</label><select id="csNewStatus"><option>접수</option><option>진행</option><option>완료</option><option>보류</option></select></div><div class="field full"><label>내용</label><textarea id="csNewMessage" rows="4" placeholder="고객 요청사항과 처리내용을 입력하세요."></textarea></div></div><button class="btn btn-primary" id="csSaveNoteButton" data-nick="${escapeHtml(i.nickname||"")}" data-name="${escapeHtml(i.receiverName||"")}" data-phone="${escapeHtml(i.phone||"")}" data-order="${escapeHtml(i.orderNumber||"")}">CS 저장</button></div>`;}
 function showCsResultV435(name){
   document.querySelectorAll("[data-cs-result]").forEach(b=>b.classList.toggle("active",b.dataset.csResult===name));
-  const map={current:"csCurrentResults",history:"csHistoryResults",notes:"csNotesResults",cancelled:"csCancelledResults"};
+  const map={current:"csCurrentResults",history:"csHistoryResults",notes:"csNotesResults"};
   document.querySelectorAll(".cs-result-panel").forEach(p=>p.classList.toggle("active",p.id===map[name]));
 }
 function bindCsActionsV435(){
@@ -3917,6 +3911,7 @@ async function saveAdminProduct(){
    V4.50.2 통합관리자 · 지연로딩 · 공통 주문수정
 ========================================================= */
 const admin450={tab:'home',ordersMode:'today',orderFilter:'all',orders:[],lookupMode:'customer',liveType:'',csFilter:'',productsLoaded:false,tabLoaded:{},selectedOrder:null};
+let adminV451Initialized=false;
 function v450(id){return document.getElementById(id)}
 function v450On(id,event,fn){const el=v450(id);if(el)el.addEventListener(event,fn);return el}
 function v450OpenModal(id){const el=v450(id);if(el){el.classList.add('show');el.setAttribute('aria-hidden','false')}}
@@ -3928,6 +3923,8 @@ function v450OrderCard(o,extra){return `<button type="button" class="v450-order-
 function v450BindOrderCards(root,orders){if(!root)return;root.querySelectorAll('[data-order-no]').forEach(el=>el.addEventListener('click',()=>{const no=el.dataset.orderNo;const o=(orders||[]).find(x=>String(x.orderNumber)===String(no));if(o)openOrderModalV450(o)}))}
 
 async function initAdminV450Page(){
+  if(adminV451Initialized)return;
+  adminV451Initialized=true;
   v450On('adminLogoutButton','click',logoutAdminV427);
   const role=adminRoleV435||'admin';const badge=v450('adminRoleBadge');if(badge)badge.textContent=role==='cs'?'CS 관리자':'대표 관리자';
   document.querySelectorAll('.admin-only').forEach(el=>{if(role==='cs')el.hidden=true});
@@ -3978,10 +3975,10 @@ async function loadLiveSummaryV450(){try{const d=await apiGet({action:'adminLive
 async function saveYoutubeApiV450(){const key=(v450('youtubeApiKeyInput').value||'').trim();if(!key){alert('YouTube API 키를 입력해주세요.');return}try{const r=await apiPost({action:'adminSaveYouTubeApiKey',apiKey:key});v450('youtubeApiKeyInput').value='';alert(r.message||'저장했습니다.');loadLiveSummaryV450()}catch(e){alert(e.message)}}
 async function startBroadcastV450(){const url=(v450('broadcastYoutubeUrl').value||'').trim();if(!url){alert('YouTube 라이브 URL을 입력해주세요.');return}if(!confirm('새 방송을 시작하면 이전 방송의 임시예약·대기·메시지ID가 초기화됩니다. 시작할까요?'))return;try{showLoading('라이브를 시작하는 중입니다.');const r=await apiPost({action:'adminStartBroadcast',youtubeUrl:url});alert(r.message||'라이브를 시작했습니다.');await loadLiveSummaryV450()}catch(e){alert(e.message)}finally{hideLoading()}}
 async function endBroadcastV450(){if(!confirm('라이브를 종료할까요?'))return;try{showLoading('라이브를 종료하는 중입니다.');const r=await apiPost({action:'adminEndBroadcast'});alert(r.message||'종료했습니다.');await loadLiveSummaryV450()}catch(e){alert(e.message)}finally{hideLoading()}}
-async function loadLiveListV450(type,title){admin450.liveType=type;try{showLoading(title+' 목록을 불러오는 중입니다.');const d=await apiGet({action:'adminLiveListV450',type:type}),rows=d.rows||[],body=v450('liveListBodyV450');v450('liveListTitleV450').textContent=title;v450('liveListPanelV450').hidden=false;body.innerHTML=rows.length?rows.map(r=>`<tr><td><input type="checkbox" class="live-row-check-v450" value="${Number(r.rowNumber)}"></td><td>${escapeHtml(v450DateTime(r.time))}</td><td>${escapeHtml(r.nickname)}</td><td>${escapeHtml(r.productNo)}</td><td>${escapeHtml(r.productName)}</td><td>${escapeHtml(r.color)}</td><td>${escapeHtml(r.size)}</td><td>${Number(r.quantity||0)}</td><td>${escapeHtml(r.status)}</td></tr>`).join(''):'<tr><td colspan="9" class="empty-cell">해당 주문이 없습니다.</td></tr>'}catch(e){alert(e.message)}finally{hideLoading()}}
+async function loadLiveListV450(type,title){admin450.liveType=type;try{showLoading(title+' 목록을 불러오는 중입니다.');const d=await apiGet({action:'adminLiveListV450',type:type}),rows=d.rows||[],body=v450('liveListBodyV450');v450('liveListTitleV450').textContent=title;v450('liveListPanelV450').hidden=false;body.innerHTML=rows.length?rows.map(r=>`<tr><td data-label="선택"><input type="checkbox" class="live-row-check-v450" value="${Number(r.rowNumber)}"></td><td data-label="시간">${escapeHtml(v450DateTime(r.time))}</td><td data-label="닉네임">${escapeHtml(r.nickname)}</td><td data-label="상품번호">${escapeHtml(r.productNo)}</td><td data-label="상품명">${escapeHtml(r.productName)}</td><td data-label="칼라">${escapeHtml(r.color)}</td><td data-label="사이즈">${escapeHtml(r.size)}</td><td data-label="수량">${Number(r.quantity||0)}</td><td data-label="상태">${escapeHtml(r.status)}</td></tr>`).join(''):'<tr><td colspan="9" class="empty-cell">해당 주문이 없습니다.</td></tr>'}catch(e){alert(e.message)}finally{hideLoading()}}
 function selectedLiveRowsV450(){return Array.from(document.querySelectorAll('.live-row-check-v450:checked')).map(x=>Number(x.value)).filter(x=>x>=2)}
-async function applyLiveBulkV450(){const rows=selectedLiveRowsV450(),status=v450('liveBulkStatusV450').value;if(!rows.length||!status){alert('변경할 주문과 상태를 선택해주세요.');return}if(!confirm(rows.length+'건을 '+status+' 상태로 변경할까요?'))return;try{showLoading('상태를 변경하는 중입니다.');const r=await apiPost({action:'adminLiveBulkStatus',rowNumbers:rows,status:status});alert(r.message||'변경했습니다.');await loadLiveListV450(admin450.liveType,'실시간 임시주문');await loadLiveSummaryV450()}catch(e){alert(e.message)}finally{hideLoading()}}
-async function deleteLiveRowsV450(){const rows=selectedLiveRowsV450();if(!rows.length){alert('삭제할 주문을 선택해주세요.');return}if(!confirm(rows.length+'건을 임시주문에서 영구 삭제할까요?'))return;try{showLoading('삭제하는 중입니다.');const r=await apiPost({action:'adminLiveDeleteRowsV450',rowNumbers:rows});alert(r.message||'삭제했습니다.');await loadLiveListV450(admin450.liveType,'실시간 임시주문');await loadLiveSummaryV450()}catch(e){alert(e.message)}finally{hideLoading()}}
+async function applyLiveBulkV450(){const rows=selectedLiveRowsV450(),status=v450('liveBulkStatusV450').value;if(!rows.length||!status){alert('변경할 주문과 상태를 선택해주세요.');return}if(!confirm(rows.length+'건을 '+status+' 상태로 변경할까요?'))return;try{showLoading('상태를 변경하는 중입니다.');const r=await apiPost({action:'adminLiveBulkStatus',rowNumbers:rows,status:status});alert(r.message||'변경했습니다.');await loadLiveListV450(admin450.liveType,'라이브임시주문');await loadLiveSummaryV450()}catch(e){alert(e.message)}finally{hideLoading()}}
+async function deleteLiveRowsV450(){const rows=selectedLiveRowsV450();if(!rows.length){alert('삭제할 주문을 선택해주세요.');return}if(!confirm(rows.length+'건을 라이브임시주문에서 영구 삭제할까요?'))return;try{showLoading('삭제하는 중입니다.');const r=await apiPost({action:'adminLiveDeleteRowsV450',rowNumbers:rows});alert(r.message||'삭제했습니다.');await loadLiveListV450(admin450.liveType,'라이브임시주문');await loadLiveSummaryV450()}catch(e){alert(e.message)}finally{hideLoading()}}
 
 function bindCsV450(){document.querySelectorAll('[data-cs-filter]').forEach(b=>b.addEventListener('click',()=>loadCsListV450(b.dataset.csFilter,b.querySelector('span')?.textContent||'CS 주문')))}
 async function loadCsSummaryV450(){try{const d=await apiGet({action:'adminOrdersV450',mode:'all'}),rows=d.orders||[];const paid=rows.filter(o=>['입금완료','카드결제완료','카드결제'].includes(o.paymentStatus)).length,unpaid=rows.filter(o=>o.paymentStatus==='미입금').length,card=rows.filter(o=>['카드결제대기','카드링크발송','카드결제완료','카드결제'].includes(o.paymentStatus)).length;[['cAll',rows.length],['cPaid',paid],['cUnpaid',unpaid],['cCard',card]].forEach(x=>{if(v450(x[0]))v450(x[0]).textContent=x[1]})}catch(e){console.warn(e)}}
@@ -3989,11 +3986,11 @@ async function loadCsListV450(filter,title){try{showLoading(title+'을 불러오
 async function quickSetOrderStatusV450(no,status,after){if(!confirm(status+' 상태로 변경할까요?'))return;try{const r=await apiPost({action:'adminSetOrderStatusV450',orderNumber:no,status:status});alert(r.message||'변경했습니다.');if(after)after();loadAdminHomeV450(true);loadCsSummaryV450()}catch(e){alert(e.message)}}
 async function sendPayAppSmsV450(no,after){try{const d=await apiGet({action:'adminOrdersV450',mode:'all',keyword:no}),o=(d.orders||[]).find(x=>x.orderNumber===no);if(!o)throw new Error('주문을 찾지 못했습니다.');if(!confirm(`${o.receiverName||o.nickname} 고객에게 페이앱 카드결제 문자를 발송할까요?\n${money(o.paymentAmount)}`))return;showLoading('페이앱 문자를 발송하는 중입니다.');const r=await apiPost({action:'adminCsCreatePayAppLink',rowNumber:o.rowNumber,sendSms:true});alert(r.message||'문자 발송을 요청했습니다.');if(after)after();loadCsSummaryV450();loadAdminHomeV450(true)}catch(e){alert(e.message)}finally{hideLoading()}}
 
-function bindProductsV450(){v450On('addProductOptionV450','click',()=>addProductOptionRowV450());v450On('saveProductV450','click',saveProductV450);v450On('reloadProductsV450','click',()=>loadProductsV450(true));v450On('saveProductArchiveV450','click',saveProductArchiveAdminV450);v450On('viewArchiveV450','click',viewArchiveV450);if(v450('productOptionsV450')&&!v450('productOptionsV450').children.length)addProductOptionRowV450()}
+function bindProductsV450(){v450On('addProductOptionV450','click',()=>addProductOptionRowV450());v450On('saveProductV450','click',saveProductV450);v450On('reloadProductsV450','click',()=>loadProductsV450(true));v450On('saveProductArchiveV450','click',saveProductArchiveAdminV450);v450On('viewArchiveV450','click',viewArchiveV450);const saveDate=v450('archiveSaveDateV451');if(saveDate&&!saveDate.value)saveDate.value=todayString();if(v450('productOptionsV450')&&!v450('productOptionsV450').children.length)addProductOptionRowV450()}
 function addProductOptionRowV450(values){const box=v450('productOptionsV450'),row=document.createElement('div');row.className='v450-option-row';row.innerHTML=`<input class="v450-opt-color" placeholder="칼라" value="${escapeHtml(values?.color||'')}"><input class="v450-opt-size" placeholder="사이즈" value="${escapeHtml(values?.size||'')}"><input class="v450-opt-stock" type="number" min="0" placeholder="현재재고" value="${values?.currentStock??''}"><button type="button" class="btn btn-danger-soft">삭제</button>`;row.querySelector('button').addEventListener('click',()=>{if(box.children.length>1)row.remove();else{row.querySelectorAll('input').forEach(x=>x.value='')}});box.appendChild(row)}
 async function saveProductV450(){const product={productNo:(v450('pNoV450').value||'').trim(),productName:(v450('pNameV450').value||'').trim(),saleType:v450('pTypeV450').value,salePrice:Number(v450('pSaleV450').value||0),depositPrice:Number(v450('pDepositV450').value||0)},options=Array.from(document.querySelectorAll('.v450-option-row')).map(r=>({color:r.querySelector('.v450-opt-color').value.trim(),size:r.querySelector('.v450-opt-size').value.trim(),currentStock:Number(r.querySelector('.v450-opt-stock').value)}));try{showLoading('상품을 저장하는 중입니다.');const r=await apiPost({action:'adminBatchProductSaveV450',product:product,options:options});alert(r.message||'저장했습니다.');admin450.productsLoaded=false;await loadProductsV450(true)}catch(e){alert(e.message)}finally{hideLoading()}}
-async function loadProductsV450(force){if(!force&&admin450.productsLoaded)return;try{showLoading('상품정보를 불러오는 중입니다.');const d=await apiGet({action:'adminProducts'}),rows=d.products||[],body=v450('productsBodyV450');body.innerHTML=rows.length?rows.map(p=>`<tr><td>${escapeHtml(p.productNo)}</td><td>${escapeHtml(p.productName)}</td><td>${escapeHtml(p.color)}</td><td>${escapeHtml(p.size)}</td><td>${money(p.salePrice)}</td><td>${money(p.depositPrice)}</td><td>${p.currentStock==null?'미설정':Number(p.currentStock)}</td><td>${Number(p.reservedStock||0)}<small>${escapeHtml(p.reservedNames||'')}</small></td><td>${Number(p.submittedStock||0)}</td><td>${escapeHtml(p.waitingNames||'')}</td><td>${p.availableStock==null?'-':Number(p.availableStock)}</td></tr>`).join(''):'<tr><td colspan="11" class="empty-cell">등록된 상품이 없습니다.</td></tr>';admin450.productsLoaded=true;await loadProductArchiveDatesV450()}catch(e){alert(e.message)}finally{hideLoading()}}
-async function saveProductArchiveAdminV450(){if(!confirm('현재 상품정보 전체를 오늘 날짜로 저장할까요? 같은 날짜 저장본은 갱신됩니다.'))return;try{showLoading('날짜별상품정보를 저장하는 중입니다.');const r=await apiPost({action:'adminSaveProductArchiveV450',date:todayString()});alert(r.message||'저장했습니다.');await loadProductArchiveDatesV450()}catch(e){alert(e.message)}finally{hideLoading()}}
+async function loadProductsV450(force){if(!force&&admin450.productsLoaded)return;try{showLoading('상품정보를 불러오는 중입니다.');const d=await apiGet({action:'adminProducts'}),rows=d.products||[],body=v450('productsBodyV450');body.innerHTML=rows.length?rows.map(p=>`<tr><td data-label="번호">${escapeHtml(p.productNo)}</td><td data-label="상품명">${escapeHtml(p.productName)}</td><td data-label="칼라">${escapeHtml(p.color)}</td><td data-label="사이즈">${escapeHtml(p.size)}</td><td data-label="판매가">${money(p.salePrice)}</td><td data-label="입금가">${money(p.depositPrice)}</td><td data-label="현재재고">${p.currentStock==null?'미설정':Number(p.currentStock)}</td><td data-label="예약">${Number(p.reservedStock||0)}<small>${escapeHtml(p.reservedNames||'')}</small></td><td data-label="주문서접수">${Number(p.submittedStock||0)}</td><td data-label="대기">${escapeHtml(p.waitingNames||'')}</td><td data-label="추가가능"><strong>${p.availableStock==null?'-':Number(p.availableStock)}</strong></td></tr>`).join(''):'<tr><td colspan="11" class="empty-cell">등록된 상품이 없습니다.</td></tr>';admin450.productsLoaded=true;await loadProductArchiveDatesV450()}catch(e){alert(e.message)}finally{hideLoading()}}
+async function saveProductArchiveAdminV450(){const date=(v450('archiveSaveDateV451')?.value||todayString()).trim();if(!date){alert('저장 날짜를 선택해주세요.');return}if(!confirm(date+' 날짜로 현재 상품정보 전체를 저장할까요?\n같은 날짜의 저장본이 있으면 갱신됩니다.'))return;try{showLoading(date+' 상품정보를 저장하는 중입니다.');const r=await apiPost({action:'adminSaveProductArchiveV450',date:date});alert(r.message||'저장했습니다.');await loadProductArchiveDatesV450();if(v450('archiveDateV450'))v450('archiveDateV450').value=date}catch(e){alert(e.message)}finally{hideLoading()}}
 async function loadProductArchiveDatesV450(){try{const d=await apiGet({action:'adminProductArchiveDatesV450'}),sel=v450('archiveDateV450');if(!sel)return;const keep=sel.value;sel.innerHTML='<option value="">날짜별 상품정보 선택</option>'+((d.dates||[]).map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join(''));if((d.dates||[]).includes(keep))sel.value=keep}catch(e){console.warn(e)}}
 async function viewArchiveV450(){const date=v450('archiveDateV450').value;if(!date){alert('조회할 날짜를 선택해주세요.');return}try{const d=await apiGet({action:'adminProductArchiveV450',date:date}),rows=d.rows||[],box=v450('archiveResultV450');box.innerHTML=rows.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>번호</th><th>상품명</th><th>칼라</th><th>사이즈</th><th>판매가</th><th>입금가</th><th>당시재고</th></tr></thead><tbody>${rows.map(p=>`<tr><td>${escapeHtml(p.productNo)}</td><td>${escapeHtml(p.productName)}</td><td>${escapeHtml(p.color)}</td><td>${escapeHtml(p.size)}</td><td>${money(p.salePrice)}</td><td>${money(p.depositPrice)}</td><td>${p.currentStock==null?'-':Number(p.currentStock)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty-state">저장된 상품이 없습니다.</div>'}catch(e){alert(e.message)}}
 
