@@ -1,0 +1,39 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>씬느샵 주문조회</title><link rel="stylesheet" href="styles.css"></head><body>
+<div class="shell" style="max-width:760px">
+  <div class="topbar"><a href="index.html" class="brand">씬느샵 <b>♥</b></a><a href="index.html" class="btn ghost">주문서로</a></div>
+  <div class="card pad">
+    <div class="h1">고객 주문서 조회</div>
+    <div class="sub">라이브 중 작성한 주문과 전체주문이력을 한 번에 조회합니다. 입금완료 전 주문은 고객이 직접 수정·삭제할 수 있습니다.</div>
+    <div class="form-grid section">
+      <div class="field"><label>수령인 성함</label><input id="receiver" class="input" placeholder="예) 신성은"></div>
+      <div class="field"><label>연락처 뒤 4자리</label><input id="last4" class="input" maxlength="4" inputmode="numeric" placeholder="예) 5484"></div>
+    </div>
+    <button id="lookup" class="btn primary w100 section">주문조회</button>
+  </div>
+  <div id="msg" class="note section hidden"></div>
+  <div id="result" class="section hidden"><div class="section-title"><h3>주문 조회 결과</h3><span id="count" class="pill"></span></div><div id="orders"></div></div>
+</div>
+
+<div id="editModal" class="modal"><div class="modal-card">
+  <div class="section-title"><div><h2 style="margin:0">주문 수정 / 삭제</h2><div id="editOrderNo" class="hint"></div></div><button id="editClose" class="btn ghost">닫기</button></div>
+  <div id="editVerify" class="note section">
+    개인정보 보호를 위해 수정·삭제할 때는 <b>전체 휴대폰번호</b>를 한 번 더 확인합니다.
+    <div class="field section"><label>전체 휴대폰번호</label><input id="editPhone" class="input" inputmode="tel" placeholder="010-1234-5678"></div>
+    <button id="editVerifyBtn" class="btn primary w100 section">본인확인 후 주문 열기</button>
+  </div>
+  <div id="editForm" class="hidden">
+    <div class="form-grid section">
+      <div class="field"><label>수령인</label><input id="editReceiver" class="input"></div>
+      <div class="field"><label>우편번호</label><div class="toolbar"><input id="editZip" class="input"><button id="editPostcode" class="btn ghost" type="button">주소찾기</button></div></div>
+      <div class="field full"><label>주소</label><input id="editAddress" class="input"></div>
+      <div class="field full"><label>배송메모</label><input id="editMemo" class="input"></div>
+    </div>
+    <div class="card pad soft section"><div class="section-title"><h3>현재 주문상품</h3><span class="pill">입금완료 전 수정 가능</span></div><div id="editCart"></div></div>
+    <div class="card pad section"><h3 style="margin-top:0">상품 추가 / 옵션 변경</h3><input id="editSearch" class="input" placeholder="상품번호 또는 상품명 검색"><div id="editCatalog" class="products section"></div></div>
+    <div class="section-title section"><b>수정 후 결제금액</b><b id="editAmount" style="font-size:24px"></b></div>
+    <div class="toolbar section"><button id="editSave" class="btn primary">수정 저장</button><button id="editDelete" class="btn red">주문 삭제</button><button id="editCancel" class="btn ghost">취소</button></div>
+  </div>
+</div></div>
+
+<div id="busy" class="modal"><div class="modal-card complete"><div class="spinner"></div><h2 id="busyText">처리하고 있습니다...</h2></div></div>
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script><script src="config.js"></script><script src="customer.js"></script></body></html>
