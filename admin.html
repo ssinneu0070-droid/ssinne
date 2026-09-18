@@ -1,644 +1,132 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#111827">
-  <title>씬느샵 통합 관리자 V4.42.3</title>
-  <link rel="stylesheet" href="style.css?v=v4-42-3-cardall">
-  <script src="script.js?v=v4-42-3-cardall" defer></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#111827">
+<title>씬느샵 통합 관리자 V4.50.4</title>
+<link rel="stylesheet" href="style.css?v=v4-50-4-final">
+<script src="script.js?v=v4-50-4-final" defer></script>
 </head>
-<body data-page="admin" class="page-admin">
-  <div class="admin-login-gate" id="adminLoginGate">
-    <div class="admin-login-card">
-      <div class="admin-login-logo">S</div>
-      <span class="eyebrow dark">SSINNEU ADMIN · V4.42.3</span>
-      <h1>관리자 로그인</h1>
-      <p>대표 관리자 또는 CS 직원 비밀번호로 로그인하세요.</p>
-      <label for="adminPasswordInput">로그인 비밀번호</label>
-      <input type="password" id="adminPasswordInput" autocomplete="current-password" placeholder="비밀번호 입력">
-      <button type="button" class="btn btn-primary full-width" id="adminLoginButton">로그인</button>
-      <div class="admin-login-error" id="adminLoginError" aria-live="polite"></div>
-      <small>대표/CS 권한은 Apps Script 서버에서 구분합니다.</small>
+<body data-page="admin" class="page-admin v450-admin">
+<div class="admin-login-gate" id="adminLoginGate">
+  <div class="admin-login-card"><div class="admin-login-logo">S</div><span class="eyebrow dark">SSINNEU ADMIN · V4.50.4</span><h1>관리자 로그인</h1><p>대표 관리자 또는 CS 비밀번호를 입력하세요.</p><label for="adminPasswordInput">비밀번호</label><input type="password" id="adminPasswordInput" autocomplete="current-password" placeholder="비밀번호 입력"><button type="button" class="btn btn-primary full-width" id="adminLoginButton">로그인</button><div class="admin-login-error" id="adminLoginError"></div><small>비밀번호·API 키는 GitHub가 아니라 Apps Script 속성에 저장됩니다.</small></div>
+</div>
+<div class="admin-app" id="adminApp" style="display:none">
+<aside class="admin-sidebar">
+  <div class="admin-brand"><div class="brand-mark small">S</div><div><strong>씬느샵</strong><span>관리자 V4.50.4</span></div></div>
+  <nav class="side-nav">
+    <button class="side-link active" data-v450-tab="home">⌂ <span>홈</span></button>
+    <button class="side-link admin-only" data-v450-tab="orders">▣ <span>주문관리</span></button>
+    <button class="side-link admin-only" data-v450-tab="lookup">⌕ <span>주문조회</span></button>
+    <button class="side-link admin-only" data-v450-tab="live">🎥 <span>라이브관리</span></button>
+    <button class="side-link" data-v450-tab="cs">💬 <span>CS관리</span></button>
+    <button class="side-link admin-only" data-v450-tab="bankmatch">₩ <span>입금관리</span></button>
+    <button class="side-link admin-only" data-v450-tab="products">◇ <span>상품관리</span></button>
+    <button class="side-link admin-only" data-v450-tab="payments">💳 <span>결제연동</span></button>
+  </nav>
+  <div class="side-foot"><a href="customer.html">고객용 주문조회</a><a href="index.html">고객 주문서</a></div>
+</aside>
+<main class="admin-main">
+<header class="admin-topbar v450-topbar"><div class="v450-brandline"><div class="brand-mark small">S</div><div><strong>씬느샵 통합관리자</strong><span id="adminRoleBadge">로그인 확인중</span></div></div><button class="btn btn-subtle" id="adminLogoutButton">로그아웃</button></header>
+
+<section id="v450Tab-home" class="v450-tab active">
+  <section class="v450-hero"><div><span class="eyebrow dark">TODAY</span><h1>오늘 운영현황</h1><p>홈에서는 숫자만 빠르게 불러오고, 상세목록은 카드를 눌렀을 때만 조회합니다.</p></div></section>
+  <div class="v450-metrics" id="homeMetricsV450">
+    <button data-home-filter="all"><span>오늘 주문 건수</span><strong id="hTodayOrders">-</strong></button>
+    <button data-home-filter="shipping"><span>오늘 택배 건수</span><strong id="hShipping">-</strong></button>
+    <button data-home-filter="paid" class="success"><span>결제완료</span><strong id="hPaid">-</strong></button>
+    <button data-home-filter="unpaid" class="danger"><span>미결제</span><strong id="hUnpaid">-</strong></button>
+    <button data-home-filter="cardWaiting" class="card-wait"><span>카드결제대기</span><strong id="hCardWaiting">-</strong></button>
+    <button data-home-filter="cardSent" class="card-sent"><span>카드링크발송</span><strong id="hCardSent">-</strong></button>
+    <button data-home-filter="cardDone" class="card-done"><span>카드결제완료</span><strong id="hCardDone">-</strong></button>
+    <div><span>총매출</span><strong id="hSales">-</strong></div>
+    <div><span>예상마진</span><strong id="hMargin">-</strong></div>
+  </div>
+  <section class="admin-panel admin-only"><div class="panel-title-row"><div><h2>빠른 실행</h2><p>필요한 기능만 홈에서 바로 실행합니다.</p></div></div>
+    <div class="v450-quick-grid">
+      <button class="v450-quick" id="rebuildButton">📦 <b>거래처발주</b></button>
+      <button class="v450-quick" id="combinedShippingButton">🔗 <b>합배송가능 고객조회</b></button>
+      <button class="v450-quick" id="archiveHistoryButton">🔄 <b>전체주문이력 저장/갱신</b></button>
+      <button class="v450-quick" id="lotteExcelButtonV418">🚚 <b>롯데택배 송장뽑기</b></button>
+      <button class="v450-quick" id="lotteTrackingButton">⇧ <b>롯데택배 송장번호 업로드</b></button>
+      <input type="file" id="lotteTrackingFile" accept=".xlsx,.xls" hidden>
     </div>
-  </div>
+  </section>
+  <section class="admin-panel" id="homeFilteredPanel" hidden><div class="panel-title-row"><div><h2 id="homeFilteredTitle">상세목록</h2><p>선택한 상태의 주문만 표시합니다.</p></div><button class="btn btn-subtle" id="homeFilteredClose">닫기</button></div><div class="v450-order-list" id="homeFilteredList"></div></section>
+</section>
 
-  <div class="admin-app" id="adminApp" style="display:none;">
-    <aside class="admin-sidebar">
-      <div class="admin-brand">
-        <div class="brand-mark small">S</div>
-        <div>
-          <strong>씬느샵</strong>
-          <span>관리자</span>
-        </div>
-      </div>
+<section id="v450Tab-orders" class="v450-tab">
+  <section class="admin-panel"><div class="panel-title-row"><div><h2>주문관리</h2><p>오늘주문 또는 전체주문을 선택해 확인하세요.</p></div></div>
+    <div class="v450-segment"><button class="active" data-orders-mode="today">오늘주문</button><button data-orders-mode="all">전체주문</button></div>
+    <div class="v450-metrics compact"><button data-order-filter="all"><span>전체 주문</span><strong id="oAll">0</strong></button><button data-order-filter="shipping"><span>택배 건수</span><strong id="oShipping">0</strong></button><button data-order-filter="paid" class="success"><span>입금완료</span><strong id="oPaid">0</strong></button><button data-order-filter="unpaid" class="danger"><span>미입금</span><strong id="oUnpaid">0</strong></button><div><span>총매출</span><strong id="oSales">0원</strong></div><div><span>예상마진</span><strong id="oMargin">0원</strong></div></div>
+    <div class="v450-search"><input id="orderSearchV450" placeholder="닉네임 · 수령인 · 연락처 · 주문번호"><button class="btn btn-primary" id="orderSearchBtnV450">검색</button></div>
+  </section>
+  <section class="admin-panel"><div class="table-wrap"><table class="data-table v450-order-table"><thead><tr><th>주문일</th><th>입금금액</th><th>입금상태</th><th>닉네임</th><th>수령인</th><th>주소</th><th>연락처</th><th>구매내역</th><th>내품수량</th><th>송장번호</th></tr></thead><tbody id="ordersBodyV450"><tr><td colspan="10" class="empty-cell">오늘주문을 불러오는 중입니다.</td></tr></tbody></table></div></section>
+</section>
 
-      <nav class="side-nav">
-        <button class="side-link active" data-tab="home" id="homeSideButton"><span>⌂</span> 홈</button>
-        <button class="side-link admin-only" data-tab="orders"><span>▣</span> 주문 관리</button>
-        <button class="side-link admin-only" data-tab="live" id="liveAdminSideButton"><span>🎥</span> 라이브 관리 <b class="live-nav-badge" id="liveNavBadge">0</b></button>
-        <button class="side-link" data-tab="cs" id="csSideButton"><span>💬</span> CS 관리 <b class="live-nav-badge cs-badge" id="csNavBadge">0</b></button>
-        <button class="side-link admin-only" data-tab="bankmatch" id="bankMatchSideButton"><span>₩</span> 입금 관리</button>
-        <button class="side-link admin-only" data-tab="products"><span>◇</span> 상품 관리</button>
-        <button class="side-link admin-only" data-tab="cancelled" id="cancelledSideButton"><span>↶</span> 취소 주문</button>
-        <a class="side-link admin-only" href="customer.html"><span>⌕</span> 고객 주문조회</a>
-        <a class="side-link admin-only" href="index.html"><span>＋</span> 주문서</a>
-      </nav>
+<section id="v450Tab-lookup" class="v450-tab">
+  <section class="admin-panel"><div class="panel-title-row"><div><h2>주문조회</h2><p>필요한 조회 방식만 눌렀을 때 데이터를 불러옵니다.</p></div></div>
+    <div class="v450-segment"><button class="active" data-lookup-mode="customer">고객주문 조회</button><button data-lookup-mode="date">날짜별 주문 조회</button><button data-lookup-mode="live">라이브 주문 조회</button></div>
+    <div class="v450-search" id="lookupCustomerControls"><input id="lookupKeywordV450" placeholder="닉네임 / 이름 / 전화번호 뒷자리"><button class="btn btn-primary" id="lookupSearchV450">조회</button></div>
+    <div class="v450-search" id="lookupDateControls" hidden><input type="date" id="lookupDateV450"><button class="btn btn-primary" id="lookupDateSearchV450">조회</button></div>
+    <div class="v450-search" id="lookupLiveControls" hidden><input id="lookupLiveKeywordV450" placeholder="라이브 주문 내 검색 (선택)"><button class="btn btn-primary" id="lookupLiveSearchV450">라이브 주문 보기</button></div>
+  </section>
+  <section class="admin-panel"><div class="v450-order-list" id="lookupResultsV450"><div class="empty-state">조회방식을 선택하고 검색해주세요.</div></div></section>
+</section>
 
-      <div class="side-foot">
-        씬느샵 Live Commerce
-      </div>
-    </aside>
+<section id="v450Tab-live" class="v450-tab">
+  <section class="admin-panel"><div class="panel-title-row"><div><h2>라이브 관리</h2><p>URL · 시작 · 종료만 간단하게 사용합니다.</p></div><span id="broadcastStateBadge" class="broadcast-state-badge">방송 대기</span></div>
+    <div class="v450-live-row"><input id="broadcastYoutubeUrl" placeholder="YouTube 라이브 URL"><button class="btn btn-primary" id="broadcastStartButton">라이브 시작</button><button class="btn btn-dark" id="broadcastEndButton">라이브 종료</button></div>
+    <div id="youtubeApiSetupV450" class="v450-api-once"><input id="youtubeApiKeyInput" type="password" placeholder="YouTube API 키 (처음 1회)"><button class="btn btn-subtle" id="youtubeApiKeySaveButton">API 키 저장</button></div>
+  </section>
+  <div class="v450-metrics compact"><button data-live-list="reserved" class="success"><span>댓글예약</span><strong id="lReserved">0</strong></button><button data-live-list="submitted"><span>주문서작성</span><strong id="lSubmitted">0</strong></button><button data-live-list="unsubmitted" class="danger"><span>주문서미작성</span><strong id="lUnsubmitted">0</strong></button><button data-live-list="review" class="warning"><span>확인필요</span><strong id="lReview">0</strong></button></div>
+  <section class="admin-panel" id="liveListPanelV450" hidden><div class="panel-title-row"><div><h2 id="liveListTitleV450">실시간 임시주문</h2><p>카드를 누른 경우에만 목록을 불러옵니다.</p></div></div><div class="v450-bulk"><label><input type="checkbox" id="liveSelectAllV450"> 전체선택</label><select id="liveBulkStatusV450"><option value="">상태 선택</option><option>예약</option><option>대기</option><option>취소</option></select><button class="btn btn-primary" id="liveBulkApplyV450">선택 상태변경</button><button class="btn btn-danger-soft" id="liveDeleteSelectedV450">선택 삭제</button></div><div class="table-wrap"><table class="data-table"><thead><tr><th>선택</th><th>시간</th><th>닉네임</th><th>상품번호</th><th>상품명</th><th>칼라</th><th>사이즈</th><th>수량</th><th>상태</th></tr></thead><tbody id="liveListBodyV450"></tbody></table></div></section>
+</section>
 
-    <main class="admin-main">
-      <header class="admin-topbar home-only-topbar-v4406 b-profile-topbar-v4407" id="adminHomeTopbarV4406">
-        <div class="b-profile-main-v4407">
-          <div class="b-profile-avatar-v4407" aria-hidden="true">S</div>
-          <div class="b-profile-copy-v4407">
-            <strong>씬느샵</strong>
-            <span>관리자 · V4.42.3</span>
-          </div>
-          <div class="topbar-role b-status-badges-v4407">
-            <span id="adminRoleBadge">로그인 확인중</span>
-            <span id="adminBroadcastMini">방송 대기</span>
-          </div>
-        </div>
-        <button class="btn btn-subtle logout-standalone b-logout-v4407" type="button" id="adminLogoutButton">🔒 로그아웃</button>
-      </header>
+<section id="v450Tab-cs" class="v450-tab">
+  <section class="admin-panel"><div class="panel-title-row"><div><h2>CS관리</h2><p>주문관리와 같은 주문수정 기능을 사용합니다.</p></div></div>
+    <div class="v450-metrics compact"><button data-cs-filter="all"><span>전체주문</span><strong id="cAll">0</strong></button><button data-cs-filter="paid" class="success"><span>결제완료</span><strong id="cPaid">0</strong></button><button data-cs-filter="unpaid" class="danger"><span>미결제</span><strong id="cUnpaid">0</strong></button><button data-cs-filter="card"><span>카드결제</span><strong id="cCard">0</strong></button></div>
+  </section>
+  <section class="admin-panel"><div class="v450-order-list" id="csResultsV450"><div class="empty-state">카드를 눌러 주문을 확인하세요.</div></div></section>
+</section>
 
+<section id="v450Tab-bankmatch" class="v450-tab">
+  <section class="admin-panel"><div class="panel-title-row"><div><h2>입금 자동대조</h2><p>입금완료 재검사는 제거했습니다. 토스뱅크·하나은행 엑셀을 미입금 주문과 대조합니다.</p></div></div>
+    <input type="file" id="bankFileInput" accept=".xlsx,.xls" multiple hidden><button class="btn btn-primary" id="bankFileButton">은행 엑셀 파일 선택</button><div id="bankSelectedFiles" class="bank-selected-files">선택된 파일이 없습니다.</div><div class="button-row"><button class="btn btn-dark" id="bankMatchStartButton" disabled>자동대조 시작</button><button class="btn btn-subtle" id="bankMatchResetButton">초기화</button></div>
+  </section>
+  <div class="v450-metrics compact"><button data-bank-result-target="bankMatchedSectionV4404"><span>자동일치</span><strong id="bankMatchedCount">0</strong></button><button data-bank-result-target="bankReviewSectionV4404"><span>확인필요</span><strong id="bankReviewCount">0</strong></button><button data-bank-result-target="bankUnpaidSectionV4404"><span>미입금</span><strong id="bankUnpaidCount">0</strong></button><button data-bank-result-target="bankOrphanSectionV4404"><span>주문 미발견</span><strong id="bankOrphanCount">0</strong></button></div>
+  <section class="admin-panel" id="bankMatchResultPanel"><button class="btn btn-primary" id="bankBulkPaidButton" disabled>자동일치 전체 입금완료</button><div id="bankMatchNotice" class="bankmatch-notice">은행 파일을 선택해주세요.</div>
+    <div id="bankMatchedSectionV4404"><h3>자동일치</h3><table class="data-table"><tbody id="bankMatchedList"></tbody></table></div>
+    <div id="bankReviewSectionV4404"><div class="button-row"><h3>확인필요</h3><button class="btn btn-primary" id="bankReviewBulkPaidButton" disabled>선택 입금완료</button><input type="checkbox" id="bankReviewSelectAll"></div><table class="data-table"><tbody id="bankReviewList"></tbody></table></div>
+    <div id="bankUnpaidSectionV4404"><h3>미입금</h3><table class="data-table"><tbody id="bankUnpaidList"></tbody></table></div>
+    <div id="bankOrphanSectionV4404"><h3>주문 미발견</h3><table class="data-table"><tbody id="bankOrphanList"></tbody></table></div>
+  </section>
+</section>
 
-      <section id="homeTab" class="tab-section active v435-home">
-        <section class="b-quick-menu-v4407 admin-only" aria-label="빠른 실행 메뉴">
-          <div class="b-quick-menu-head-v4407">
-            <div><h2>빠른 실행 메뉴</h2><p>자주 사용하는 기능을 홈에서 바로 실행합니다.</p></div>
-          </div>
-          <div class="topbar-actions b-quick-grid-v4407">
-            <button class="b-quick-button-v4407" type="button" id="rebuildButton"><span class="b-quick-icon-v4407">📦</span><b>거래처발주 엑셀 다운로드</b><em>›</em></button>
-            <button class="b-quick-button-v4407" type="button" id="combinedShippingButton"><span class="b-quick-icon-v4407">🔗</span><b>합배송 가능 고객 · 전체주문이력</b><em>›</em></button>
-            <button class="b-quick-button-v4407 accent" type="button" id="archiveHistoryButton"><span class="b-quick-icon-v4407">🔄</span><b>전체주문이력 저장/갱신</b><em>›</em></button>
-            <button class="b-quick-button-v4407" type="button" id="fillLegacyOrderNumbersButton"><span class="b-quick-icon-v4407">＋</span><b>기존 주문번호 자동생성</b><em>›</em></button>
-            <button class="b-quick-button-v4407 accent" type="button" id="lotteExcelButtonV418"><span class="b-quick-icon-v4407">🚚</span><b>롯데택배 · 전체주문이력 날짜선택</b><em>›</em></button>
-            <button class="b-quick-button-v4407 dark" type="button" id="lotteTrackingButton"><span class="b-quick-icon-v4407">⇧</span><b>롯데 송장결과 업로드</b><em>›</em></button>
-            <input type="file" id="lotteTrackingFile" accept=".xlsx,.xls" hidden>
-          </div>
-        </section>
-        <section class="v435-welcome">
-          <div><span class="eyebrow dark">TODAY · V4.42.3</span><h2 id="homeWelcomeTitle">오늘도 좋은 하루 되세요 💗</h2><p id="homeWelcomeText">방송 · 주문 · CS · 출고까지 필요한 업무만 한눈에 확인하세요.</p></div>
-          <div class="home-quick-search"><input id="homeQuickSearch" placeholder="닉네임 · 이름 · 전화번호 · 주문번호"><button class="btn btn-primary" id="homeQuickSearchButton" type="button">고객 찾기</button></div>
-        </section>
-        <div class="summary-grid premium v435-home-summary">
-          <button class="metric-card" type="button" id="homeTodayOrdersCardV4404" data-home-tab="orders"><span>오늘 주문</span><strong id="homeOrderCount">-</strong><small>현재 주문</small></button>
-          <button class="metric-card warning" type="button" id="homeUnpaidCardV4404" data-home-tab="orders"><span>미결제</span><strong id="homeUnpaidCount">-</strong><small>미입금 · 카드대기</small></button>
-          <button class="metric-card success" type="button" id="homeCsCardV4404" data-home-tab="cs"><span>CS 접수</span><strong id="homeCsCount">-</strong><small>처리할 문의</small></button>
-          <button class="metric-card accent admin-only" type="button" id="homeLiveCardV4404" data-home-tab="live"><span>라이브 확인필요</span><strong id="homeLiveReviewCount">-</strong><small>예약 · 대기 확인</small></button>
-        </div>
-        <div class="v435-home-grid">
-          <section class="admin-panel">
-            <div class="panel-title-row"><div><h2>🎥 방송 상태</h2><p>방송 시작과 YouTube 연결 상태를 빠르게 확인합니다.</p></div><button class="btn btn-subtle admin-only" type="button" data-go-tab="live">라이브 관리</button></div>
-            <div id="homeBroadcastCard" class="home-status-card">방송 상태를 불러오는 중입니다.</div>
-          </section>
-          <section class="admin-panel">
-            <div class="panel-title-row"><div><h2>💬 CS 현황</h2><p>동생분과 같이 처리한 CS 진행상태입니다.</p></div><button class="btn btn-subtle" type="button" data-go-tab="cs">CS 관리</button></div>
-            <div class="home-cs-status"><span>접수 <b id="homeCsReceived">0</b></span><span>진행 <b id="homeCsProgress">0</b></span><span>완료 <b id="homeCsDone">0</b></span><span>보류 <b id="homeCsHold">0</b></span></div>
-          </section>
-        </div>
-        <section class="admin-panel admin-only">
-          <div class="panel-title-row"><div><h2>⚙ 운영 바로가기</h2><p>시트는 삭제하지 않고 상황에 맞춰 필요한 탭만 표시합니다.</p></div></div>
-          <div class="v435-action-grid">
-            <button class="btn btn-primary" type="button" data-sheet-mode="broadcast">🎥 방송 중 시트</button>
-            <button class="btn btn-dark" type="button" data-sheet-mode="after">📦 방송 종료 시트</button>
-            <button class="btn btn-subtle" type="button" data-sheet-mode="all">👀 전체 시트 보기</button>
-          </div>
-        </section>
-        <section class="admin-panel admin-only security-panel-v436">
-          <button class="mobile-settings-close-v4406" type="button" id="mobileSettingsCloseV4406">← 설정 닫기</button>
-          <div class="panel-title-row"><div><h2>🔐 보안 · 카드결제 설정</h2><p>대표/CS 비밀번호와 고객에게 보낼 카드결제 링크를 관리자 화면에서 설정합니다.</p></div><span id="securityStatusV436" class="security-status-v436">설정 확인중</span></div>
-          <div class="form-grid two security-grid-v436">
-            <div class="field"><label for="newAdminPasswordV436">새 대표 관리자 비밀번호</label><input id="newAdminPasswordV436" type="password" autocomplete="new-password" placeholder="4자리 이상"></div>
-            <div class="field"><label for="newCsPasswordV436">새 CS 직원 비밀번호</label><input id="newCsPasswordV436" type="password" autocomplete="new-password" placeholder="4자리 이상"></div>
-          </div>
-          <div class="button-row"><button class="btn btn-dark" type="button" id="securitySaveButtonV436">비밀번호 저장</button></div>
-          <div class="payapp-setting-v438">
-            <h3>💳 페이앱 자동결제 연결</h3>
-            <p>한 번만 연결하면 대표와 CS 직원 모두 고객을 검색한 뒤 금액을 다시 입력하지 않고 페이앱 결제링크를 만들 수 있습니다.</p>
-            <div class="form-grid three">
-              <div class="field"><label for="payAppUserIdV438">페이앱 판매자 아이디</label><input id="payAppUserIdV438" autocomplete="off" placeholder="페이앱 아이디"></div>
-              <div class="field"><label for="payAppLinkKeyV438">연동 KEY</label><input id="payAppLinkKeyV438" type="password" autocomplete="new-password" placeholder="연동 KEY"></div>
-              <div class="field"><label for="payAppLinkValV438">연동 VALUE</label><input id="payAppLinkValV438" type="password" autocomplete="new-password" placeholder="연동 VALUE"></div>
-            </div>
-            <div class="button-row"><button class="btn btn-primary" type="button" id="payAppConfigSaveButtonV438">페이앱 연결정보 저장</button></div>
-            <small class="setting-help-v436">연동 KEY/VALUE는 Script Properties에 저장하며 저장 후 화면에 다시 표시하지 않습니다. CS 직원에게는 설정칸이 보이지 않습니다.</small>
-          </div>
-          <div class="payapp-setting-v438 toss-setting-v440">
-            <h3>🔵 토스페이먼츠 연결 <small>선택사항</small></h3>
-            <p><b>아직 가입 전이면 비워두셔도 됩니다.</b> 페이앱은 그대로 작동합니다. 토스 가입 후 테스트 키를 저장하면 CS 화면에 토스 결제링크 버튼이 자동으로 나타납니다.</p>
-            <div class="form-grid three">
-              <div class="field"><label for="tossClientKeyV440">클라이언트 키</label><input id="tossClientKeyV440" type="password" autocomplete="new-password" placeholder="test_gck_... / live_gck_..."></div>
-              <div class="field"><label for="tossSecretKeyV440">시크릿 키</label><input id="tossSecretKeyV440" type="password" autocomplete="new-password" placeholder="test_gsk_... / live_gsk_..."></div>
-              <div class="field"><label for="tossPayPageUrlV440">씬느샵 결제페이지 주소</label><input id="tossPayPageUrlV440" autocomplete="off" placeholder="https://ssinneu0070-droid.github.io/ssinne/pay.html"></div>
-            </div>
-            <div class="button-row"><button class="btn btn-primary" type="button" id="tossConfigSaveButtonV440">토스페이먼츠 연결정보 저장</button></div>
-            <small class="setting-help-v436">V2 주문서형/결제창형 연동 키(gck/gsk)를 사용합니다. 시크릿 키는 Script Properties에만 저장되고 GitHub·고객 화면에는 노출되지 않습니다.</small>
-          </div>
-          <small class="setting-help-v436">비밀번호는 평문으로 저장하지 않고 해시값으로 보관합니다. 기존 첫 로그인 비밀번호를 사용 중이면 먼저 새 비밀번호로 변경하세요.</small>
-        </section>
-      </section>
+<section id="v450Tab-products" class="v450-tab">
+  <section class="admin-panel"><div class="panel-title-row"><div><h2>상품정보 등록</h2><p>기본정보는 한 번, 칼라·사이즈·현재재고는 + 옵션추가로 입력합니다.</p></div></div>
+    <div class="form-grid three"><div class="field"><label>상품번호</label><input id="pNoV450" inputmode="numeric"></div><div class="field"><label>상품명</label><input id="pNameV450"></div><div class="field"><label>판매구분</label><select id="pTypeV450"><option>오늘상품</option><option>상시상품</option></select></div><div class="field"><label>판매가</label><input id="pSaleV450" type="number"></div><div class="field"><label>입금가</label><input id="pDepositV450" type="number"></div></div>
+    <div id="productOptionsV450" class="v450-options"></div><div class="button-row"><button class="btn btn-subtle" id="addProductOptionV450">＋ 옵션 추가</button><button class="btn btn-primary" id="saveProductV450">상품 저장</button></div>
+  </section>
+  <section class="admin-panel"><div class="panel-title-row"><div><h2>상품정보 저장하기</h2><p>현재 상품정보를 날짜별상품정보 시트에 한 덩어리 색상으로 저장합니다.</p></div><button class="btn btn-primary" id="saveProductArchiveV450">오늘 상품정보 저장</button></div><div class="v450-search"><select id="archiveDateV450"><option value="">날짜별 상품정보 선택</option></select><button class="btn btn-subtle" id="viewArchiveV450">조회</button></div><div id="archiveResultV450"></div></section>
+  <section class="admin-panel"><div class="panel-title-row"><div><h2>현재 상품정보</h2><p>상품정보는 이 탭을 눌렀을 때만 불러옵니다.</p></div><button class="btn btn-subtle" id="reloadProductsV450">새로고침</button></div><div class="table-wrap"><table class="data-table"><thead><tr><th>번호</th><th>상품명</th><th>칼라</th><th>사이즈</th><th>판매가</th><th>입금가</th><th>현재재고</th><th>예약</th><th>주문서접수</th><th>대기</th><th>추가가능</th></tr></thead><tbody id="productsBodyV450"></tbody></table></div></section>
+</section>
 
-      <section id="ordersTab" class="tab-section">
-        <section class="admin-panel">
-          <div class="panel-title-row">
-            <div>
-              <h2>주문 조회 구분</h2>
-              <p>오늘 운영 주문과 전체 보관 주문을 나누어 확인할 수 있습니다.</p>
-            </div>
-          </div>
+<section id="v450Tab-payments" class="v450-tab">
+  <section class="admin-panel"><div class="panel-title-row"><div><h2>결제 연동 설정</h2><p>홈에서 분리했습니다. 키는 Script Properties에만 저장됩니다.</p></div></div>
+    <div class="v450-settings-grid"><div><h3>페이앱 자동결제 연결</h3><input id="payAppUserIdV438" placeholder="판매자 아이디"><input id="payAppLinkKeyV438" type="password" placeholder="연동 KEY"><input id="payAppLinkValV438" type="password" placeholder="연동 VALUE"><button class="btn btn-primary" id="payAppSaveV450">페이앱 저장</button></div><div><h3>토스페이먼츠 연결</h3><input id="tossClientKeyV440" placeholder="Client Key"><input id="tossSecretKeyV440" type="password" placeholder="Secret Key"><input id="tossPayPageUrlV440" placeholder="결제페이지 URL (선택)"><button class="btn btn-primary" id="tossSaveV450">토스 저장</button></div><div><h3>관리자 비밀번호</h3><input id="newAdminPasswordV436" type="password" placeholder="새 대표 비밀번호"><input id="newCsPasswordV436" type="password" placeholder="새 CS 비밀번호"><button class="btn btn-dark" id="securitySaveV450">비밀번호 저장</button></div></div>
+  </section>
+</section>
+</main>
+</div>
 
-          <div class="order-source-tabs">
-            <button type="button" class="source-tab active" id="currentOrdersSourceButton">
-              오늘 주문
-            </button>
-            <button type="button" class="source-tab" id="historyOrdersSourceButton">
-              전체 주문이력
-            </button>
-          </div>
-        </section>
-
-        <div class="summary-grid premium v2-summary">
-          <button type="button" class="metric-card clickable-metric" id="summaryAllCardV4404">
-            <span>조회 주문건</span>
-            <strong id="summaryOrderCount">0</strong>
-            <small>눌러서 전체 주문 보기</small>
-          </button>
-          <button type="button" class="metric-card success clickable-metric" id="summaryPaidCardV4404">
-            <span>입금완료</span>
-            <strong id="summaryPaidCount">0</strong>
-            <small>눌러서 완료 주문 보기</small>
-          </button>
-          <button type="button" class="metric-card warning clickable-metric" id="summaryUnpaidCard">
-            <span>미입금 주문</span>
-            <strong id="summaryUnpaidCount">0</strong>
-            <small>미입금·카드결제 모아보기</small>
-          </button>
-          <button type="button" class="metric-card accent clickable-metric" id="summaryPaymentCard">
-            <span>조회 금액</span>
-            <strong id="summaryPaymentTotal">0원</strong>
-            <small>눌러서 금액만 보기</small>
-          </button>
-        </div>
-
-        <section class="admin-panel">
-          <div class="panel-title-row">
-            <div>
-              <h2>주문 검색</h2>
-              <p>날짜 또는 고객정보로 주문을 조회하세요.</p>
-            </div>
-          </div>
-
-          <div class="search-toolbar">
-            <div class="field compact">
-              <label for="startDate">시작일</label>
-              <input type="date" id="startDate">
-            </div>
-
-            <div class="field compact">
-              <label for="endDate">종료일</label>
-              <input type="date" id="endDate">
-            </div>
-
-            <div class="field compact grow">
-              <label for="orderKeyword">닉네임·수령인·연락처</label>
-              <input type="text" id="orderKeyword" placeholder="검색어 입력">
-            </div>
-
-            <button class="btn btn-primary" type="button" id="searchOrdersButton">조회하기</button>
-            <button class="btn btn-subtle" type="button" id="todayOrdersButton">오늘 주문</button>
-            <button class="btn btn-subtle" type="button" id="allOrdersButton">전체 보기</button>
-          </div>
-        </section>
-
-        <section class="amount-only-panel" id="amountOnlyPanel">
-          <span>선택 날짜 주문금액 합계</span>
-          <div id="amountOnlyValue">0원</div>
-          <button type="button" class="btn btn-subtle" id="backToOrderListButton">
-            주문 목록으로 돌아가기
-          </button>
-        </section>
-
-        <section class="admin-panel" id="orderListPanel">
-          <div class="panel-title-row">
-            <div>
-              <h2>주문 목록</h2>
-              <p>입금상태를 바로 변경할 수 있습니다.</p>
-            </div>
-          </div>
-
-          <div class="table-wrap">
-            <table class="data-table order-table">
-              <thead>
-                <tr>
-                  <th>주문일</th>
-                  <th>입금금액</th>
-                  <th>입금상태</th>
-                  <th>입금내역</th>
-                  <th>닉네임</th>
-                  <th>수령인</th>
-                  <th>주소</th>
-                  <th>연락처</th>
-                  <th>배송메모</th>
-                  <th>우편번호</th>
-                  <th>구매내역</th>
-                  <th>내품수량</th>
-                  <th>택배사</th>
-                  <th>송장번호</th>
-                </tr>
-              </thead>
-              <tbody id="adminOrderList">
-                <tr>
-                  <td colspan="14" class="empty-cell">
-                    날짜 또는 검색 조건을 선택한 뒤 조회하기를 눌러주세요.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </section>
-
-
-
-      <section id="csTab" class="tab-section">
-        <section class="admin-panel cs-hero-v435">
-          <div class="panel-title-row"><div><span class="eyebrow dark">CS DESK · PC/MOBILE</span><h2>💬 CS 관리</h2><p>카드결제 고객을 누르면 현재 고객주문 시트의 카드 주문·상품·결제버튼을 한 번에 불러옵니다. 링크 발송, 수정, 취소도 바로 처리할 수 있습니다.</p></div></div>
-          <div class="cs-search-bar"><input id="csSearchKeyword" placeholder="닉네임 · 수령인 · 전화번호 · 주문번호"><button class="btn btn-primary" type="button" id="csSearchButton">조회하기</button></div>
-        </section>
-        <div class="summary-grid premium cs-summary-v435">
-          <button type="button" class="metric-card warning cs-status-summary-v4403" data-cs-case-status="received"><span>접수</span><strong id="csReceivedCount">0</strong><small>눌러서 새 문의 보기</small></button>
-          <button type="button" class="metric-card cs-status-summary-v4403" data-cs-case-status="progress"><span>진행</span><strong id="csProgressCount">0</strong><small>눌러서 처리 중 보기</small></button>
-          <button type="button" class="metric-card success cs-status-summary-v4403" data-cs-case-status="done"><span>오늘 완료</span><strong id="csDoneCount">0</strong><small>눌러서 오늘 완료 보기</small></button>
-          <button type="button" class="metric-card accent cs-status-summary-v4403" data-cs-case-status="hold"><span>보류</span><strong id="csHoldCount">0</strong><small>눌러서 보류 보기</small></button>
-          <button type="button" class="metric-card cs-card-payment-summary-v4405" id="csCardPaymentCardV4405"><span>💳 카드결제 고객</span><strong id="csCardPaymentCountV4405">0</strong><small>눌러서 카드결제만 보기</small></button>
-        </div>
-        <div class="cs-status-toolbar-v4403"><span>CS 상태 또는 카드결제 고객 카드를 누르면 해당 고객만 바로 모아볼 수 있습니다.</span><button type="button" class="btn btn-subtle" id="csDoneResetButtonV4403">오늘 완료 표시 초기화</button></div>
-        <section id="csStatusCasesPanelV4403" class="admin-panel cs-status-cases-v4403" hidden>
-          <div class="panel-title-row"><div><span class="eyebrow dark">CS STATUS</span><h2 id="csStatusCasesTitleV4403">CS 상태별 보기</h2><p id="csStatusCasesSubV4403">선택한 상태의 CS 기록입니다.</p></div><button type="button" class="btn btn-subtle" id="csStatusCasesCloseV4403">닫기</button></div>
-          <div id="csStatusCasesListV4403" class="cs-status-case-list-v4403"><div class="empty-state">상태 카드를 눌러주세요.</div></div>
-        </section>
-        <section id="csCardPaymentsPanelV4405" class="admin-panel cs-card-payments-v4405" hidden>
-          <div class="panel-title-row"><div><span class="eyebrow dark">CARD PAYMENT</span><h2>💳 카드결제 고객 모아보기</h2><p>현재 고객주문 시트에 남아 있는 카드결제 주문을 날짜와 관계없이 펼쳐서 보여줍니다. 페이앱 링크·문자·주문수정·취소·삭제를 카드에서 바로 처리할 수 있습니다.</p></div><button type="button" class="btn btn-subtle" id="csCardPaymentsCloseV4405">닫기</button></div>
-          <div class="cs-card-payment-tabs-v4405">
-            <button class="active" type="button" data-cs-card-list-filter="all">전체 카드결제</button>
-            <button type="button" data-cs-card-list-filter="waiting">결제대기</button>
-            <button type="button" data-cs-card-list-filter="sent">링크발송</button>
-            <button type="button" data-cs-card-list-filter="done">결제완료</button>
-          </div>
-          <div id="csCardPaymentsSummaryV4405" class="cs-card-payment-summary-line-v4405"></div>
-          <div id="csCardPaymentsListV4405" class="cs-card-payment-list-v4405"><div class="empty-state">카드결제 고객 카드를 눌러주세요.</div></div>
-        </section>
-        <div id="csEmptyState" class="admin-panel empty-state">고객을 검색하면 주문내역이 표시됩니다. 카드결제 고객 상세보기는 현재 고객주문 시트의 카드 주문을 조회합니다.</div>
-        <section id="csCustomerPanel" class="admin-panel cs-customer-panel" hidden>
-          <div class="cs-customer-head"><div><span class="eyebrow dark">고객 통합조회</span><h2 id="csCustomerTitle">고객</h2><p id="csCustomerSub"></p></div><span class="cs-source-badge" id="csCustomerStatus">조회완료</span></div>
-          <div class="cs-result-tabs"><button class="active" type="button" data-cs-result="current">현재 주문 <b id="csCurrentCount">0</b></button><button type="button" data-cs-result="history">전체주문이력 <b id="csHistoryCount">0</b></button><button type="button" data-cs-result="notes">CS 기록 <b id="csNotesCount">0</b></button><button type="button" data-cs-result="cancelled">취소이력 <b id="csCancelledCount">0</b></button></div>
-          <div class="cs-payment-filters-v440">
-            <button class="active" type="button" data-cs-pay-filter="all">전체</button>
-            <button type="button" data-cs-pay-filter="bank">무통장</button>
-            <button type="button" data-cs-pay-filter="card">카드결제</button>
-            <button type="button" data-cs-pay-filter="cardWaiting">카드결제대기</button>
-            <button type="button" data-cs-pay-filter="cardSent">카드링크발송</button>
-            <button type="button" data-cs-pay-filter="cardDone">카드결제완료</button>
-          </div>
-          <div id="csCurrentResults" class="cs-result-panel active"></div>
-          <div id="csHistoryResults" class="cs-result-panel"></div>
-          <div id="csNotesResults" class="cs-result-panel"></div>
-          <div id="csCancelledResults" class="cs-result-panel"></div>
-        </section>
-      </section>
-
-      <section id="bankmatchTab" class="tab-section">
-        <section class="admin-panel bankmatch-hero">
-          <div class="panel-title-row">
-            <div>
-              <span class="eyebrow dark">BANK MATCH V4.00</span>
-              <h2>입금 자동대조</h2>
-              <p>암호를 제거한 토스뱅크·하나은행 엑셀 파일을 넣으면 현재 미입금 주문과 자동으로 비교합니다.<br><strong>자동일치 기준: 고객주문 수령인·닉네임 ↔ 은행 거래내역 입금자명 + 입금액 · 분할입금 합산 및 중복사용 방지</strong></p>
-            </div>
-          </div>
-          <div class="bankmatch-guide">
-            <div><b>1</b><span>은행 거래내역 XLSX 준비</span></div>
-            <div><b>2</b><span>아래에 파일 업로드</span></div>
-            <div><b>3</b><span>한 건씩 입금확인 또는 자동일치 일괄처리</span></div>
-          </div>
-          <div class="bank-upload-box">
-            <input type="file" id="bankFileInput" accept=".xlsx,.xls" multiple hidden>
-            <button type="button" class="btn btn-primary" id="bankFileButton">은행 엑셀 파일 선택</button>
-            <p>토스뱅크와 하나은행 파일을 한 번에 여러 개 선택할 수 있습니다. 비밀번호가 제거된 파일만 가능합니다.</p>
-            <div id="bankSelectedFiles" class="bank-selected-files">선택된 파일이 없습니다.</div>
-          </div>
-          <div class="bankmatch-actions">
-            <button type="button" class="btn btn-dark" id="bankMatchStartButton" disabled>자동대조 시작</button>
-            <button type="button" class="btn btn-primary" id="bankPaidAuditButton" disabled>✅ 입금완료 재검사</button>
-            <button type="button" class="btn btn-subtle" id="bankMatchResetButton">초기화</button>
-          </div>
-        </section>
-
-        <div class="summary-grid premium bankmatch-summary">
-          <button type="button" class="metric-card success clickable-metric" data-bank-result-target="bankMatchedSectionV4404"><span>자동일치</span><strong id="bankMatchedCount">0</strong><small>눌러서 결과 보기</small></button>
-          <button type="button" class="metric-card warning clickable-metric" data-bank-result-target="bankReviewSectionV4404"><span>확인필요</span><strong id="bankReviewCount">0</strong><small>눌러서 확인할 건 보기</small></button>
-          <button type="button" class="metric-card clickable-metric" data-bank-result-target="bankUnpaidSectionV4404"><span>미입금</span><strong id="bankUnpaidCount">0</strong><small>눌러서 미입금 보기</small></button>
-          <button type="button" class="metric-card accent clickable-metric" data-bank-result-target="bankOrphanSectionV4404"><span>관련 입금 미매칭</span><strong id="bankOrphanCount">0</strong><small>눌러서 미매칭 보기</small></button>
-        </div>
-
-        <section class="admin-panel" id="bankMatchResultPanel">
-          <div class="panel-title-row">
-            <div><h2>입금확인 결과</h2><p>수령인과 닉네임을 은행 입금자명과 함께 비교합니다. 자동일치는 바로 입금확인할 수 있고, 확인필요 항목은 은행내역을 보고 직접 확인 후 처리할 수 있습니다.</p></div>
-            <button type="button" class="btn btn-primary" id="bankBulkPaidButton" disabled>자동일치 전체 입금완료</button>
-          </div>
-          <div id="bankMatchNotice" class="bankmatch-notice">은행 파일을 선택한 뒤 자동대조 시작을 눌러주세요.</div>
-          <div class="bank-result-section" id="bankMatchedSectionV4404">
-            <h3>🟢 자동일치</h3>
-            <div class="table-wrap"><table class="data-table"><thead><tr><th>닉네임</th><th>수령인</th><th>주문건</th><th>주문금액</th><th>입금자명</th><th>입금금액</th><th>은행</th><th>입금시간</th><th>처리</th></tr></thead><tbody id="bankMatchedList"><tr><td colspan="9" class="empty-cell">결과가 없습니다.</td></tr></tbody></table></div>
-          </div>
-          <div class="bank-result-section" id="bankReviewSectionV4404">
-            <div class="panel-title-row bank-review-title-row">
-              <h3>🟡 확인필요</h3>
-              <button type="button" class="btn btn-primary" id="bankReviewBulkPaidButton" disabled>선택 입금완료</button>
-            </div>
-            <div class="table-wrap"><table class="data-table"><thead><tr><th><input type="checkbox" id="bankReviewSelectAll" aria-label="확인필요 전체 선택"></th><th>닉네임</th><th>수령인</th><th>주문금액</th><th>후보 입금자</th><th>입금금액</th><th>차이</th><th>사유</th><th>처리</th></tr></thead><tbody id="bankReviewList"><tr><td colspan="9" class="empty-cell">결과가 없습니다.</td></tr></tbody></table></div>
-          </div>
-          <div class="bank-result-section" id="bankUnpaidSectionV4404">
-            <h3>🔴 미입금</h3>
-            <div class="table-wrap"><table class="data-table"><thead><tr><th>닉네임</th><th>수령인</th><th>연락처</th><th>주문건</th><th>입금예정액</th></tr></thead><tbody id="bankUnpaidList"><tr><td colspan="5" class="empty-cell">결과가 없습니다.</td></tr></tbody></table></div>
-          </div>
-          <div class="bank-result-section" id="bankOrphanSectionV4404">
-            <h3>⚪ 은행 입금은 있으나 주문을 찾지 못함</h3>
-            <div class="table-wrap"><table class="data-table"><thead><tr><th>은행</th><th>입금시간</th><th>입금자명</th><th>입금금액</th></tr></thead><tbody id="bankOrphanList"><tr><td colspan="4" class="empty-cell">결과가 없습니다.</td></tr></tbody></table></div>
-          </div>
-        </section>
-
-        <section class="admin-panel paid-audit-panel" id="bankPaidAuditPanel">
-          <div class="panel-title-row">
-            <div>
-              <span class="eyebrow dark">2차 검수</span>
-              <h2>✅ 입금완료 재검사</h2>
-              <p>이미 입금완료 처리한 주문도 같은 은행 엑셀과 다시 비교합니다. 재검사는 상태를 자동으로 변경하지 않고 이상 건만 표시합니다.</p>
-            </div>
-          </div>
-          <div class="audit-summary-grid">
-            <div class="audit-mini success"><span>정상</span><strong id="paidAuditOkCount">0</strong></div>
-            <div class="audit-mini warning"><span>확인필요</span><strong id="paidAuditReviewCount">0</strong></div>
-            <div class="audit-mini danger"><span>오류의심</span><strong id="paidAuditErrorCount">0</strong></div>
-            <div class="audit-mini"><span>검사대상</span><strong id="paidAuditTotalCount">0</strong></div>
-          </div>
-          <div id="paidAuditNotice" class="bankmatch-notice">은행 파일을 선택한 뒤 ‘입금완료 재검사’를 눌러주세요.</div>
-          <div class="bank-result-section">
-            <h3>🟢 정상</h3>
-            <div class="table-wrap"><table class="data-table"><thead><tr><th>닉네임</th><th>수령인</th><th>주문건</th><th>주문금액</th><th>입금자명</th><th>입금금액</th><th>은행</th><th>입금시간</th></tr></thead><tbody id="paidAuditOkList"><tr><td colspan="8" class="empty-cell">재검사 결과가 없습니다.</td></tr></tbody></table></div>
-          </div>
-          <div class="bank-result-section">
-            <h3>🟡 확인필요</h3>
-            <div class="table-wrap"><table class="data-table"><thead><tr><th>닉네임</th><th>수령인</th><th>주문금액</th><th>후보 입금자</th><th>입금금액</th><th>차이</th><th>사유</th></tr></thead><tbody id="paidAuditReviewList"><tr><td colspan="7" class="empty-cell">재검사 결과가 없습니다.</td></tr></tbody></table></div>
-          </div>
-          <div class="bank-result-section">
-            <h3>🔴 오류의심</h3>
-            <div class="table-wrap"><table class="data-table"><thead><tr><th>닉네임</th><th>수령인</th><th>연락처</th><th>주문건</th><th>주문금액</th><th>사유</th></tr></thead><tbody id="paidAuditErrorList"><tr><td colspan="6" class="empty-cell">재검사 결과가 없습니다.</td></tr></tbody></table></div>
-          </div>
-        </section>
-      </section>
-
-
-      <section id="liveTab" class="tab-section">
-        <section class="admin-panel broadcast-control-v435">
-          <div class="panel-title-row"><div><span class="eyebrow dark">BROADCAST SETUP · V4.42.3</span><h2>🎥 라이브 방송 설정</h2><p>상품정보 사전저장 없이 YouTube 라이브 링크만 입력해 바로 시작할 수 있습니다.</p></div><span id="broadcastStateBadge" class="broadcast-state-badge">방송 대기</span></div>
-          <div class="broadcast-grid-v435">
-            <div class="field"><label for="broadcastYoutubeUrl">YouTube 라이브 URL</label><input id="broadcastYoutubeUrl" placeholder="https://www.youtube.com/watch?v=..."></div>
-            <div class="field"><label for="broadcastName">방송명</label><input id="broadcastName" placeholder="예: 9월 14일 라이브"></div>
-          </div>
-          <div class="button-row broadcast-buttons-v435"><button class="btn btn-subtle" type="button" id="broadcastValidateButtonV436">✓ 상품정보 검사(선택)</button><button class="btn btn-primary" type="button" id="broadcastStartButton">＋ 라이브 링크로 바로 시작</button><button class="btn btn-dark" type="button" id="broadcastEndButton">■ 방송 종료</button><button class="btn btn-subtle" type="button" id="broadcastRefreshButton">상태 새로고침</button></div>
-          <div id="broadcastPrecheckV436" class="broadcast-precheck-v436">상품정보를 검사하면 중복 · 가격 · 재고 누락을 방송 전에 확인할 수 있습니다.</div>
-          <div id="broadcastStatusCard" class="broadcast-status-card">방송 상태를 확인하고 있습니다.</div>
-          <details class="api-key-details"><summary>YouTube API 키 설정 (처음 1회)</summary><div class="api-key-row"><input id="youtubeApiKeyInput" type="password" placeholder="YouTube Data API v3 키"><button class="btn btn-subtle" type="button" id="youtubeApiKeySaveButton">API 키 저장</button></div><small>API 키는 GitHub 파일이 아니라 Apps Script 속성에 저장됩니다.</small></details>
-        </section>
-        <section class="admin-panel live-admin-hero">
-          <div class="panel-title-row"><div><span class="eyebrow dark">LIVE CONTROL · V4.42.3</span><h2>실시간 주문관리</h2><p>현재 판매상품 설정부터 예약 · 대기 · 취소 · 확인필요까지 한 화면에서 처리합니다.</p></div><div class="live-admin-head-actions"><button type="button" class="btn btn-primary" id="liveCollectNowButton">채팅 지금 수집</button><button type="button" class="btn btn-subtle" id="liveReloadButton">새로고침</button></div></div>
-          <div class="live-connection-line"><span id="liveConnectionStatus">방송 연결 상태 확인 중...</span><small id="liveAutoRefreshText">이 화면을 열어두면 약 20초 간격으로 자동 갱신합니다.</small></div>
-        </section>
-        <section class="admin-panel">
-          <div class="panel-title-row"><div><h2>현재 판매상품</h2><p>상품번호를 지정하고 필요하면 기본 칼라/사이즈를 입력하세요. 여러 칼라 상품에서 기본 칼라를 비우면 고객이 댓글에 칼라를 적어야 합니다.</p></div></div>
-          <div class="live-sale-form"><div class="field compact"><label>상품번호</label><input id="liveSaleProductNo" inputmode="numeric" maxlength="4" placeholder="예: 15"></div><div class="field compact"><label>기본 칼라</label><input id="liveSaleColor" placeholder="선택"></div><div class="field compact"><label>기본 사이즈</label><input id="liveSaleSize" placeholder="예: FREE"></div><button class="btn btn-primary" type="button" id="liveSetSaleButton">판매상품 설정</button><button class="btn btn-subtle" type="button" id="liveClearSaleButton">판매 종료/지우기</button></div>
-          <div class="live-current-sale" id="liveCurrentSale">현재 판매상품 없음</div>
-        </section>
-        <div class="summary-grid premium live-summary-grid"><button type="button" class="metric-card success clickable-metric" data-live-summary-status="예약"><span>예약</span><strong id="liveReservedCount">0</strong><small>눌러서 예약만 보기</small></button><button type="button" class="metric-card warning clickable-metric" data-live-summary-status="확인필요"><span>확인필요</span><strong id="liveReviewCount">0</strong><small>눌러서 확인필요만 보기</small></button><button type="button" class="metric-card clickable-metric" data-live-summary-status="대기"><span>대기</span><strong id="liveWaitingCount">0</strong><small>눌러서 대기만 보기</small></button><button type="button" class="metric-card accent clickable-metric" data-live-summary-status="취소"><span>취소</span><strong id="liveCancelledCount">0</strong><small>눌러서 취소만 보기</small></button></div>
-        <section class="admin-panel"><div class="panel-title-row"><div><h2>실시간 임시주문</h2><p>주문서 제출 전 주문입니다. 체크한 주문은 상태를 한 번에 변경할 수 있습니다.</p></div></div>
-          <div class="live-bulk-toolbar-v4411">
-            <label class="live-select-all-v4411"><input type="checkbox" id="liveSelectAllV4411"> <span>현재 목록 전체선택</span></label>
-            <select id="liveBulkStatusV4411" aria-label="일괄 변경 상태"><option value="">변경할 상태 선택</option><option value="예약">예약</option><option value="대기">대기</option><option value="확인필요">확인필요</option><option value="취소">취소</option></select>
-            <button type="button" class="btn btn-primary" id="liveBulkApplyV4411">선택 상태변경</button>
-            <span id="liveBulkSelectedCountV4411">0건 선택</span>
-          </div>
-          <div class="table-wrap"><table class="data-table live-admin-table"><thead><tr><th class="live-check-col-v4411">선택</th><th>시간</th><th>고객</th><th>댓글</th><th>상품</th><th>수량</th><th>상태</th><th>처리</th></tr></thead><tbody id="liveAdminOrderList"><tr><td colspan="8" class="empty-cell">라이브 데이터를 불러오는 중입니다.</td></tr></tbody></table></div></section>
-        <section class="admin-panel"><div class="panel-title-row"><div><h2>🔴 확인필요</h2><p>고객 신고·애매한 취소·옵션 확인 건만 모아서 처리합니다.</p></div></div><div id="liveIssueList" class="live-issue-list"><div class="empty-state">확인필요 항목이 없습니다.</div></div></section>
-      </section>
-
-      <section id="cancelledTab" class="tab-section">
-        <section class="admin-panel">
-          <div class="panel-title-row"><div><h2>취소주문</h2><p>취소된 주문을 확인하고 고객주문으로 복구할 수 있습니다.</p></div></div>
-          <div class="search-toolbar"><div class="field compact grow"><label for="cancelKeyword">닉네임·수령인·연락처·취소사유</label><input id="cancelKeyword" placeholder="검색어 입력"></div><button class="btn btn-primary" id="searchCancelledButton" type="button">조회</button></div>
-        </section>
-        <section class="admin-panel"><div class="summary-grid cancelled-summary-v4404"><button type="button" class="metric-card clickable-metric" id="cancelledSummaryCardV4404"><span>취소 주문</span><strong id="cancelledCount">0</strong><small>눌러서 취소목록 보기</small></button></div><div id="cancelledOrderList" class="mobile-card-list"><div class="empty-state">조회 버튼을 눌러주세요.</div></div></section>
-      </section>
-
-      <section id="productsTab" class="tab-section">
-        <section class="admin-panel">
-          <div class="panel-title-row">
-            <div>
-              <h2 id="productFormTitle">상품정보 추가</h2>
-              <p>방송 전 상품번호·옵션·금액·현재재고를 등록하세요. 재고를 비워두면 재고관리 미사용으로 처리됩니다.</p>
-            </div>
-          </div>
-
-          <input type="hidden" id="productRowNumber">
-
-          <div class="form-grid three">
-            <div class="field">
-              <label for="adminProductNo">상품번호</label>
-              <input id="adminProductNo" type="text" inputmode="numeric" maxlength="4" placeholder="상품번호 1~9999">
-            </div>
-            <div class="field">
-              <label for="adminProductName">상품명</label>
-              <input id="adminProductName" type="text">
-            </div>
-            <div class="field">
-              <label for="adminProductColor">칼라</label>
-              <input id="adminProductColor" type="text">
-            </div>
-            <div class="field">
-              <label for="adminProductSize">사이즈</label>
-              <input id="adminProductSize" type="text">
-            </div>
-            <div class="field">
-              <label for="adminSalePrice">판매가</label>
-              <input id="adminSalePrice" type="number" min="0">
-            </div>
-            <div class="field">
-              <label for="adminDepositPrice">입금가</label>
-              <input id="adminDepositPrice" type="number" min="0">
-            </div>
-            <div class="field">
-              <label for="adminCurrentStock">현재재고</label>
-              <input id="adminCurrentStock" type="number" min="0" step="1" placeholder="미입력 = 재고관리 안 함">
-            </div>
-            <div class="field">
-              <label for="adminSaleType">판매구분</label>
-              <select id="adminSaleType"><option value="오늘">오늘상품</option><option value="상시">상시상품</option></select>
-              <small>상시상품은 매일 다시 입력하지 않습니다.</small>
-            </div>
-          </div>
-
-          <div class="button-row">
-            <button type="button" class="btn btn-primary" id="saveProductButton">저장하기</button>
-            <button type="button" class="btn btn-subtle" id="resetProductButton">새 상품 입력</button>
-            <button type="button" class="btn btn-danger-soft" id="clearTodayProductsButton">오늘상품만 비우기</button>
-          </div>
-        </section>
-
-        <section class="admin-panel">
-          <div class="panel-title-row">
-            <div>
-              <h2>상품정보 목록</h2>
-              <p>상품번호·상품명·칼라·사이즈로 검색하세요.</p>
-            </div>
-          </div>
-
-          <div class="search-toolbar product-toolbar">
-            <div class="field compact grow">
-              <label for="productKeyword">상품 검색</label>
-              <input id="productKeyword" type="text" placeholder="상품번호·상품명·칼라·사이즈">
-            </div>
-            <button type="button" class="btn btn-subtle" id="reloadProductsButton">새로고침</button>
-          </div>
-
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>구분</th>
-                  <th>상품번호</th>
-                  <th>상품명</th>
-                  <th>칼라</th>
-                  <th>사이즈</th>
-                  <th>판매가</th>
-                  <th>입금가</th>
-                  <th>현재재고</th>
-                  <th>라이브예약</th>
-                  <th>추가주문가능</th>
-                  <th>상태</th>
-                  <th>관리</th>
-                </tr>
-              </thead>
-              <tbody id="adminProductList">
-                <tr><td colspan="12" class="empty-cell">상품정보를 불러오는 중입니다.</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </section>
-
-
-      
-    </main>
-    <nav class="mobile-admin-nav" aria-label="모바일 관리자 메뉴">
-      <button type="button" data-mobile-tab="home" class="active"><span>⌂</span><b>홈</b></button>
-      <button type="button" data-mobile-tab="orders" class="admin-only"><span>▣</span><b>주문</b></button>
-      <button type="button" data-mobile-tab="cs"><span>💬</span><b>CS</b></button>
-      <button type="button" data-mobile-tab="live" class="admin-only"><span>🎥</span><b>라이브</b></button>
-      <button type="button" id="mobileMoreButton"><span>☰</span><b>더보기</b></button>
-    </nav>
-
-    <div class="mobile-more-overlay-v4406" id="mobileMoreOverlayV4406"></div>
-    <aside class="mobile-more-sheet-v4406" id="mobileMoreSheetV4406" aria-label="더보기 메뉴" aria-hidden="true">
-      <div class="mobile-more-handle-v4406"></div>
-      <div class="mobile-more-title-v4406">
-        <div><strong>더보기</strong><span>자주 쓰지 않는 관리 기능</span></div>
-        <button type="button" id="mobileMoreCloseV4406" aria-label="닫기">×</button>
-      </div>
-      <div class="mobile-more-grid-v4406">
-        <button type="button" class="admin-only" data-more-tab="bankmatch"><span>₩</span><b>입금 관리</b></button>
-        <button type="button" class="admin-only" data-more-tab="products"><span>◇</span><b>상품 관리</b></button>
-        <button type="button" class="admin-only" data-more-tab="cancelled"><span>↶</span><b>취소 주문</b></button>
-        <button type="button" class="admin-only" id="mobileSettingsButtonV4406"><span>⚙</span><b>보안 · 결제설정</b></button>
-        <a class="admin-only" href="customer.html"><span>⌕</span><b>고객 주문조회</b></a>
-        <a class="admin-only" href="index.html"><span>＋</span><b>주문서 열기</b></a>
-      </div>
-      <button type="button" class="mobile-more-logout-v4406" id="mobileLogoutButtonV4406">🔒 로그아웃</button>
-    </aside>
-  </div>
-
-  <div class="v2-modal" id="lotteDownloadModal" aria-hidden="true">
-    <div class="v2-modal-card" style="width:min(540px,100%);">
-      <button class="v2-modal-close" type="button" id="lotteDownloadModalClose" aria-label="닫기">×</button>
-      <div class="panel-title-row" style="margin-bottom:18px;">
-        <div>
-          <h2 style="margin:0 0 6px;">🚚 롯데택배 양식 다운로드</h2>
-          <p style="margin:0;">전체주문이력을 기준으로 롯데택배 양식을 만들 날짜를 선택하세요.</p>
-        </div>
-      </div>
-      <div class="form-grid two">
-        <div class="field">
-          <label for="lotteStartDate">시작일</label>
-          <input type="date" id="lotteStartDate">
-        </div>
-        <div class="field">
-          <label for="lotteEndDate">종료일</label>
-          <input type="date" id="lotteEndDate">
-        </div>
-      </div>
-      <div class="locked-note" style="margin-top:14px;">
-        먼저 <b>전체주문이력 저장/갱신</b>을 완료한 뒤 다운로드하세요.<br>하루치만 받으려면 시작일과 종료일을 같은 날짜로 선택하세요.<br>
-        정렬은 기존과 동일하게 <b>내품수량 내림차순 → 같은 수량은 상품번호 내림차순</b>으로 적용됩니다.<br>
-        <b>판매가·입금가·결제금액은 롯데 파일에 포함하지 않습니다.</b> 상품명에 명시적으로 붙은 원화 가격표기도 자동 제거합니다.<br>
-        ALPS 출력설정은 <b>상품글씨 8PT / 상품출력수량 10 / 금액 관련 출력 체크 해제</b>를 권장합니다.
-      </div>
-      <div class="v2-actions">
-        <button class="btn btn-subtle" type="button" id="lotteDownloadCancelButton">취소</button>
-        <button class="btn btn-primary" type="button" id="lotteDownloadConfirmButton">선택 날짜 다운로드</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="v2-modal" id="combinedShippingModal" aria-hidden="true">
-    <div class="v2-modal-card" style="width:min(540px,100%);">
-      <button class="v2-modal-close" type="button" id="combinedShippingModalClose" aria-label="닫기">×</button>
-      <div class="panel-title-row" style="margin-bottom:18px;">
-        <div>
-          <h2 style="margin:0 0 6px;">🔗 합배송 가능 고객 다운로드</h2>
-          <p style="margin:0;">전체주문이력에서 확인할 날짜를 선택하면 합배송 가능한 고객의 수령인 이름과 닉네임만 엑셀로 저장합니다.</p>
-        </div>
-      </div>
-      <div class="form-grid two">
-        <div class="field">
-          <label for="combinedStartDate">시작일</label>
-          <input type="date" id="combinedStartDate">
-        </div>
-        <div class="field">
-          <label for="combinedEndDate">종료일</label>
-          <input type="date" id="combinedEndDate">
-        </div>
-      </div>
-      <div class="locked-note" style="margin-top:14px;">
-        <b>전체주문이력</b>의 선택 기간 안에서 <b>수령인 + 연락처가 같은 주문이 2건 이상</b>이면 합배송 가능 고객으로 표시합니다.<br>
-        내려받는 엑셀에는 개인정보를 최소화해 <b>수령인 / 닉네임</b> 두 열만 저장합니다.
-      </div>
-      <div class="v2-actions">
-        <button class="btn btn-subtle" type="button" id="combinedShippingCancelButton">취소</button>
-        <button class="btn btn-primary" type="button" id="combinedShippingConfirmButton">합배송 고객 엑셀 다운로드</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="loading-overlay" id="loadingOverlay">
-    <div class="loading-card">
-      <div class="spinner"></div>
-      <p id="loadingText">처리 중입니다.</p>
-    </div>
-  </div>
+<!-- 공통 주문 상세 팝업 -->
+<div class="v450-modal" id="orderModalV450" aria-hidden="true"><div class="v450-modal-card wide"><div class="v450-modal-head"><h2>주문 상세</h2><button id="orderModalCloseV450">✕</button></div><div id="orderModalBodyV450"></div></div></div>
+<!-- 합배송 팝업 -->
+<div class="v450-modal" id="combinedShippingModal" aria-hidden="true"><div class="v450-modal-card"><div class="v450-modal-head"><h2>합배송 가능 고객조회</h2><button id="combinedShippingModalClose">✕</button></div><div class="v450-search"><input type="date" id="combinedStartDate"><span>~</span><input type="date" id="combinedEndDate"><button class="btn btn-primary" id="combinedShippingConfirmButton">조회</button></div><pre id="combinedResultV450" class="v450-copy-box">날짜를 선택하고 조회해주세요.</pre><div class="button-row"><button class="btn btn-dark" id="combinedCopyV450">전체 복사</button><button class="btn btn-subtle" id="combinedShippingCancelButton">닫기</button></div></div></div>
+<!-- 롯데 날짜 팝업 -->
+<div class="v450-modal" id="lotteDownloadModal" aria-hidden="true"><div class="v450-modal-card"><div class="v450-modal-head"><h2>롯데택배 송장뽑기</h2><button id="lotteDownloadModalClose">✕</button></div><div class="v450-search"><input type="date" id="lotteStartDate"><span>~</span><input type="date" id="lotteEndDate"></div><p>한 시트 안에서 결제완료 → 카드미결제 → 미입금 순으로 정렬합니다.</p><div class="button-row"><button class="btn btn-primary" id="lotteDownloadConfirmButton">엑셀 다운로드</button><button class="btn btn-subtle" id="lotteDownloadCancelButton">취소</button></div></div></div>
+<div class="loading-overlay" id="loadingOverlay"><div class="loading-card"><div class="spinner"></div><p id="loadingText">처리 중입니다.</p></div></div>
 </body>
 </html>
