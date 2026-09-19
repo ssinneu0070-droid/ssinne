@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#fff8fb">
-<title>씬느샵 주문서 V5.6.5</title>
-<link rel="stylesheet" href="styles.css?v=5.6.5">
+<title>씬느샵 주문서 V6.1.0</title>
+<link rel="stylesheet" href="styles.css?v=6.1.0">
 </head>
 <body class="shop-body">
 <div class="shop-shell customer-order-shell">
@@ -58,12 +58,11 @@
 
     <div class="order-section-card">
       <div class="order-section-head">
-        <div><h2>예약 정보 확인</h2><p>라이브 예약 시 입력한 닉네임과 전체 연락처를 입력해주세요.</p></div>
+        <div><h2>예약 정보 확인</h2><p>라이브 주문에 사용한 닉네임만 입력해주세요.</p></div>
         <button id="liveCatalogRefresh" class="btn mini ghost refresh-mini" type="button">↻ 상품정보 새로고침</button>
       </div>
-      <div class="two-col-fields">
-        <label><span>닉네임</span><input id="liveNick" class="input" placeholder="씬느샵-s0t"><div id="nickSuggestions" class="suggestions"></div></label>
-        <label><span>연락처</span><input id="livePhone" class="input" inputmode="tel" placeholder="010-1234-5678"></label>
+      <div class="two-col-fields one-col-mobile">
+        <label><span>닉네임</span><input id="liveNick" class="input" placeholder="씬느샵-s0t" autocomplete="off"><div id="nickSuggestions" class="suggestions"></div></label>
       </div>
       <button id="liveLoad" class="btn primary w100 order-main-button" type="button">✓ 주문 불러오기</button>
     </div>
@@ -72,6 +71,16 @@
       <div class="order-section-card section">
         <div class="order-section-head"><div><h2>불러온 상품 보기</h2><p>상품 사진 없이 상품번호·옵션·수량만 간단하게 확인합니다.</p></div><span class="pill">예약상품</span></div>
         <div id="liveItems" class="text-item-list"></div>
+      </div>
+
+      <div class="order-section-card section">
+        <div class="order-section-head product-input-head"><div><h2>빠진 상품 직접 추가</h2><p>댓글 주문에 빠진 상품이 있으면 상품번호로 바로 추가할 수 있어요.</p></div><button id="liveCatalogRefresh2" class="btn mini ghost refresh-mini" type="button">↻ 상품정보 새로고침</button></div>
+        <div class="product-search-row"><label>상품번호 검색</label><input id="liveManualSearch" class="input" inputmode="numeric" pattern="[0-9]*" placeholder="숫자만 입력"><button id="liveManualSearchBtn" class="btn primary" type="button">⌕ 검색</button></div>
+        <div id="liveManualBox" class="direct-product-box hidden">
+          <div class="field-row"><label>상품명</label><input id="liveManualName" class="input" readonly></div>
+          <div class="option-compact-row"><label>칼라<select id="liveManualColor" class="input"></select></label><label>사이즈<select id="liveManualSize" class="input"></select></label><label>수량<div class="qtybox direct-qty"><button id="liveManualMinus" type="button">−</button><b id="liveManualQty">1</b><button id="liveManualPlus" type="button">+</button></div></label></div>
+          <button id="liveManualAdd" class="btn primary w100 cart-add-button" type="button">🛒 주문에 추가</button>
+        </div>
       </div>
 
       <div class="order-section-card section">
@@ -159,7 +168,7 @@
     <div class="order-section-card section shipping-form-card">
       <div class="order-section-head"><div><h2>배송지 입력</h2><p>정확한 배송을 위해 정보를 확인해주세요.</p></div><span class="saved-badge">✓ 이전에 입력한 배송지 정보는 자동 저장되어 다음 주문 시 그대로 불러와집니다.</span></div>
       <div class="dense-form">
-        <label><span>닉네임</span><input id="directNick" class="input" placeholder="씬느샵-s0t"><div id="directNickSuggestions" class="suggestions"></div></label>
+        <label><span>닉네임</span><input id="directNick" class="input" placeholder="씬느샵-s0t (@ 제외)" autocomplete="off"></label>
         <label><span>수령인</span><input id="directReceiver" class="input" placeholder="신성은"></label>
         <label><span>연락처</span><input id="directPhone" class="input" inputmode="tel" placeholder="010-1234-5678"></label>
         <label class="address-line"><span>주소</span><div><input id="directAddress" class="input"><button class="btn primary" type="button" onclick="openPostcode('direct')">⌕ 주소 검색</button></div></label>
@@ -193,6 +202,6 @@
 <div id="busy" class="modal"><div class="modal-card complete"><div class="spinner"></div><h2 id="busyText">처리 중입니다...</h2><div class="sub">창을 닫지 말고 잠시만 기다려주세요. 보통 몇 초 정도 소요됩니다.</div></div></div>
 <div id="toast" class="toast-message hidden"></div>
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script src="config.js?v=5.6.5"></script>
-<script src="app.js?v=5.6.5"></script>
+<script src="config.js?v=6.1.0"></script>
+<script src="app.js?v=6.1.0"></script>
 </body></html>
