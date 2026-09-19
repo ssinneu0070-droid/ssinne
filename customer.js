@@ -1,7 +1,21 @@
 const API_URL=(window.SSINNE_CONFIG||{}).API_URL||'';
 const $=s=>document.querySelector(s), esc=s=>String(s==null?'':s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])),money=n=>Number(n||0).toLocaleString('ko-KR')+'원';
 const state={orders:[],catalog:[],edit:null,editCart:[],originalQty:{},authReceiver:'',authPhone:'',config:{}};
-async function api(action,p={}){if(!/^https:\/\/script\.google\.com\/macros\/s\//.test(API_URL))throw new Error('주문조회 서버 주소가 설정되지 않았습니다.');const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,...p})});const j=await r.json();if(!j.success)throw new Error(j.error||'처리 오류');return j}
+async function api(action,p={}){
+  if(!/^https:\/\/script\.google\.com\/macros\/s\//.test(API_URL)) throw new Error('주문조회 서버 주소가 설정되지 않았습니다.');
+  let r;
+  try{
+    r=await fetch(API_URL+'?v='+Date.now(),{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action,...p})});
+  }catch(err){
+    console.error('Customer API network error',err);
+    throw new Error('서버 연결이 원활하지 않습니다. 잠시 후 다시 시도해주세요.');
+  }
+  if(!r.ok) throw new Error('서버 연결 오류가 발생했습니다. ('+r.status+')');
+  let j;
+  try{j=JSON.parse(await r.text())}catch(err){throw new Error('서버 응답을 확인할 수 없습니다. 잠시 후 다시 시도해주세요.')}
+  if(!j.success) throw new Error(j.error||'처리 오류');
+  return j;
+}
 function key(x){return [String(x.productNo||''),String(x.color||'').trim().toLowerCase(),String(x.size||'').trim().toLowerCase()].join('|')}
 async function loadConfig(){try{const r=await api('public_config');state.config=r||{}}catch(e){}}
 async function lookup(){const receiver=$('#receiver').value.trim(),phoneLast4=$('#last4').value.trim();if(!receiver||phoneLast4.replace(/\D/g,'').length!==4)return msg('수령인 성함과 연락처 뒤 4자리를 입력해주세요.');try{busy(true,'주문을 조회하고 있습니다...');const r=await api('customer_lookup',{receiver,phoneLast4});state.orders=r.orders||[];render(state.orders)}catch(e){msg(e.message)}finally{busy(false)}}

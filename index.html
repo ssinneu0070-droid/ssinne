@@ -1,36 +1,198 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>씬느샵 주문서 V5.6.0</title><link rel="stylesheet" href="styles.css"></head><body class="shop-body">
-<div class="shop-shell">
-<header class="shop-header"><button id="backBtn" class="btn ghost hidden">← 이전으로</button><div class="shop-logo">씬느샵 <span>♥</span><small>LIVE SHOPPING</small></div><a href="customer.html" class="header-link">주문조회</a></header>
-<section id="homeScreen" class="screen">
-  <div class="hero compact-hero"><div class="hero-kicker">SSINNEU SHOP · LIVE SHOPPING</div><div class="hero-title">씬느샵 ♥</div><div class="hero-copy">라이브 방송에서 미리 예약하신 상품을 불러오시거나, 직접 주문서를 작성하실 수 있어요.</div><div class="handnote">예쁜 일상이 특별해지는 곳, 씬느샵 ♡</div></div>
-  <div class="choice-grid"><button id="goLive" class="card choice primary-choice"><div class="choice-icon">▣</div><h2>라이브 주문 불러오기</h2><div class="sub">라이브에서 예약한 내역을 불러와요</div><span class="choice-arrow">›</span></button><button id="goDirect" class="card choice"><div class="choice-icon">✎</div><h2 style="color:#d84275">직접 주문서 작성</h2><div class="sub">지금 바로 주문서를 작성해요</div><span class="choice-arrow">›</span></button></div>
-  <div class="trust-row card"><div class="trust-item"><div class="trust-icon">🚚</div><b>안전한 주문</b><span>빠른 배송</span></div><div class="trust-item"><div class="trust-icon">♡</div><b>예쁜 상품</b><span>정직한 가격</span></div><div class="trust-item"><div class="trust-icon">◌</div><b>친절한 상담</b><span>언제나 도와드려요</span></div></div>
-</section>
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fff8fb">
+<title>씬느샵 주문서 V5.6.4</title>
+<link rel="stylesheet" href="styles.css?v=5.6.4">
+</head>
+<body class="shop-body">
+<div class="shop-shell customer-order-shell">
+  <header class="shop-header customer-shop-header">
+    <button id="homeMenuBtn" class="header-round" type="button" aria-label="메뉴">☰</button>
+    <button id="backBtn" class="header-back hidden" type="button">← 이전으로</button>
+    <a href="index.html" class="shop-logo shop-logo-centered">씬느샵 <span>♥</span><small>LIVE SHOPPING</small></a>
+    <a href="customer.html" class="header-order-link" aria-label="주문조회"><span>⌕</span><small>주문조회</small></a>
+  </header>
 
-<section id="liveScreen" class="screen hidden">
-  <div class="card pad"><div class="flow-title"><div class="flow-icon">▣</div><div><div class="h1">라이브 주문 불러오기</div><div class="sub">라이브에서 예약한 상품을 불러와 주문서를 이어서 작성하세요.</div></div></div>
-    <div class="form-grid section"><div class="field"><label>닉네임</label><input id="liveNick" class="input" placeholder="씬느샵-s0t"><div id="nickSuggestions" class="suggestions"></div></div><div class="field"><label>연락처</label><input id="livePhone" class="input" inputmode="tel" placeholder="010-1234-5678"></div></div><div class="toolbar section"><button id="liveLoad" class="btn primary" style="flex:1">✓ 주문 불러오기</button><button id="liveCatalogRefresh" class="btn ghost mini">↻ 상품정보 새로고침</button></div>
-  </div>
-  <div id="liveLoaded" class="hidden">
-    <div class="card pad section"><div class="section-title"><h3>🛒 불러온 상품 보기</h3><span class="pill">예약상품</span></div><div id="liveItems"></div></div>
-    <div class="card pad section"><div class="section-title"><h3>총금액</h3><span class="pill">20만원 이상 무료배송 자동계산</span></div><div class="totalbar"><div class="stat">상품금액 <b id="liveSubtotal">0원</b></div><div class="stat">배송비 <b id="liveShipping">0원</b></div><div class="stat">총 결제금액 <b id="liveTotal">0원</b></div></div></div>
-    <div class="card pad section"><div class="section-title"><h3>🚚 배송비 선택</h3></div><div class="payment-grid"><button class="payment-choice active" data-ship-target="live" data-ship="basic"><span class="pay-icon">🚚</span><span><strong>기본배송비 4,000원</strong><span>20만원 이상 주문 시 자동 무료</span></span></button><button class="payment-choice" data-ship-target="live" data-ship="island"><span class="pay-icon">🌴</span><span><strong>제주 및 도서산간 7,000원</strong><span>해당 지역만 선택</span></span></button></div><input id="liveShippingType" class="hidden" value="basic"></div>
-    <div class="card pad section"><div class="section-title"><h3>💳 결제방식 선택</h3></div><div class="payment-grid"><button class="payment-choice active" data-pay-target="live" data-pay="bank"><span class="pay-icon">🏦</span><span><strong>계좌이체</strong><span>수령인 이름으로 입금</span></span></button><button class="payment-choice" data-pay-target="live" data-pay="card"><span class="pay-icon">💳</span><span><strong>카드결제</strong><span>부가세 10% 추가</span></span></button></div><input id="livePayment" class="hidden" value="bank"><div class="bank-copy section"><span>🏦 <b id="liveBankAccount">1002-5790-8378</b><small id="liveBankText">토스뱅크 - 신성은</small></span><button class="btn primary" onclick="copyBank()">계좌번호 복사하기</button></div></div>
-    <div class="card pad section"><div class="section-title"><h3>📍 배송지 입력</h3><span class="pill green">이전 배송지 자동저장</span></div><div class="form-stack"><label>닉네임</label><input id="liveNick2" class="input" readonly><label>수령인</label><input id="liveReceiver" class="input" placeholder="신성은"><label>연락처</label><input id="livePhone2" class="input" inputmode="tel"><label>주소</label><div class="toolbar"><input id="liveAddress" class="input"><button class="btn primary" onclick="openPostcode('live')">주소 검색</button></div><input id="liveZip" class="hidden"><label>상세주소</label><input id="liveDetail" class="input"><label>배송메모</label><input id="liveMemo" class="input" placeholder="문 앞에 놓아주세요"></div><button id="liveSubmit" class="btn primary w100 section">✈ 제출하기</button></div>
-  </div>
-</section>
+  <!-- 주문서 선택 -->
+  <section id="homeScreen" class="screen">
+    <div class="home-visual cardless">
+      <div class="home-note note-left">예쁜 일상이<br>특별해지는 곳<br>씬느샵 ♡</div>
+      <div class="home-note note-right">좋은 옷,<br>좋은 하루 ♡</div>
+      <div class="home-decor bag-decor">🛍</div>
+      <div class="home-decor flower-decor">🌷</div>
+      <div class="home-brand-big">씬느샵 <span>♥</span><small>LIVE SHOPPING</small></div>
+      <p>라이브 방송에서 미리 예약하신 상품을 불러오시거나,<br>직접 주문서를 작성하실 수 있어요.</p>
+    </div>
 
-<section id="directScreen" class="screen hidden">
-  <div class="card pad"><div class="flow-title"><div class="flow-icon">▤</div><div><div class="h1">직접 주문서 작성</div><div class="sub">원하시는 상품을 직접 검색하여 주문하실 수 있어요.</div></div></div></div>
-  <div class="card pad section"><div class="section-title"><div><h3>🛍 상품 입력</h3><span class="sub">상품번호로 검색하여 상품을 선택해주세요.</span></div><button id="directCatalogRefresh" class="btn mini ghost">↻ 상품정보 새로고침</button></div><div class="toolbar"><input id="directSearch" class="input" inputmode="numeric" pattern="[0-9]*" placeholder="숫자만 입력 (예: 105)"><button id="directSearchBtn" class="btn primary">⌕ 검색</button></div><div id="directProductBox" class="section hidden"><label>상품명</label><input id="directProductName" class="input" readonly><div class="form-grid section"><div class="field"><label>칼라</label><select id="directColor" class="input"></select></div><div class="field"><label>사이즈</label><select id="directSize" class="input"></select></div><div class="field"><label>수량</label><div class="qtybox"><button id="directMinus">−</button><b id="directQtyPick">1</b><button id="directPlus">+</button></div></div></div><button id="directAdd" class="btn primary w100 section">🛒 담기</button></div></div>
-  <div class="card pad section"><div class="section-title"><h3>🛒 담은 상품 보기</h3></div><div id="directCart"></div></div>
-  <div class="card pad section"><div class="section-title"><h3>총금액</h3><span class="pill">20만원 이상 무료배송 자동계산</span></div><div class="totalbar"><div class="stat">상품금액 <b id="directSubtotal">0원</b></div><div class="stat">배송비 <b id="directShipping">0원</b></div><div class="stat">총 결제금액 <b id="directTotal">0원</b></div></div></div>
-  <div class="card pad section"><div class="section-title"><h3>🚚 배송비 선택</h3></div><div class="payment-grid"><button class="payment-choice active" data-ship-target="direct" data-ship="basic"><span class="pay-icon">🚚</span><span><strong>기본배송비 4,000원</strong><span>20만원 이상 자동 무료</span></span></button><button class="payment-choice" data-ship-target="direct" data-ship="island"><span class="pay-icon">🌴</span><span><strong>제주 및 도서산간 7,000원</strong><span>해당 지역만 선택</span></span></button></div><input id="directShippingType" class="hidden" value="basic"></div>
-  <div class="card pad section"><div class="section-title"><h3>💳 결제방식 선택</h3></div><div class="payment-grid"><button class="payment-choice active" data-pay-target="direct" data-pay="bank"><span class="pay-icon">🏦</span><span><strong>계좌이체</strong><span>수령인 이름으로 입금</span></span></button><button class="payment-choice" data-pay-target="direct" data-pay="card"><span class="pay-icon">💳</span><span><strong>카드결제</strong><span>부가세 10% 추가</span></span></button></div><input id="directPayment" class="hidden" value="bank"><div class="bank-copy section"><span>🏦 <b id="directBankAccount">1002-5790-8378</b><small id="directBankText">토스뱅크 - 신성은</small></span><button class="btn primary" onclick="copyBank()">계좌번호 복사하기</button></div></div>
-  <div class="card pad section"><div class="section-title"><h3>📍 배송지 입력</h3><span class="pill green">입력한 배송지는 다음 주문에도 자동저장</span></div><div class="form-stack"><label>닉네임</label><input id="directNick" class="input" placeholder="씬느샵-s0t"><div id="directNickSuggestions" class="suggestions"></div><label>수령인</label><input id="directReceiver" class="input" placeholder="신성은"><label>연락처</label><input id="directPhone" class="input" inputmode="tel" placeholder="010-1234-5678"><label>주소</label><div class="toolbar"><input id="directAddress" class="input"><button class="btn primary" onclick="openPostcode('direct')">주소 검색</button></div><input id="directZip" class="hidden"><label>상세주소</label><input id="directDetail" class="input"><label>배송메모</label><input id="directMemo" class="input" placeholder="문 앞에 놓아주세요"></div><button id="directSubmit" class="btn primary w100 section">✈ 제출하기</button></div>
-</section>
+    <div class="home-choice-stack">
+      <button id="goLive" class="home-choice home-choice-live" type="button">
+        <span class="home-choice-icon">▣</span>
+        <span class="home-choice-copy"><b>라이브 주문 불러오기</b><small>라이브에서 예약한 내역을 불러와요</small></span>
+        <span class="home-choice-arrow">›</span>
+      </button>
+      <button id="goDirect" class="home-choice home-choice-direct" type="button">
+        <span class="home-choice-icon">✎</span>
+        <span class="home-choice-copy"><b>직접 주문서 작성</b><small>지금 바로 주문서를 작성해요</small></span>
+        <span class="home-choice-arrow">›</span>
+      </button>
+    </div>
 
-<section id="completeScreen" class="screen hidden"><div class="card pad complete"><div class="check">✓</div><div class="h1">주문이 정상적으로 접수되었습니다!</div><div class="sub">씬느샵을 이용해 주셔서 감사합니다.<br>포장까지 정성껏 준비하겠습니다. ♡</div><div class="order-number section"><div>주문번호</div><b id="completeNo"></b></div><div id="completeInfo" class="note section" style="text-align:left;display:grid;gap:8px"></div><div class="section-title section"><h3>🛍 주문상품</h3><b id="completeTotal"></b></div><div id="completeItems"></div><div id="completePayment" class="note section"></div><div class="complete-actions"><a href="index.html" class="btn ghost">⌂ 쇼핑 계속하기</a><a href="customer.html" class="btn primary">주문조회 바로가기 ›</a><a id="bandBtn" target="_blank" class="btn green">씬느샵 밴드 바로가기 ↗</a><a id="channelBtn" target="_blank" class="btn yellow">채널톡 바로가기 ↗</a></div></div></section>
+    <div class="home-trust">
+      <div><span class="trust-circle">🚚</span><b>안전한 주문</b><small>빠른 배송</small></div>
+      <div><span class="trust-circle">♡</span><b>예쁜 상품</b><small>정직한 가격</small></div>
+      <div><span class="trust-circle">◌</span><b>친절한 상담</b><small>언제나 도와드려요</small></div>
+    </div>
+    <a class="home-help" href="customer.html"><span>♥</span><div>언제든지 궁금한 점이 있으시면<br>주문조회 또는 고객센터로 확인해주세요.</div><b>›</b></a>
+    <div class="home-footer-copy">FASHION MAKES A HAPPIER YOU <span>♥</span></div>
+  </section>
+
+  <!-- 라이브 주문 불러오기 -->
+  <section id="liveScreen" class="screen hidden order-flow-screen">
+    <div class="flow-banner">
+      <div class="flow-banner-icon">▣</div>
+      <div><h1>라이브 주문 불러오기</h1><p>라이브 방송에서 예약한 상품을 불러와 주문서를 이어서 작성할 수 있어요.</p></div>
+    </div>
+
+    <div class="order-section-card">
+      <div class="order-section-head">
+        <div><h2>예약 정보 확인</h2><p>라이브 예약 시 입력한 닉네임과 전체 연락처를 입력해주세요.</p></div>
+        <button id="liveCatalogRefresh" class="btn mini ghost refresh-mini" type="button">↻ 상품정보 새로고침</button>
+      </div>
+      <div class="two-col-fields">
+        <label><span>닉네임</span><input id="liveNick" class="input" placeholder="씬느샵-s0t"><div id="nickSuggestions" class="suggestions"></div></label>
+        <label><span>연락처</span><input id="livePhone" class="input" inputmode="tel" placeholder="010-1234-5678"></label>
+      </div>
+      <button id="liveLoad" class="btn primary w100 order-main-button" type="button">✓ 주문 불러오기</button>
+    </div>
+
+    <div id="liveLoaded" class="hidden">
+      <div class="order-section-card section">
+        <div class="order-section-head"><div><h2>불러온 상품 보기</h2><p>상품 사진 없이 상품번호·옵션·수량만 간단하게 확인합니다.</p></div><span class="pill">예약상품</span></div>
+        <div id="liveItems" class="text-item-list"></div>
+      </div>
+
+      <div class="order-section-card section">
+        <div class="order-section-head"><div><h2>총금액</h2><p>불러온 상품 금액과 배송비를 확인해주세요.</p></div><span class="free-badge">🚚 20만원 이상 무료배송 자동계산</span></div>
+        <div class="checkout-total"><div><small>상품금액</small><b id="liveSubtotal">0원</b></div><i></i><div><small>배송비</small><b id="liveShipping">0원</b></div><i></i><div class="grand"><small>총 결제금액</small><b id="liveTotal">0원</b></div></div>
+      </div>
+
+      <div class="order-section-card section">
+        <div class="order-section-head"><div><h2>배송비 선택</h2><p>지역에 맞는 배송비를 선택해주세요.</p></div></div>
+        <div class="simple-choice-grid"><button class="simple-choice active" data-ship-target="live" data-ship="basic"><span>◉</span><b>기본배송비</b><strong>4,000원</strong></button><button class="simple-choice" data-ship-target="live" data-ship="island"><span>○</span><b>제주 및 도서산간</b><strong>7,000원</strong></button></div><input id="liveShippingType" class="hidden" value="basic">
+      </div>
+
+      <div class="order-section-card section">
+        <div class="order-section-head"><div><h2>결제방식 선택</h2><p>원하시는 결제방식을 선택해주세요.</p></div></div>
+        <div class="simple-choice-grid"><button class="simple-choice active" data-pay-target="live" data-pay="bank"><span>◉</span><b>🏦 계좌이체</b></button><button class="simple-choice" data-pay-target="live" data-pay="card"><span>○</span><b>💳 카드결제</b></button></div><input id="livePayment" class="hidden" value="bank">
+      </div>
+
+      <div class="order-section-card section bank-section">
+        <div class="order-section-head"><div><h2>계좌번호 복사하기</h2><p>아래 계좌번호로 입금해 주세요.</p></div></div>
+        <div class="account-row"><div><b id="liveBankAccount">1002-5790-8378</b><small id="liveBankText">토스뱅크 - 신성은</small></div><button class="btn primary" type="button" onclick="copyBank()">▣ 계좌번호 복사하기</button></div>
+      </div>
+
+      <div class="order-section-card section shipping-form-card">
+        <div class="order-section-head"><div><h2>배송지 입력</h2><p>이전에 입력한 배송지 정보는 다음 주문에도 자동 저장됩니다.</p></div><span class="saved-badge">✓ 이전 배송지 자동저장</span></div>
+        <div class="dense-form">
+          <label><span>닉네임</span><input id="liveNick2" class="input" readonly></label>
+          <label><span>수령인</span><input id="liveReceiver" class="input" placeholder="신성은"></label>
+          <label><span>연락처</span><input id="livePhone2" class="input" inputmode="tel"></label>
+          <label class="address-line"><span>주소</span><div><input id="liveAddress" class="input"><button class="btn primary" type="button" onclick="openPostcode('live')">⌕ 주소 검색</button></div></label>
+          <input id="liveZip" class="hidden">
+          <label><span>상세주소</span><input id="liveDetail" class="input"></label>
+          <label><span>배송메모</span><input id="liveMemo" class="input" placeholder="문 앞에 놓아주세요"></label>
+        </div>
+      </div>
+      <div class="sticky-submit-wrap"><button id="liveSubmit" class="btn primary w100 final-submit" type="button">✈ 제출하기</button></div>
+    </div>
+  </section>
+
+  <!-- 직접 주문서 작성 -->
+  <section id="directScreen" class="screen hidden order-flow-screen">
+    <div class="flow-banner direct-banner">
+      <div class="flow-banner-icon">▤</div>
+      <div><h1>직접 주문서 작성</h1><p>원하시는 상품을 직접 검색하여 주문하실 수 있어요.</p></div>
+      <div class="flow-handnote">좋아하는 마음이<br>좋은 하루를 만들어요 ♡</div>
+    </div>
+
+    <div class="order-section-card section-zero">
+      <div class="order-section-head product-input-head">
+        <div><h2>상품 입력</h2><p>상품번호로 검색하여 상품을 선택해주세요.</p></div>
+        <button id="directCatalogRefresh" class="btn mini ghost refresh-mini" type="button">↻ 상품정보 새로고침</button>
+      </div>
+      <div class="product-search-row"><label>상품번호 검색</label><input id="directSearch" class="input" inputmode="numeric" pattern="[0-9]*" placeholder="숫자만 입력 (예: 105)"><button id="directSearchBtn" class="btn primary" type="button">⌕ 검색</button></div>
+      <div id="directProductBox" class="direct-product-box hidden">
+        <div class="field-row"><label>상품명</label><input id="directProductName" class="input" readonly></div>
+        <div class="option-compact-row"><label>칼라<select id="directColor" class="input"></select></label><label>사이즈<select id="directSize" class="input"></select></label><label>수량<div class="qtybox direct-qty"><button id="directMinus" type="button">−</button><b id="directQtyPick">1</b><button id="directPlus" type="button">+</button></div></label></div>
+        <button id="directAdd" class="btn primary w100 cart-add-button" type="button">🛒 담기</button>
+      </div>
+    </div>
+
+    <div class="order-section-card section">
+      <div class="order-section-head"><div><h2>담은 상품 보기</h2><p>선택하신 상품이 아래에 담겨요.</p></div></div>
+      <div id="directCart" class="text-item-list"></div>
+    </div>
+
+    <div class="order-section-card section">
+      <div class="order-section-head"><div><h2>총금액</h2><p>주문하신 상품의 금액을 확인해주세요.</p></div><span class="free-badge">🚚 20만원 이상 무료배송 자동계산</span></div>
+      <div class="checkout-total"><div><small>상품금액</small><b id="directSubtotal">0원</b></div><i></i><div><small>배송비</small><b id="directShipping">0원</b></div><i></i><div class="grand"><small>총 결제금액</small><b id="directTotal">0원</b></div></div>
+    </div>
+
+    <div class="order-section-card section">
+      <div class="order-section-head"><div><h2>배송비 선택</h2><p>지역에 맞는 배송비를 선택해주세요.</p></div></div>
+      <div class="simple-choice-grid"><button class="simple-choice active" data-ship-target="direct" data-ship="basic"><span>◉</span><b>기본배송비</b><strong>4,000원</strong></button><button class="simple-choice" data-ship-target="direct" data-ship="island"><span>○</span><b>제주 및 도서산간</b><strong>7,000원</strong></button></div><input id="directShippingType" class="hidden" value="basic">
+    </div>
+
+    <div class="order-section-card section">
+      <div class="order-section-head"><div><h2>결제방식 선택</h2><p>원하시는 결제방식을 선택해주세요.</p></div></div>
+      <div class="simple-choice-grid"><button class="simple-choice active" data-pay-target="direct" data-pay="bank"><span>◉</span><b>🏦 계좌이체</b></button><button class="simple-choice" data-pay-target="direct" data-pay="card"><span>○</span><b>💳 카드결제</b></button></div><input id="directPayment" class="hidden" value="bank">
+    </div>
+
+    <div class="order-section-card section bank-section">
+      <div class="order-section-head"><div><h2>계좌번호 복사하기</h2><p>아래 계좌번호로 입금해 주세요.</p></div></div>
+      <div class="account-row"><div><b id="directBankAccount">1002-5790-8378</b><small id="directBankText">토스뱅크 - 신성은</small></div><button class="btn primary" type="button" onclick="copyBank()">▣ 계좌번호 복사하기</button></div>
+    </div>
+
+    <div class="order-section-card section shipping-form-card">
+      <div class="order-section-head"><div><h2>배송지 입력</h2><p>정확한 배송을 위해 정보를 확인해주세요.</p></div><span class="saved-badge">✓ 이전에 입력한 배송지 정보는 자동 저장되어 다음 주문 시 그대로 불러와집니다.</span></div>
+      <div class="dense-form">
+        <label><span>닉네임</span><input id="directNick" class="input" placeholder="씬느샵-s0t"><div id="directNickSuggestions" class="suggestions"></div></label>
+        <label><span>수령인</span><input id="directReceiver" class="input" placeholder="신성은"></label>
+        <label><span>연락처</span><input id="directPhone" class="input" inputmode="tel" placeholder="010-1234-5678"></label>
+        <label class="address-line"><span>주소</span><div><input id="directAddress" class="input"><button class="btn primary" type="button" onclick="openPostcode('direct')">⌕ 주소 검색</button></div></label>
+        <input id="directZip" class="hidden">
+        <label><span>상세주소</span><input id="directDetail" class="input"></label>
+        <label><span>배송메모</span><input id="directMemo" class="input" placeholder="문 앞에 놓아주세요"></label>
+      </div>
+      <button id="directSubmit" class="btn primary w100 final-submit section" type="button">✈ 제출하기</button>
+    </div>
+    <div class="flow-footer">Ssineu Shop　♡　언제나, 더 예쁜 하루가 되길</div>
+  </section>
+
+  <!-- 주문 완료 -->
+  <section id="completeScreen" class="screen hidden complete-page">
+    <div class="complete-card">
+      <div class="complete-check">✓</div>
+      <h1>주문이 정상적으로 접수되었습니다!</h1>
+      <p class="complete-lead">씬느샵을 이용해 주셔서 감사합니다.<br>포장까지 정성껏 준비하겠습니다. ♡</p>
+      <div class="complete-number-box"><small>주문번호</small><div><b id="completeNo"></b><button id="completeCopy" type="button" aria-label="주문번호 복사">▣</button></div><span>(이 번호는 주문조회 시 필요합니다)</span></div>
+      <div id="completeInfo" class="complete-info"></div>
+      <div class="complete-products-title"><span>🛍</span><h2>주문상품 (<b id="completeCount">0</b>건)</h2></div>
+      <div id="completeItems" class="complete-items text-item-list"></div>
+      <div class="complete-notice">ⓘ　주문하신 내용은 주문조회에서 언제든지 확인하실 수 있습니다.<br>　　입금 확인 후 순차적으로 포장하여 발송됩니다.<br>　　궁금한 점이 있으시면 아래 버튼을 이용해 주세요. ♡</div>
+      <div class="complete-actions final-actions"><a href="index.html" class="btn ghost">⌂ 쇼핑 계속하기</a><a href="customer.html" class="btn primary">주문조회 바로가기 ›</a><a id="bandBtn" target="_blank" class="btn green">♧ 씬느샵 밴드 바로가기 ↗</a><a id="channelBtn" target="_blank" class="btn yellow">Ch 채널톡 바로가기 ↗</a></div>
+      <div class="complete-brand-footer"><span>♥</span> 씬느샵<br><small>항상 고객님과 함께합니다. ♡</small></div>
+      <span id="completeTotal" class="hidden"></span><div id="completePayment" class="hidden"></div>
+    </div>
+  </section>
 </div>
-<div id="busy" class="modal"><div class="modal-card complete"><div class="spinner"></div><h2 id="busyText">처리 중입니다...</h2><div class="sub">창을 닫지 말고 잠시만 기다려주세요. 보통 몇 초 정도 소요됩니다.</div></div></div><div id="toast" class="card pad hidden" style="position:fixed;right:18px;bottom:18px;z-index:130;max-width:420px"></div>
-<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script><script src="config.js"></script><script src="app.js"></script></body></html>
+
+<div id="busy" class="modal"><div class="modal-card complete"><div class="spinner"></div><h2 id="busyText">처리 중입니다...</h2><div class="sub">창을 닫지 말고 잠시만 기다려주세요. 보통 몇 초 정도 소요됩니다.</div></div></div>
+<div id="toast" class="toast-message hidden"></div>
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script src="config.js?v=5.6.4"></script>
+<script src="app.js?v=5.6.4"></script>
+</body></html>

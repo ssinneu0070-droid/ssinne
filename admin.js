@@ -8,7 +8,24 @@ const esc=s=>String(s==null?'':s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;'
 const money=n=>Number(n||0).toLocaleString('ko-KR')+'원';
 const norm=s=>String(s||'').trim().toLowerCase().replace(/\s+/g,'');
 const pkey=x=>[String(x.productNo||x.no||''),norm(x.color),norm(x.size)].join('|');
-async function api(action,p={}){if(!/^https:\/\/script\.google\.com\/macros\/s\//.test(API_URL))throw new Error('config.js에 Apps Script /exec 주소를 입력해주세요.');const r=await fetch(API_URL+'?v='+Date.now(),{method:'POST',cache:'no-store',headers:{'Content-Type':'text/plain;charset=utf-8','Cache-Control':'no-cache'},body:JSON.stringify({action,adminToken:TOKEN,...p})});const j=await r.json();if(!j.success){if((j.error||'').includes('관리자 로그인이 필요')){TOKEN='';localStorage.removeItem('ssinne_admin_token');showLogin()}throw new Error(j.error||'오류가 발생했습니다.')}return j}
+async function api(action,p={}){
+  if(!/^https:\/\/script\.google\.com\/macros\/s\//.test(API_URL)) throw new Error('config.js에 Apps Script /exec 주소를 입력해주세요.');
+  let r;
+  try{
+    r=await fetch(API_URL+'?v='+Date.now(),{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action,adminToken:TOKEN,...p})});
+  }catch(err){
+    console.error('Admin API network error',err);
+    throw new Error('서버 연결이 원활하지 않습니다. 잠시 후 다시 시도해주세요.');
+  }
+  if(!r.ok) throw new Error('서버 연결 오류가 발생했습니다. ('+r.status+')');
+  let j;
+  try{j=JSON.parse(await r.text())}catch(err){throw new Error('서버 응답을 확인할 수 없습니다. 잠시 후 다시 시도해주세요.')}
+  if(!j.success){
+    if((j.error||'').includes('관리자 로그인이 필요')){TOKEN='';localStorage.removeItem('ssinne_admin_token');showLogin()}
+    throw new Error(j.error||'오류가 발생했습니다.');
+  }
+  return j;
+}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.remove('hidden');setTimeout(()=>t.classList.add('hidden'),3200)}
 function busy(on,m='처리 중입니다...'){$('#busy').classList.toggle('show',on);$('#busyText').textContent=m}
 function panel(name){$$('.admin-panel').forEach(x=>x.classList.remove('active'));const p=$('#panel-'+name);if(p)p.classList.add('active');$$('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.panel===name));({orders:loadOrders,lookup:()=>{},live:loadLive,bank:()=>{},card:()=>{},products:loadProducts,gifts:loadGifts,settings:loadSettings}[name]||(()=>{}))()}
