@@ -244,3 +244,9 @@ pre{font-family:inherit}
   .direct-product-box{overflow:visible!important}.option-compact-row{overflow:visible!important}
   .same-customer-badge{font-size:11px;white-space:normal;line-height:1.35}
 }
+
+.card-status-row{grid-template-columns:repeat(4,minmax(0,1fr));}.card-send-filter{cursor:pointer}.card-send-filter.active{outline:2px solid #ef477c;box-shadow:0 4px 14px rgba(239,71,124,.08)}@media(max-width:760px){.card-status-row{grid-template-columns:1fr 1fr}.card-status-row .status-card{min-height:48px}}
+
+/* V6.2.3 카드결제 부가세 제외 */
+.card-tax-exclude{display:flex;align-items:center;gap:7px;padding:9px 12px;border:1px solid #f4b9cb;border-radius:12px;background:#fff7fa;color:#d93663;white-space:nowrap;cursor:pointer}.card-tax-exclude input{width:18px;height:18px;accent-color:#ef477c}.card-tax-exclude span{font-size:11px;color:#7d6470;font-weight:500}
+@media(max-width:760px){.card-tax-exclude{grid-column:1/-1;justify-content:center;white-space:normal;min-height:42px}.card-tax-exclude span{display:inline}.card-sendbar #cardSend{grid-column:1/-1}}
