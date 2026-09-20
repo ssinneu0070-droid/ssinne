@@ -9,7 +9,7 @@ const pkey=x=>[String(x.productNo||x.no||''),norm(x.color),norm(x.size)].join('|
 async function api(action,p={},timeoutMs=18000){if(!/^https:\/\/script\.google\.com\/macros\/s\//.test(API_URL))throw new Error('config.js에 Apps Script /exec 주소를 입력해주세요.');const c=new AbortController(),timer=setTimeout(()=>c.abort(),timeoutMs);let r;try{r=await fetch(API_URL+'?v='+Date.now(),{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action,adminToken:TOKEN,...p}),signal:c.signal})}catch(e){if(e&&e.name==='AbortError')throw new Error('서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요.');throw new Error('서버 연결이 원활하지 않습니다. 잠시 후 다시 시도해주세요.')}finally{clearTimeout(timer)}if(!r.ok)throw new Error('서버 연결 오류 ('+r.status+')');let j;try{j=JSON.parse(await r.text())}catch(e){throw new Error('서버 응답을 확인할 수 없습니다.')}if(!j.success){if((j.error||'').includes('관리자 로그인이 필요')){TOKEN='';localStorage.removeItem('ssinne_admin_token');showLogin()}throw new Error(j.error||'오류가 발생했습니다.')}return j}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.remove('hidden');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.add('hidden'),3200)}
 function busy(on,m='처리 중입니다...'){$('#busy').classList.toggle('show',on);$('#busyText').textContent=m}
-function panel(name){$$('.admin-panel').forEach(x=>x.classList.remove('active'));$('#panel-'+name)?.classList.add('active');$$('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.panel===name));({orders:loadOrders,live:loadLive,card:()=>loadCards('all'),products:loadProducts,gifts:loadGifts,pending:loadPending,settings:loadSettings}[name]||(()=>{}))()}
+function panel(name){$$('.admin-panel').forEach(x=>x.classList.remove('active'));$('#panel-'+name)?.classList.add('active');$$('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.panel===name));({orders:loadOrders,live:loadLive,card:()=>loadCards('all'),shipping:loadShippingPolicy,products:loadProducts,gifts:loadGifts,pending:loadPending,settings:loadSettings}[name]||(()=>{}))()}
 async function login(){try{busy(true,'로그인 중입니다...');const r=await api('admin_login',{password:$('#adminPassword').value});TOKEN=r.token;localStorage.setItem('ssinne_admin_token',TOKEN);showAdmin()}catch(e){toast(e.message)}finally{busy(false)}}
 function showLogin(){$('#adminApp').classList.add('hidden');$('#login').classList.remove('hidden')}
 function showAdmin(){$('#login').classList.add('hidden');$('#adminApp').classList.remove('hidden');panel('orders')}
@@ -110,6 +110,40 @@ function findTrackingHeader(aoa){for(let i=0;i<Math.min(40,aoa.length);i++){cons
 async function trackingRead(file){trackingRows=[];if(!file)return;try{const buf=await file.arrayBuffer(),wb=XLSX.read(buf,{cellDates:false}),ws=wb.Sheets[wb.SheetNames[0]],aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''}),h=findTrackingHeader(aoa);if(!h)throw new Error('주문번호와 운송장번호 열을 찾지 못했습니다.');trackingRows=aoa.slice(h.i+1).map(r=>({orderNo:String(r[h.oi]||'').trim(),tracking:String(r[h.ti]||'').replace(/[^0-9-]/g,'').trim()})).filter(x=>x.orderNo&&x.tracking);$('#trackingStatus').textContent=`${file.name} · ${trackingRows.length}건 준비됨`}catch(e){trackingRows=[];$('#trackingStatus').textContent=e.message;toast(e.message)}}
 async function trackingApply(){if(!trackingRows.length)return toast('먼저 롯데 송장 결과 엑셀을 선택해주세요.');try{busy(true,'송장번호를 주문에 연결하고 있습니다...');const r=await api('admin_apply_tracking',{items:trackingRows});$('#trackingStatus').textContent=`연동 ${r.updated||0}건`+(r.unmatched?.length?` · 미연결 ${r.unmatched.length}건`:``);toast('송장번호 연동을 완료했습니다. 송장이 붙은 미출고 주문은 자동으로 출고 처리됩니다.');if($('#panel-pending')?.classList.contains('active'))loadPending()}catch(e){toast(e.message)}finally{busy(false)}}
 
+
+/* 배송비 이벤트 */
+async function loadShippingPolicy(){
+  try{
+    const r=await api('admin_shipping_policy');
+    const on=!!r.freeShippingEvent;
+    $('#shippingPolicyBadge').textContent=on?'무료배송 이벤트 적용중':'기본 배송비 정책';
+    $('#shippingPolicyBadge').className='pill '+(on?'green':'blue');
+    $('#shippingPolicyBox').innerHTML=on
+      ?'<strong>🚚 오늘 전체 무료배송 이벤트 적용중</strong><br><span>현재 주문 및 이후 새 주문의 배송비가 0원으로 계산됩니다.</span>'
+      :'<strong>기본 정책 사용중</strong><br><span>20만원 미만 일반 4,000원 · 제주/도서산간 7,000원 · 20만원 이상 무료</span>';
+  }catch(e){toast(e.message)}
+}
+function renderShippingResult(r){
+  if(!r)return;
+  $('#shipResultCount').textContent=(r.count||0)+'건';
+  $('#shipResultChanged').textContent=(r.changed||0)+'건';
+  $('#shipResultDiff').textContent=money(r.difference||0);
+  $('#shipResultRelink').textContent=(r.relink||0)+'건';
+}
+async function applyShippingEvent(free){
+  const msg=free
+    ?'현재 고객주문 전체를 무료배송으로 다시 계산합니다.\n이미 입금완료된 주문도 금액이 바뀔 수 있습니다. 계속할까요?'
+    :'기본 정책(20만원 이상 무료 / 일반 4,000원 / 제주·도서산간 7,000원)으로 현재 주문을 다시 계산할까요?';
+  if(!confirm(msg))return;
+  try{
+    busy(true,free?'무료배송 이벤트를 적용하고 있습니다...':'기본 배송비 정책으로 복구하고 있습니다...');
+    const r=await api('admin_shipping_apply',{freeShippingEvent:!!free},60000);
+    renderShippingResult(r);
+    await loadShippingPolicy();
+    toast(free?'무료배송 이벤트를 적용했습니다.':'기본 배송비 정책으로 복구했습니다.');
+  }catch(e){toast(e.message)}finally{busy(false)}
+}
+
 /* 설정 */
 async function loadSettings(){try{const r=await api('admin_settings_get'),s=r.settings;$('#sVersion').textContent='V'+s.version;$('#sWebApp').value=s.webAppUrl||'';$('#sVideo').value=s.youtubeVideoId||'';$('#sBankName').value=s.bankName||'';$('#sBankAccount').value=s.bankAccount||'';$('#sBankOwner').value=s.bankOwner||'';$('#sBand').value=s.bandUrl||'';$('#sChannel').value=s.channelUrl||'';$('#sPayUser').value=s.payAppUserId||'';$('#sCardProvider').value=s.cardProvider||'payapp';$('#cardProvider').value=s.cardProvider||'payapp';$('#sTossUrl').value=s.tossCardUrl||'';$('#ytStatus').textContent=s.youtubeApiConfigured?'저장됨':'미설정';$('#payStatus').textContent=s.payAppConfigured?'연결됨':'미설정'}catch(e){toast(e.message)}}
 async function saveSettings(){const pw=$('#sPassword').value,settings={youtubeApiKey:$('#sApiKey').value,youtubeVideoId:$('#sVideo').value,bankName:$('#sBankName').value,bankAccount:$('#sBankAccount').value,bankOwner:$('#sBankOwner').value,bandUrl:$('#sBand').value,channelUrl:$('#sChannel').value,cardProvider:$('#sCardProvider').value,tossCardUrl:$('#sTossUrl').value,payAppUserId:$('#sPayUser').value,payAppLinkKey:$('#sPayKey').value,payAppLinkVal:$('#sPayVal').value,newAdminPassword:pw};try{await api('admin_settings_save',{settings});if(pw){TOKEN='';localStorage.removeItem('ssinne_admin_token');location.reload();return}toast('설정을 저장했습니다.')}catch(e){toast(e.message)}}
@@ -121,7 +155,7 @@ function bind(){
  $('#cardSearch').onclick=()=>loadCards('search');$('#cardShowAll').onclick=()=>{cardSendFilter='';loadCards('all')};$$('.card-send-filter').forEach(b=>b.onclick=()=>{const f=b.dataset.cardSendFilter||'';cardSendFilter=cardSendFilter===f?'':f;loadCards('all')});$('#cardSend').onclick=sendCardLink;$('#cardSelectAll').onclick=()=>{const a=$$('.cardCheck'),all=a.length&&a.every(x=>x.checked);a.forEach(x=>x.checked=!all);updateCardSelectedCount()};$('#cardHeaderCheck').onchange=e=>{$$('.cardCheck').forEach(x=>x.checked=e.target.checked);updateCardSelectedCount()};
  $('#liveLinkOpen').onclick=()=>$('#liveLinkModal').classList.add('show');$('#liveLinkClose').onclick=()=>$('#liveLinkModal').classList.remove('show');$('#liveVideoSave').onclick=saveLiveVideo;$('#bStart').onclick=broadcastStart;$('#bCollect').onclick=collectLive;$('#bEnd').onclick=broadcastEnd;
  $('#optionAdd').onclick=optionAdd;$('#productSave').onclick=saveProduct;$('#productClear').onclick=clearProductForm;$('#productDelete').onclick=deleteProducts;$('#productDeleteAll').onclick=deleteAllProducts;$('#productHeaderCheck').onchange=e=>{$$('.productCheck').forEach(x=>x.checked=e.target.checked)};$('#snapshotSave').onclick=saveSnapshot;$('#snapshotLoadByDate').onclick=loadSnapshotByDate;$('#giftSave').onclick=saveGift;$('#giftApply').onclick=applyGifts;
- $('#bankFile').onchange=e=>bankUpload(e.target.files[0]);$('#bankStart').onclick=bankStartMatch;$('#bankDeleteSelected').onclick=bankDeleteSelected;$('#bankHeaderCheck').onchange=e=>{$$('.bankCheck').forEach(x=>x.checked=e.target.checked)};$$('.bank-filter').forEach(b=>b.onclick=()=>{bankFilter=b.dataset.bankFilter;renderBank()});$('#bankShowAll').onclick=()=>{bankFilter='';renderBank()};$('#bankRetry').onclick=bankReset;$('#settingsSave').onclick=saveSettings;$('#pendingSearch').onclick=()=>loadPending();$('#pendingRefresh').onclick=()=>{if($('#pendingQuery'))$('#pendingQuery').value='';loadPending()};$('#pendingLotte').onclick=pendingLotte;$('#pendingHeaderCheck').onchange=e=>{$$('.pendingCheckDesk').forEach(x=>x.checked=e.target.checked)};$('#trackingUploadOpen').onclick=()=>$('#trackingModal').classList.add('show');$('#trackingClose').onclick=()=>$('#trackingModal').classList.remove('show');$('#trackingFile').onchange=e=>trackingRead(e.target.files[0]);$('#trackingApply').onclick=trackingApply;$('#startClose').onclick=()=>$('#startModal').classList.remove('show');$$('.startMode').forEach(b=>b.onclick=()=>broadcastStartMode(b.dataset.mode));
+ $('#bankFile').onchange=e=>bankUpload(e.target.files[0]);$('#bankStart').onclick=bankStartMatch;$('#bankDeleteSelected').onclick=bankDeleteSelected;$('#bankHeaderCheck').onchange=e=>{$$('.bankCheck').forEach(x=>x.checked=e.target.checked)};$$('.bank-filter').forEach(b=>b.onclick=()=>{bankFilter=b.dataset.bankFilter;renderBank()});$('#bankShowAll').onclick=()=>{bankFilter='';renderBank()};$('#bankRetry').onclick=bankReset;$('#settingsSave').onclick=saveSettings;$('#shippingFreeApply').onclick=()=>applyShippingEvent(true);$('#shippingDefaultRestore').onclick=()=>applyShippingEvent(false);$('#shippingRefresh').onclick=loadShippingPolicy;$('#pendingSearch').onclick=()=>loadPending();$('#pendingRefresh').onclick=()=>{if($('#pendingQuery'))$('#pendingQuery').value='';loadPending()};$('#pendingLotte').onclick=pendingLotte;$('#pendingHeaderCheck').onchange=e=>{$$('.pendingCheckDesk').forEach(x=>x.checked=e.target.checked)};$('#trackingUploadOpen').onclick=()=>$('#trackingModal').classList.add('show');$('#trackingClose').onclick=()=>$('#trackingModal').classList.remove('show');$('#trackingFile').onchange=e=>trackingRead(e.target.files[0]);$('#trackingApply').onclick=trackingApply;$('#startClose').onclick=()=>$('#startModal').classList.remove('show');$$('.startMode').forEach(b=>b.onclick=()=>broadcastStartMode(b.dataset.mode));
  $('#aoEditProducts').onclick=()=>{adminEdit.editMode=!adminEdit.editMode;$('#aoProductEditor').classList.toggle('hidden',!adminEdit.editMode);$('#aoEditProducts').textContent=adminEdit.editMode?'수정 닫기':'상품 수정';renderAdminCart()};$('#aoSearch').addEventListener('input',e=>renderAdminCatalog(e.target.value));$('#aoSave').onclick=saveAdminOrder;$('#aoPaid').onclick=()=>modalStatus('입금완료');$('#aoUnpaid').onclick=()=>modalStatus('미입금');$('#aoCard').onclick=()=>modalStatus('카드결제대기');$('#aoDelete').onclick=modalDelete;$('#orderModalClose').onclick=()=>$('#orderModal').classList.remove('show');
 }
 document.addEventListener('DOMContentLoaded',()=>{bind();if(TOKEN)showAdmin()});

@@ -2,8 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>씬느샵 관리자 V6.2.3</title>
-<link rel="stylesheet" href="styles.css?v=6.2.3">
+<title>씬느샵 관리자 V6.2.4</title>
+<link rel="stylesheet" href="styles.css?v=6.2.4">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -19,12 +19,13 @@
     <button data-panel="live" data-icon="📺">라이브관리</button>
     <button data-panel="bank" data-icon="💰">입금관리</button>
     <button data-panel="card" data-icon="💳">카드결제</button>
+    <button data-panel="shipping" data-icon="🚚">배송비이벤트</button>
     <button data-panel="pending" data-icon="📦">미출고관리</button>
     <button data-panel="products" data-icon="🛍">상품관리</button>
     <button data-panel="gifts" data-icon="🎁">사은품관리</button>
     <button data-panel="settings" data-icon="⚙️">설정</button>
   </nav>
-  <div class="sidebar-footer">오늘도 좋은 하루가 되길 ♡<br><small>V6.2.3</small></div>
+  <div class="sidebar-footer">오늘도 좋은 하루가 되길 ♡<br><small>V6.2.4</small></div>
 </aside>
 <main class="admin-main">
   <div class="admin-header"><div><h1 style="margin:0">씬느샵 관리자</h1><div class="sub">필요한 기능만 빠르고 깔끔하게 관리합니다.</div></div><div class="admin-user"><div class="admin-avatar">♡</div><div class="mobile-hide"><b>관리자님</b><div class="hint">안녕하세요!</div></div><button id="logoutBtn" class="btn ghost">로그아웃</button></div></div>
@@ -67,6 +68,41 @@
     </div>
   </section>
 
+
+  <section id="panel-shipping" class="admin-panel">
+    <div class="panel-hero"><div><h2>배송비 설정 / 무료배송 이벤트</h2><div class="sub">평소에는 20만원 이상 무료배송 정책을 사용하고, 이벤트 날에는 현재 주문 전체를 무료배송으로 한 번에 재계산합니다.</div></div></div>
+    <div class="shipping-policy-grid">
+      <div class="admin-card shipping-policy-card">
+        <div class="section-title"><h3>현재 배송비 정책</h3><span id="shippingPolicyBadge" class="pill blue">확인 중</span></div>
+        <div id="shippingPolicyBox" class="shipping-policy-box section">배송비 설정을 불러오는 중입니다.</div>
+        <div class="shipping-rule-list section">
+          <div><b>기본 정책</b><span>20만원 미만 일반 4,000원</span></div>
+          <div><b>제주·도서산간</b><span>20만원 미만 7,000원</span></div>
+          <div><b>20만원 이상</b><span>자동 무료배송</span></div>
+        </div>
+      </div>
+      <div class="admin-card shipping-event-card">
+        <h3>오늘 전체 무료배송 이벤트</h3>
+        <p class="sub">현재 고객주문 금액을 다시 계산하고, 이후 새 주문도 배송비 0원으로 받습니다.</p>
+        <div class="feature-banner section"><b>카드결제 주의</b><br>금액이 바뀐 기존 카드링크는 자동으로 <b>재발송필요</b>가 됩니다. 카드결제 메뉴에서 새 링크를 보내주세요.</div>
+        <div class="shipping-action-stack section">
+          <button id="shippingFreeApply" class="btn primary">🚚 오늘 전체 무료배송 적용</button>
+          <button id="shippingDefaultRestore" class="btn ghost">↩ 기본 배송비 정책으로 복구</button>
+        </div>
+      </div>
+    </div>
+    <div class="admin-card section">
+      <div class="section-title"><h3>처리 결과</h3><button id="shippingRefresh" class="btn ghost mini">↻ 새로고침</button></div>
+      <div id="shippingResult" class="shipping-result-grid section">
+        <div><span>재계산 주문</span><b id="shipResultCount">-</b></div>
+        <div><span>금액 변경 주문</span><b id="shipResultChanged">-</b></div>
+        <div><span>총 금액 변화</span><b id="shipResultDiff">-</b></div>
+        <div><span>카드링크 재발송</span><b id="shipResultRelink">-</b></div>
+      </div>
+      <p class="hint">무료배송 적용 후 이미 입금완료된 주문이 있다면 배송비 차액 환불 여부를 꼭 확인해주세요.</p>
+    </div>
+  </section>
+
   <section id="panel-pending" class="admin-panel">
     <div class="panel-hero"><div><h2>미출고관리</h2><div class="sub">전체주문이력에서 <b>송장번호가 없는 주문만</b> 자동으로 불러옵니다. 송장번호가 붙으면 자동으로 출고 처리되어 목록에서 사라집니다.</div></div></div>
     <div class="admin-card pending-clean-card">
@@ -93,7 +129,7 @@
       <div class="admin-card"><h3>카드결제 설정 <span id="payStatus" class="pill"></span></h3><label>기본 결제사</label><select id="sCardProvider" class="input"><option value="payapp">페이앱</option><option value="toss">토스페이먼츠</option></select><label class="section">페이앱 userid</label><input id="sPayUser" class="input"><div class="form-grid section"><div class="field"><label>linkkey</label><input id="sPayKey" class="input" type="password"></div><div class="field"><label>linkval</label><input id="sPayVal" class="input" type="password"></div></div><label class="section">토스 카드결제 링크</label><input id="sTossUrl" class="input" placeholder="토스 결제링크 또는 연동 URL"><label class="section">고정 카드결제 링크(예비)</label><input id="sCardUrl" class="input"></div>
       <div class="admin-card"><h3>고객 연결 링크</h3><label>씬느샵 밴드 URL</label><input id="sBand" class="input"><label class="section">채널톡 URL</label><input id="sChannel" class="input"></div>
       <div class="admin-card"><h3>관리자 보안</h3><label>관리자 새 비밀번호</label><input id="sPassword" class="input" type="password" placeholder="변경할 때만 입력"><p class="hint">일정시간 자동 로그아웃 기능은 사용하지 않습니다.</p></div>
-      <div class="admin-card"><h3>연결 정보</h3><label>Apps Script /exec 주소</label><input id="sWebApp" class="input" readonly><p class="hint">web/config.js에도 같은 /exec 주소를 입력하세요.</p><p>버전 <b id="sVersion">V6.2.3</b></p></div>
+      <div class="admin-card"><h3>연결 정보</h3><label>Apps Script /exec 주소</label><input id="sWebApp" class="input" readonly><p class="hint">web/config.js에도 같은 /exec 주소를 입력하세요.</p><p>버전 <b id="sVersion">V6.2.4</b></p></div>
     </div><div class="toolbar section"><button id="settingsSave" class="btn primary">✓ 설정 저장</button></div>
   </section>
 </main></div>
@@ -106,5 +142,5 @@
 <div id="startModal" class="modal"><div class="modal-card"><div class="section-title"><h2>라이브 시작 방식</h2><button id="startClose" class="btn ghost">닫기</button></div><button class="btn primary w100 section startMode" data-mode="new">오늘 상품정보 비우고 시작</button><button class="btn softpink w100 section startMode" data-mode="keep">현재상품 유지 시작</button></div></div>
 <div id="trackingModal" class="modal"><div class="modal-card"><div class="section-title"><h2>롯데 송장번호 자동연동</h2><button id="trackingClose" class="btn ghost">닫기</button></div><p class="sub">롯데알프스 결과 엑셀을 선택하면 주문번호와 송장번호 열을 찾아 전체주문이력에 연결합니다.</p><input id="trackingFile" class="input section" type="file" accept=".xlsx,.xls"><button id="trackingApply" class="btn primary w100 section">송장번호 연동 시작</button><div id="trackingStatus" class="hint section"></div></div></div>
 <div id="busy" class="modal"><div class="modal-card complete"><div class="spinner"></div><h2 id="busyText">처리 중입니다...</h2></div></div><div id="toast" class="card pad hidden" style="position:fixed;right:18px;bottom:18px;z-index:130;max-width:420px"></div>
-<script src="config.js?v=6.2.3"></script><script src="admin.js?v=6.2.3"></script>
+<script src="config.js?v=6.2.4"></script><script src="admin.js?v=6.2.4"></script>
 </body></html>
