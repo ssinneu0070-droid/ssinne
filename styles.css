@@ -217,7 +217,7 @@ pre{font-family:inherit}
 .one-col-mobile{grid-template-columns:1fr!important}.bank-filter.active,.kpi-btn.active{outline:2px solid #ef477c}
 @media(max-width:760px){.status-row{grid-template-columns:1fr 1fr 1fr}.status-card{padding:10px 8px;font-size:11px}.status-card b{font-size:14px}.kpis{grid-template-columns:1fr 1fr}.kpis .kpi-btn:last-child{grid-column:1/-1}}
 
-/* V6.1.2 모바일 가독성 + 미출고 관리 */
+/* V6.1.3 모바일 가독성 + 미출고 관리 */
 .pending-customer-card{margin-top:14px;padding:15px 16px;border:1px solid #ffcbd8;border-radius:15px;background:#fff2f5;color:#b92f55;line-height:1.65}.pending-customer-card>b{display:block;font-size:16px;margin-bottom:5px}.pending-customer-card strong{color:#9e2548}.pending-customer-card p{margin:7px 0 0;padding:9px 11px;background:#fff;border-radius:10px;color:#555f70}.pending-message{min-width:210px;min-height:70px!important}.pending-items{min-width:220px}.compact-select{min-width:105px}.btn.violet{background:linear-gradient(135deg,#8d72f4,#7157df);color:#fff}
 @media(max-width:760px){
   /* 50~60대 고객용: 너무 작던 글씨/입력칸을 모바일 비율 안에서 확대 */
