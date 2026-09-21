@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#fff8fb">
-<title>씬느샵 주문서 V6.3.0</title>
-<link rel="stylesheet" href="styles.css?v=6.3.0">
+<title>씬느샵 주문서 V6.3.3</title>
+<link rel="stylesheet" href="styles.css?v=6.3.3">
 </head>
 <body class="shop-body">
 <div class="shop-shell customer-order-shell">
@@ -75,7 +75,7 @@
 
       <div class="order-section-card section">
         <div class="order-section-head product-input-head"><div><h2>빠진 상품 직접 추가</h2><p>댓글 주문에 빠진 상품이 있으면 상품번호로 바로 추가할 수 있어요.</p></div><button id="liveCatalogRefresh2" class="btn mini ghost refresh-mini" type="button">↻ 상품정보 새로고침</button></div>
-        <div class="product-search-row"><label>상품번호 검색</label><input id="liveManualSearch" class="input" inputmode="numeric" pattern="[0-9]*" placeholder="숫자만 입력"><button id="liveManualSearchBtn" class="btn primary" type="button">⌕ 검색</button></div>
+        <div class="product-search-row"><label>상품번호 검색</label><input id="liveManualSearch" class="input" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="예: 105, A105, SS-12"><button id="liveManualSearchBtn" class="btn primary" type="button">⌕ 검색</button></div>
         <div id="liveManualBox" class="direct-product-box hidden">
           <div class="field-row"><label>상품명</label><input id="liveManualName" class="input" readonly></div>
           <div class="option-compact-row"><label>칼라<select id="liveManualColor" class="input"></select></label><label>사이즈<select id="liveManualSize" class="input"></select></label><label>수량<div class="qtybox direct-qty"><button id="liveManualMinus" type="button">−</button><b id="liveManualQty">1</b><button id="liveManualPlus" type="button">+</button></div></label></div>
@@ -85,7 +85,7 @@
 
       <div class="order-section-card section">
         <div class="order-section-head"><div><h2>총금액</h2><p>불러온 상품 금액과 배송비를 확인해주세요.</p></div><span class="free-badge">🚚 20만원 이상 무료배송 자동계산</span></div>
-        <div class="checkout-total"><div><small>상품금액</small><b id="liveSubtotal">0원</b></div><i></i><div><small>배송비</small><b id="liveShipping">0원</b></div><i></i><div class="grand"><small>총 결제금액</small><b id="liveTotal">0원</b></div></div>
+        <div class="checkout-total"><div><small>상품금액</small><b id="liveSubtotal">0원</b></div><i></i><div><small>배송비</small><b id="liveShipping">0원</b></div><i></i><div class="grand"><small>총 결제금액</small><b id="liveTotal">0원</b></div></div><div id="liveVipBadge" class="vip-customer-badge hidden"></div>
       </div>
 
       <div class="order-section-card section">
@@ -109,7 +109,8 @@
           <label><span>닉네임</span><input id="liveNick2" class="input" readonly></label>
           <label><span>수령인</span><input id="liveReceiver" class="input" placeholder="신성은"></label>
           <label><span>연락처</span><input id="livePhone2" class="input" inputmode="tel"></label>
-          <label class="address-line"><span>주소</span><div><input id="liveAddress" class="input"><button class="btn primary" type="button" onclick="openPostcode('live')">⌕ 주소 검색</button></div></label>
+          <label class="address-line"><span>주소</span><div><input id="liveAddress" class="input" readonly placeholder="주소 검색 버튼을 눌러주세요"><button class="btn primary" type="button" onclick="openPostcode('live')">⌕ 주소 검색</button></div></label>
+          <div id="livePostcodePanel" class="postcode-inline hidden"><div class="postcode-inline-head"><div><b>주소 검색</b><small>도로명 또는 건물명을 입력해주세요.</small></div><button class="postcode-close" type="button" onclick="closePostcode('live')">닫기 ×</button></div><div id="livePostcodeEmbed" class="postcode-embed"></div></div>
           <input id="liveZip" class="hidden">
           <label><span>상세주소</span><input id="liveDetail" class="input"></label>
           <label><span>배송메모</span><input id="liveMemo" class="input" placeholder="문 앞에 놓아주세요"></label>
@@ -132,7 +133,7 @@
         <div><h2>상품 입력</h2><p>상품번호로 검색하여 상품을 선택해주세요.</p></div>
         <button id="directCatalogRefresh" class="btn mini ghost refresh-mini" type="button">↻ 상품정보 새로고침</button>
       </div>
-      <div class="product-search-row"><label>상품번호 검색</label><input id="directSearch" class="input" inputmode="numeric" pattern="[0-9]*" placeholder="숫자만 입력 (예: 105)"><button id="directSearchBtn" class="btn primary" type="button">⌕ 검색</button></div>
+      <div class="product-search-row"><label>상품번호 검색</label><input id="directSearch" class="input" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="예: 105, A105, SS-12"><button id="directSearchBtn" class="btn primary" type="button">⌕ 검색</button></div>
       <div id="directProductBox" class="direct-product-box hidden">
         <div class="field-row"><label>상품명</label><input id="directProductName" class="input" readonly></div>
         <div class="option-compact-row"><label>칼라<select id="directColor" class="input"></select></label><label>사이즈<select id="directSize" class="input"></select></label><label>수량<div class="qtybox direct-qty"><button id="directMinus" type="button">−</button><b id="directQtyPick">1</b><button id="directPlus" type="button">+</button></div></label></div>
@@ -147,7 +148,7 @@
 
     <div class="order-section-card section">
       <div class="order-section-head"><div><h2>총금액</h2><p>주문하신 상품의 금액을 확인해주세요.</p></div><span class="free-badge">🚚 20만원 이상 무료배송 자동계산</span></div>
-      <div class="checkout-total"><div><small>상품금액</small><b id="directSubtotal">0원</b></div><i></i><div><small>배송비</small><b id="directShipping">0원</b></div><i></i><div class="grand"><small>총 결제금액</small><b id="directTotal">0원</b></div></div>
+      <div class="checkout-total"><div><small>상품금액</small><b id="directSubtotal">0원</b></div><i></i><div><small>배송비</small><b id="directShipping">0원</b></div><i></i><div class="grand"><small>총 결제금액</small><b id="directTotal">0원</b></div></div><div id="directVipBadge" class="vip-customer-badge hidden"></div>
     </div>
 
     <div class="order-section-card section">
@@ -171,7 +172,8 @@
         <label><span>닉네임</span><input id="directNick" class="input" placeholder="씬느샵-s0t (@ 제외)" autocomplete="off"></label>
         <label><span>수령인</span><input id="directReceiver" class="input" placeholder="신성은"></label>
         <label><span>연락처</span><input id="directPhone" class="input" inputmode="tel" placeholder="010-1234-5678"></label>
-        <label class="address-line"><span>주소</span><div><input id="directAddress" class="input"><button class="btn primary" type="button" onclick="openPostcode('direct')">⌕ 주소 검색</button></div></label>
+        <label class="address-line"><span>주소</span><div><input id="directAddress" class="input" readonly placeholder="주소 검색 버튼을 눌러주세요"><button class="btn primary" type="button" onclick="openPostcode('direct')">⌕ 주소 검색</button></div></label>
+        <div id="directPostcodePanel" class="postcode-inline hidden"><div class="postcode-inline-head"><div><b>주소 검색</b><small>도로명 또는 건물명을 입력해주세요.</small></div><button class="postcode-close" type="button" onclick="closePostcode('direct')">닫기 ×</button></div><div id="directPostcodeEmbed" class="postcode-embed"></div></div>
         <input id="directZip" class="hidden">
         <label><span>상세주소</span><input id="directDetail" class="input"></label>
         <label><span>배송메모</span><input id="directMemo" class="input" placeholder="문 앞에 놓아주세요"></label>
@@ -202,6 +204,6 @@
 <div id="busy" class="modal"><div class="modal-card complete"><div class="spinner"></div><h2 id="busyText">처리 중입니다...</h2><div class="sub">창을 닫지 말고 잠시만 기다려주세요. 보통 몇 초 정도 소요됩니다.</div></div></div>
 <div id="toast" class="toast-message hidden"></div>
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script src="config.js?v=6.3.0"></script>
-<script src="app.js?v=6.3.0"></script>
+<script src="config.js?v=6.3.3"></script>
+<script src="app.js?v=6.3.3"></script>
 </body></html>

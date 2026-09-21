@@ -2,8 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>씬느샵 관리자 V6.3.0</title>
-<link rel="stylesheet" href="styles.css?v=6.3.0">
+<title>씬느샵 관리자 V6.3.3</title>
+<link rel="stylesheet" href="styles.css?v=6.3.3">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -20,13 +20,13 @@
     <button data-panel="live" data-icon="📺">라이브관리</button>
     <button data-panel="bank" data-icon="💰">입금관리</button>
     <button data-panel="card" data-icon="💳">카드결제</button>
-    <button data-panel="shipping" data-icon="🚚">배송비이벤트</button>
+    <button data-panel="shipping" data-icon="🚚">배송비 설정</button>
     <button data-panel="lotte" data-icon="🚚">롯데택배</button>
     <button data-panel="products" data-icon="🛍">상품관리</button>
     <button data-panel="gifts" data-icon="🎁">사은품관리</button>
     <button data-panel="settings" data-icon="⚙️">설정</button>
   </nav>
-  <div class="sidebar-footer">오늘도 좋은 하루가 되길 ♡<br><small>V6.3.0</small></div>
+  <div class="sidebar-footer">오늘도 좋은 하루가 되길 ♡<br><small>V6.3.3</small></div>
 </aside>
 <main class="admin-main">
   <div class="admin-header"><div><h1 style="margin:0">씬느샵 관리자</h1><div class="sub">필요한 기능만 빠르고 깔끔하게 관리합니다.</div></div><div class="admin-user"><div class="admin-avatar">♡</div><div class="mobile-hide"><b>관리자님</b><div class="hint">안녕하세요!</div></div><button id="logoutBtn" class="btn ghost">로그아웃</button></div></div>
@@ -77,42 +77,41 @@
       <div class="toolbar card-searchbar"><input id="cardQuery" class="input" placeholder="주문번호 / 닉네임 / 수령인 / 연락처 검색"><button id="cardSearch" class="btn primary">🔎 검색</button><button id="cardShowAll" class="btn softpink">▣ 전체 모아보기</button></div>
       <div class="status-row section card-status-row"><button class="status-card card-send-filter" data-card-send-filter="">전체(<b id="cAll">0</b>)</button><button class="status-card orange card-send-filter" data-card-send-filter="미발송">미발송(<b id="cUnsent">0</b>)</button><button class="status-card green card-send-filter" data-card-send-filter="발송완료">발송완료(<b id="cSent">0</b>)</button><button class="status-card red card-send-filter" data-card-send-filter="재발송필요">재발송필요(<b id="cRelink">0</b>)</button></div>
       <div class="toolbar section card-sendbar"><label>결제사</label><select id="cardProvider" class="input provider-select"><option value="payapp">페이앱</option><option value="toss">토스페이먼츠</option></select><span id="cardSelectedCount" class="pill blue">선택 0명</span><button id="cardSelectAll" class="btn ghost">전체선택</button><label class="card-tax-exclude"><input id="cardTaxExclude" type="checkbox"> <b>부가세 제외</b><span>선택 고객은 주문금액 그대로 결제</span></label><button id="cardSend" class="btn primary">➤ 선택 고객 카드결제 링크 보내기</button></div>
-      <div class="table-wrap section"><table class="table"><thead><tr><th><input id="cardHeaderCheck" type="checkbox" aria-label="전체선택"></th><th>주문번호</th><th>닉네임</th><th>수령인</th><th>연락처</th><th>고객주문 합계</th><th>기본 카드금액(+10%)</th><th>발송상태</th><th>결제상태 / 변경</th></tr></thead><tbody id="cardTbody"><tr><td colspan="9">카드결제대기 고객을 불러오는 중입니다.</td></tr></tbody></table></div>
+      <div class="table-wrap section"><table class="table"><thead><tr><th><input id="cardHeaderCheck" type="checkbox" aria-label="전체선택"></th><th>주문번호</th><th>닉네임</th><th>수령인</th><th>연락처</th><th>고객주문 합계</th><th>기본 카드금액(+10%)</th><th>발송상태</th><th>결제상태 / 변경</th></tr></thead><tbody id="cardTbody"><tr><td colspan="9">카드결제 고객을 불러오는 중입니다.</td></tr></tbody></table></div>
     </div>
   </section>
 
 
   <section id="panel-shipping" class="admin-panel">
-    <div class="panel-hero"><div><h2>배송비 설정 / 무료배송 이벤트</h2><div class="sub">평소에는 20만원 이상 무료배송 정책을 사용하고, 이벤트 날에는 현재 주문 전체를 무료배송으로 한 번에 재계산합니다.</div></div></div>
-    <div class="shipping-policy-grid">
-      <div class="admin-card shipping-policy-card">
-        <div class="section-title"><h3>현재 배송비 정책</h3><span id="shippingPolicyBadge" class="pill blue">확인 중</span></div>
-        <div id="shippingPolicyBox" class="shipping-policy-box section">배송비 설정을 불러오는 중입니다.</div>
-        <div class="shipping-rule-list section">
-          <div><b>기본 정책</b><span>20만원 미만 일반 4,000원</span></div>
-          <div><b>제주·도서산간</b><span>20만원 미만 7,000원</span></div>
-          <div><b>20만원 이상</b><span>자동 무료배송</span></div>
-        </div>
+    <div class="panel-hero"><div><h2>배송비 설정</h2><div class="sub">기본 배송비와 무료배송 기준, VIP 고객의 무료배송·카드 부가세 혜택을 한곳에서 관리합니다.</div></div><button id="shippingSave" class="btn primary">💾 설정 저장</button></div>
+    <div class="admin-card shipping-basic-card">
+      <div class="section-title"><h3>⚙ 배송비 기본 설정</h3><span id="shippingPolicyBadge" class="pill blue">확인 중</span></div>
+      <div class="shipping-settings-grid section">
+        <div class="field"><label>기본 배송비</label><div class="input-unit"><input id="shipBasic" class="input" type="number" min="0"><span>원</span></div></div>
+        <div class="field"><label>제주·도서산간 배송비</label><div class="input-unit"><input id="shipIsland" class="input" type="number" min="0"><span>원</span></div></div>
+        <div class="field"><label>무료배송 기준금액</label><div class="input-unit"><input id="shipThreshold" class="input" type="number" min="0"><span>원 이상</span></div></div>
+        <label class="event-toggle"><input id="shipFreeEvent" type="checkbox"><span><b>방송 중 무료배송 이벤트 사용</b><small>켜면 현재 주문과 새 주문의 배송비를 0원으로 재계산합니다.</small></span></label>
       </div>
-      <div class="admin-card shipping-event-card">
-        <h3>오늘 전체 무료배송 이벤트</h3>
-        <p class="sub">현재 고객주문 금액을 다시 계산하고, 이후 새 주문도 배송비 0원으로 받습니다.</p>
-        <div class="feature-banner section"><b>카드결제 주의</b><br>금액이 바뀐 기존 카드링크는 자동으로 <b>재발송필요</b>가 됩니다. 카드결제 메뉴에서 새 링크를 보내주세요.</div>
-        <div class="shipping-action-stack section">
-          <button id="shippingFreeApply" class="btn primary">🚚 오늘 전체 무료배송 적용</button>
-          <button id="shippingDefaultRestore" class="btn ghost">↩ 기본 배송비 정책으로 복구</button>
-        </div>
+      <div id="shippingPolicyBox" class="shipping-policy-box section"></div>
+    </div>
+    <div class="admin-grid-2 section">
+      <div class="admin-card">
+        <h3>💳 카드결제 설정</h3>
+        <div class="field section"><label>일반 고객 카드 부가세</label><select id="shipCardRate" class="input"><option value="0.10">10% 자동 가산 (기본)</option><option value="0">0% 가산</option></select></div>
+        <label class="check-label section"><input type="checkbox" checked disabled> VIP 고객은 개별 설정에 따라 부가세 제외</label>
+        <p class="hint">VIP로 등록된 고객은 주문서에서 카드결제를 선택해도 부가세 제외 설정이 자동 적용됩니다.</p>
+      </div>
+      <div class="admin-card vip-benefit-card">
+        <h3>♥ VIP 고객 혜택 안내</h3>
+        <div class="vip-benefits section"><div>✓ 등록한 VIP 고객은 카드 부가세 제외 가능</div><div>✓ VIP 고객 배송비 무료 적용 가능</div><div>✓ 닉네임·수령인·연락처를 함께 확인해 자동 적용</div><div>✓ 고객별 혜택을 각각 켜고 끌 수 있음</div></div>
       </div>
     </div>
     <div class="admin-card section">
-      <div class="section-title"><h3>처리 결과</h3><button id="shippingRefresh" class="btn ghost mini">↻ 새로고침</button></div>
-      <div id="shippingResult" class="shipping-result-grid section">
-        <div><span>재계산 주문</span><b id="shipResultCount">-</b></div>
-        <div><span>금액 변경 주문</span><b id="shipResultChanged">-</b></div>
-        <div><span>총 금액 변화</span><b id="shipResultDiff">-</b></div>
-        <div><span>카드링크 재발송</span><b id="shipResultRelink">-</b></div>
-      </div>
-      <p class="hint">무료배송 적용 후 이미 입금완료된 주문이 있다면 배송비 차액 환불 여부를 꼭 확인해주세요.</p>
+      <div class="section-title"><div><h3>♛ VIP 고객 관리</h3><div class="sub">VIP 고객을 저장해두면 주문서와 카드결제 금액에 자동 적용됩니다.</div></div><div class="toolbar"><input id="vipFile" type="file" accept=".xlsx,.xls" class="hidden"><button id="vipUpload" class="btn ghost">⇧ 엑셀 업로드</button><button id="vipNew" class="btn primary">＋ VIP 고객 추가</button><button id="vipDownload" class="btn ghost">⇩ 엑셀 다운로드</button></div></div>
+      <div class="toolbar section"><input id="vipQuery" class="input" placeholder="닉네임, 이름, 연락처로 검색하세요."><button id="vipSearch" class="btn primary">🔎 검색</button><button id="vipShowAll" class="btn ghost">전체보기</button></div>
+      <div class="table-wrap section"><table class="table vip-table"><thead><tr><th><input id="vipHeaderCheck" type="checkbox"></th><th>No.</th><th>닉네임</th><th>수령인 이름</th><th>연락처</th><th>카드 부가세</th><th>배송비</th><th>상태</th><th>관리</th></tr></thead><tbody id="vipTbody"></tbody></table></div>
+      <div class="toolbar section"><button id="vipDeleteSelected" class="btn red">⌫ 선택 삭제</button><span id="vipCount" class="hint"></span></div>
+      <div class="feature-banner section"><b>주의사항</b>　VIP 자동 적용은 등록 정보와 고객 주문서의 닉네임·수령인·연락처를 확인합니다. 같은 이름 고객 오적용을 막기 위해 연락처를 함께 저장하는 것을 권장합니다.</div>
     </div>
   </section>
 
@@ -120,7 +119,7 @@
     <div class="panel-hero"><div><h2>롯데택배</h2><div class="sub">전체주문이력을 기준으로 송장 다운로드·송장번호 입력·합배송·반품교환·미출고를 한곳에서 관리합니다.</div></div><div class="toolbar"><button id="lotteBuild3pl" class="btn blue">3PL 새로 생성</button><button id="lotteBuildSupplier" class="btn violet">거래처발주 새로 계산</button></div></div>
     <div class="admin-card"><div class="inner-tabs lotte-tabs"><button class="inner-tab active" data-lotte-tab="download">송장 다운로드</button><button class="inner-tab" data-lotte-tab="tracking">송장번호 입력</button><button class="inner-tab" data-lotte-tab="combine">합배송 조회</button><button class="inner-tab" data-lotte-tab="return">반품·교환 관리</button><button class="inner-tab" data-lotte-tab="pending">미출고 관리</button></div></div>
 
-    <div id="lotte-download" class="lotte-view active admin-card section"><div class="section-title"><h3>송장 다운로드</h3><span class="pill">전체주문이력 기준</span></div><div class="filter-grid"><input id="lotteFrom" type="date" class="input"><input id="lotteTo" type="date" class="input"><input id="lotteNick" class="input" placeholder="닉네임 부분검색"><input id="lotteReceiver" class="input" placeholder="수령인 이름 부분검색"><select id="lotteStatus" class="input"><option>전체</option><option>입금완료</option><option>카드결제</option><option>카드결제대기</option><option>미입금</option></select><label class="check-label"><input id="lotteExcludeTracked" type="checkbox" checked> 송장번호 있는 주문 제외</label><label class="check-label"><input id="lotteExcludeCombined" type="checkbox"> 합배송 후보 제외</label><button id="lotteSearch" class="btn primary">🔎 검색</button><button id="lotteReset" class="btn ghost">초기화</button></div><div class="status-row section"><button class="status-card" data-lotte-status="전체">전체 <b id="lAll">0</b></button><button class="status-card green" data-lotte-status="입금완료">입금완료 <b id="lPaid">0</b></button><button class="status-card violet" data-lotte-status="카드결제">카드결제 <b id="lCard">0</b></button><button class="status-card blue" data-lotte-status="카드결제대기">카드결제대기 <b id="lCardPending">0</b></button><button class="status-card orange" data-lotte-status="미입금">미입금 <b id="lUnpaid">0</b></button></div><div class="table-wrap section"><table class="table"><thead><tr><th><input id="lotteHeaderCheck" type="checkbox"></th><th>주문일</th><th>주문번호</th><th>닉네임</th><th>수령인</th><th>연락처</th><th>내품</th><th>결제상태</th><th>송장번호</th></tr></thead><tbody id="lotteTbody"></tbody></table></div><div class="toolbar section"><button id="lotteSelectedDownload" class="btn primary">선택 다운로드</button><button id="lotteAllDownload" class="btn softpink">검색결과 전체 다운로드</button></div></div>
+    <div id="lotte-download" class="lotte-view active admin-card section"><div class="section-title"><h3>송장 다운로드</h3><span class="pill">전체주문이력 기준</span></div><div class="lotte-quick-download"><div><b>📅 날짜만 선택해서 바로 송장 다운로드</b><div class="hint">입금완료 · 송장번호 없는 주문을 선택한 날짜 기준으로 즉시 롯데택배 ALPS 양식으로 만듭니다.</div></div><input id="lotteQuickDate" type="date" class="input"><button id="lotteQuickBtn" class="btn primary" type="button">선택 날짜 다시 다운로드</button><span id="lotteQuickStatus" class="pill blue">날짜를 선택하세요</span></div><div class="advanced-title section">상세 조회 / 고객별 선택 다운로드</div><div class="filter-grid"><input id="lotteFrom" type="date" class="input"><input id="lotteTo" type="date" class="input"><input id="lotteNick" class="input" placeholder="닉네임 부분검색"><input id="lotteReceiver" class="input" placeholder="수령인 이름 부분검색"><select id="lotteStatus" class="input"><option>전체</option><option>입금완료</option><option>카드결제</option><option>카드결제대기</option><option>미입금</option></select><label class="check-label"><input id="lotteExcludeTracked" type="checkbox" checked> 송장번호 있는 주문 제외</label><label class="check-label"><input id="lotteExcludeCombined" type="checkbox"> 합배송 후보 제외</label><button id="lotteSearch" class="btn primary">🔎 검색</button><button id="lotteReset" class="btn ghost">초기화</button></div><div class="status-row section"><button class="status-card" data-lotte-status="전체">전체 <b id="lAll">0</b></button><button class="status-card green" data-lotte-status="입금완료">입금완료 <b id="lPaid">0</b></button><button class="status-card violet" data-lotte-status="카드결제">카드결제 <b id="lCard">0</b></button><button class="status-card blue" data-lotte-status="카드결제대기">카드결제대기 <b id="lCardPending">0</b></button><button class="status-card orange" data-lotte-status="미입금">미입금 <b id="lUnpaid">0</b></button></div><div class="table-wrap section"><table class="table"><thead><tr><th><input id="lotteHeaderCheck" type="checkbox"></th><th>주문일</th><th>주문번호</th><th>닉네임</th><th>수령인</th><th>연락처</th><th>내품</th><th>결제상태</th><th>송장번호</th></tr></thead><tbody id="lotteTbody"></tbody></table></div><div class="toolbar section"><button id="lotteSelectedDownload" class="btn primary">선택 다운로드</button><button id="lotteAllDownload" class="btn softpink">검색결과 전체 다운로드</button></div></div>
 
     <div id="lotte-tracking" class="lotte-view admin-card section"><div class="section-title"><h3>송장번호 입력</h3><span class="pill">롯데알프스 결과 엑셀</span></div><div class="upload-zone"><input id="trackingFile" class="input" type="file" accept=".xlsx,.xls"><div id="trackingStatus" class="hint section">파일을 선택하면 주문번호/송장번호를 자동으로 찾습니다.</div><button id="trackingApply" class="btn primary">송장번호 연동 시작</button></div><div class="status-row section"><div class="status-card green">매칭완료 <b id="trackMatched">0</b></div><div class="status-card orange">미매칭 <b id="trackMissing">0</b></div><div class="status-card">총 업로드 <b id="trackTotal">0</b></div></div><div class="table-wrap section"><table class="table"><thead><tr><th>주문번호</th><th>송장번호</th><th>결과</th></tr></thead><tbody id="trackingTbody"></tbody></table></div></div>
 
@@ -133,7 +132,7 @@
 
   <section id="panel-products" class="admin-panel">
     <div class="panel-hero"><div><h2>상품관리</h2><div class="sub">상품정보 등록/수정과 날짜별 상품정보 저장을 한 화면에서 관리합니다.</div></div></div>
-    <div class="admin-card product-editor"><div class="section-title"><h3>상품정보 등록 / 수정</h3><span class="pill">옵션을 여러 개 추가한 뒤 한 번에 저장</span></div><div class="product-basic-grid"><div class="field"><label>상품번호</label><input id="pNo" class="input" inputmode="numeric"></div><div class="field"><label>상품명</label><input id="pName" class="input"></div><div class="field"><label>판매가</label><input id="pSale" class="input" type="number"></div><div class="field"><label>입금가</label><input id="pCost" class="input" type="number"></div><div class="field"><label>현재재고</label><input id="pStock" class="input" type="number"></div></div><div class="option-editor section"><div class="section-title"><h3>옵션 정보</h3><span class="sub">칼라와 사이즈를 추가하세요.</span></div><div class="option-entry"><div class="field"><label>칼라</label><input id="pColor" class="input" placeholder="예: 블랙"></div><div class="field"><label>사이즈</label><input id="pSize" class="input" value="FREE"></div><button id="optionAdd" class="btn softpink">＋ 옵션추가</button></div><div id="optionList" class="option-list section"></div></div><div class="toolbar section"><button id="productSave" class="btn primary">✓ 상품 등록/수정</button><button id="productClear" class="btn ghost">초기화</button><button id="productDelete" class="btn red">선택삭제</button><button id="productDeleteAll" class="btn red">모두삭제</button></div></div>
+    <div class="admin-card product-editor"><div class="section-title"><h3>상품정보 등록 / 수정</h3><span class="pill">옵션을 여러 개 추가한 뒤 한 번에 저장</span></div><div class="product-basic-grid"><div class="field"><label>상품번호</label><input id="pNo" class="input" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="예: 105, A105, SS-12"></div><div class="field"><label>상품명</label><input id="pName" class="input"></div><div class="field"><label>판매가</label><input id="pSale" class="input" type="number"></div><div class="field"><label>입금가</label><input id="pCost" class="input" type="number"></div><div class="field"><label>현재재고</label><input id="pStock" class="input" type="number"></div></div><div class="option-editor section"><div class="section-title"><h3>옵션 정보</h3><span class="sub">칼라와 사이즈를 추가하세요.</span></div><div class="option-entry"><div class="field"><label>칼라</label><input id="pColor" class="input" placeholder="예: 블랙"></div><div class="field"><label>사이즈</label><input id="pSize" class="input" value="FREE"></div><button id="optionAdd" class="btn softpink">＋ 옵션추가</button></div><div id="optionList" class="option-list section"></div></div><div class="toolbar section"><button id="productSave" class="btn primary">✓ 상품 등록/수정</button><button id="productClear" class="btn ghost">초기화</button><button id="productDelete" class="btn red">선택삭제</button><button id="productDeleteAll" class="btn red">모두삭제</button></div></div>
     <div class="admin-card section"><div class="section-title"><h3>상품정보 저장 · 불러오기</h3><span class="pill">저장일 · 업체명 기준 상품정보 저장</span></div><div class="toolbar"><input id="snapshotVendor" class="input" placeholder="업체명 (저장할 때 한 번만 입력)"><button id="snapshotSave" class="btn primary">현재 상품정보 저장</button><input id="snapshotDate" class="input" type="date"><button id="snapshotLoadByDate" class="btn softpink">선택 날짜 불러오기</button></div><div id="snapshotList" class="section"></div></div>
     <div class="admin-card section"><div class="section-title"><h3>등록된 상품정보</h3><span class="pill">주문가능수량 = 현재재고 - 주문서작성수량</span></div><div class="table-wrap"><table class="table"><thead><tr><th><input id="productHeaderCheck" type="checkbox" aria-label="전체선택"></th><th>상품번호</th><th>상품명</th><th>칼라</th><th>사이즈</th><th>판매가</th><th>입금가</th><th>현재재고</th><th>재고상태</th><th>댓글예약수량</th><th>주문서작성수량</th><th>주문가능수량</th><th>수정</th></tr></thead><tbody id="productTbody"></tbody></table></div></div>
   </section>
@@ -147,7 +146,7 @@
       <div class="admin-card"><h3>카드결제 설정 <span id="payStatus" class="pill"></span></h3><label>기본 결제사</label><select id="sCardProvider" class="input"><option value="payapp">페이앱</option><option value="toss">토스페이먼츠</option></select><label class="section">페이앱 userid</label><input id="sPayUser" class="input"><div class="form-grid section"><div class="field"><label>linkkey</label><input id="sPayKey" class="input" type="password"></div><div class="field"><label>linkval</label><input id="sPayVal" class="input" type="password"></div></div><label class="section">토스 카드결제 링크</label><input id="sTossUrl" class="input" placeholder="토스 결제링크 또는 연동 URL"><label class="section">고정 카드결제 링크(예비)</label><input id="sCardUrl" class="input"></div>
       <div class="admin-card"><h3>고객 연결 링크</h3><label>씬느샵 밴드 URL</label><input id="sBand" class="input"><label class="section">채널톡 URL</label><input id="sChannel" class="input"></div>
       <div class="admin-card"><h3>관리자 보안</h3><label>관리자 새 비밀번호</label><input id="sPassword" class="input" type="password" placeholder="변경할 때만 입력"><p class="hint">일정시간 자동 로그아웃 기능은 사용하지 않습니다.</p></div>
-      <div class="admin-card"><h3>연결 정보</h3><label>Apps Script /exec 주소</label><input id="sWebApp" class="input" readonly><p class="hint">web/config.js에도 같은 /exec 주소를 입력하세요.</p><p>버전 <b id="sVersion">V6.3.0</b></p></div>
+      <div class="admin-card"><h3>연결 정보</h3><label>Apps Script /exec 주소</label><input id="sWebApp" class="input" readonly><p class="hint">web/config.js에도 같은 /exec 주소를 입력하세요.</p><p>버전 <b id="sVersion">V6.3.3</b></p></div>
     </div><div class="toolbar section"><button id="settingsSave" class="btn primary">✓ 설정 저장</button></div>
   </section>
 </main></div>
@@ -159,6 +158,7 @@
 <div id="startModal" class="modal"><div class="modal-card"><div class="section-title"><h2>라이브 시작 방식</h2><button id="startClose" class="btn ghost">닫기</button></div><button class="btn primary w100 section startMode" data-mode="new">오늘 상품정보 비우고 시작</button><button class="btn softpink w100 section startMode" data-mode="keep">현재상품 유지 시작</button></div></div>
 <div id="csModal" class="modal"><div class="modal-card"><div class="section-title"><h2>CS 등록 / 수정</h2><button id="csModalClose" class="btn ghost">닫기</button></div><input id="csRow" type="hidden"><div class="form-grid"><div class="field"><label>접수일</label><input id="csDate" type="date" class="input"></div><div class="field"><label>채널톡ID</label><input id="csChannelId" class="input"></div><div class="field"><label>닉네임</label><input id="csNickname" class="input"></div><div class="field"><label>고객명</label><input id="csCustomer" class="input"></div><div class="field full"><label>내용</label><textarea id="csContent" class="input" rows="4"></textarea></div><div class="field"><label>유형</label><select id="csType" class="input"><option>입금완료</option><option>주문서작성</option><option>주문확인</option><option>송장확인</option><option>배송문의</option><option>불량문의</option><option>사이즈문의</option><option>교환</option><option>환불</option><option>추가주문문의</option><option>기타</option></select></div><div class="field"><label>상태</label><select id="csEditStatus" class="input"><option>접수</option><option>진행</option><option>완료</option><option>보류</option></select></div><div class="field"><label>주문번호</label><input id="csOrderNo" class="input"></div><div class="field"><label>결제구분</label><input id="csPayment" class="input" placeholder="예: 카드결제"></div><div class="field full"><label>메모</label><input id="csMemo" class="input"></div></div><button id="csSave" class="btn primary w100 section">저장</button></div></div>
 <div id="combineCustomerModal" class="modal"><div class="modal-card"><div class="section-title"><h2>합배송 고객 목록</h2><button id="combineCustomerClose" class="btn ghost">닫기</button></div><div id="combineCustomerList" class="section"></div></div></div>
+<div id="vipModal" class="modal"><div class="modal-card"><div class="section-title"><div><h2>VIP 고객 등록 / 수정</h2><div class="hint">연락처까지 저장하면 더 안전하게 자동 적용됩니다.</div></div><button id="vipModalClose" class="btn ghost">닫기</button></div><input id="vipRow" type="hidden"><div class="form-grid section"><div class="field"><label>닉네임</label><input id="vipNickname" class="input"></div><div class="field"><label>수령인 이름</label><input id="vipReceiver" class="input"></div><div class="field"><label>연락처</label><input id="vipPhone" class="input" placeholder="010-0000-0000"></div><div class="field"><label>상태</label><select id="vipActive" class="input"><option value="1">사용</option><option value="0">중지</option></select></div><div class="field"><label>카드 부가세</label><select id="vipTax" class="input"><option value="1">제외</option><option value="0">적용</option></select></div><div class="field"><label>배송비</label><select id="vipShipping" class="input"><option value="1">무료</option><option value="0">기본 정책</option></select></div><div class="field full"><label>메모</label><input id="vipMemo" class="input"></div></div><button id="vipSave" class="btn primary w100 section">VIP 고객 저장</button></div></div>
 <div id="busy" class="modal"><div class="modal-card complete"><div class="spinner"></div><h2 id="busyText">처리 중입니다...</h2></div></div><div id="toast" class="card pad hidden" style="position:fixed;right:18px;bottom:18px;z-index:130;max-width:420px"></div>
-<script src="config.js?v=6.3.0"></script><script src="admin.js?v=6.3.0"></script>
+<script src="config.js?v=6.3.3"></script><script src="admin.js?v=6.3.3"></script>
 </body></html>
