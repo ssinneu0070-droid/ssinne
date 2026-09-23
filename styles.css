@@ -337,3 +337,37 @@ pre{font-family:inherit}
 .return-headline{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:2px 4px}.return-headline h3{font-size:22px;margin:0 0 4px}.return-summary-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}.return-summary-card{border:1px solid #e5e7eb;border-radius:16px;min-height:92px;background:#fff;display:flex;align-items:center;gap:12px;padding:16px;text-align:left;cursor:pointer;font-family:inherit;transition:transform .15s ease, box-shadow .15s ease}.return-summary-card:hover{transform:translateY(-1px)}.return-summary-card>span{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:24px;font-weight:900}.return-summary-card div{display:grid;gap:4px}.return-summary-card small{font-size:13px;font-weight:850}.return-summary-card b{font-size:24px}.return-summary-card.all{background:#fff8fb;border-color:#f5cedb;color:#d52f68}.return-summary-card.all>span{background:#fde8ef}.return-summary-card.ret{background:#fff8fa;border-color:#f7d0dd;color:#e11d48}.return-summary-card.ret>span{background:#ffe7ef}.return-summary-card.exchange{background:#f5faff;border-color:#cfe2fb;color:#2563c7}.return-summary-card.exchange>span{background:#e7f1ff}.return-summary-card.shipping{background:#fffaf0;border-color:#f3ddad;color:#d97706}.return-summary-card.shipping>span{background:#fff0d0}.return-summary-card.done{background:#f3fff8;border-color:#caecd8;color:#168654}.return-summary-card.done>span{background:#ddf8e8}.return-summary-card.active{box-shadow:0 0 0 2px rgba(239,71,124,.12),0 8px 20px rgba(15,23,42,.05)}.return-filter-card{padding:16px!important}.return-date-row{display:grid;grid-template-columns:auto minmax(150px,1fr) 20px minmax(150px,1fr) repeat(5,auto);gap:8px;align-items:center}.return-filter-row{display:grid;grid-template-columns:180px 180px minmax(320px,1fr) 140px 110px;gap:9px;margin-top:12px}.return-workbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px}.return-workbar #returnBulkStatus{max-width:210px}.return-range-text{margin-left:auto}.return-content-grid{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:12px;align-items:start}.return-list-card{min-width:0;padding:0!important;overflow:hidden}.return-table{min-width:1500px}.return-table th{background:#fff4f8}.return-items-cell{max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.return-pager{padding:12px;justify-content:center}.return-drawer{position:sticky;top:12px;padding:15px!important;max-height:calc(100vh - 40px);overflow:auto}.return-drawer.hidden{display:none}.return-drawer-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.return-drawer-grid label{display:grid;gap:5px;font-size:12px;font-weight:850;color:#3f4758}.return-drawer-grid .full{grid-column:1/-1}.return-order-lookup{display:grid;grid-template-columns:1fr auto;gap:6px}.return-drawer textarea{resize:vertical}.return-table .pill.pink{background:#ffeaf1;color:#d91f5d}.return-table .pill.violet{background:#f2eaff;color:#7541c8}
 @media(max-width:1280px){.return-summary-grid{grid-template-columns:repeat(3,1fr)}.return-content-grid{grid-template-columns:1fr}.return-drawer{position:static;max-height:none}.return-date-row{grid-template-columns:auto 1fr 20px 1fr repeat(3,auto)}.return-date-row .return-date-preset:nth-last-child(-n+2){display:none}}
 @media(max-width:760px){.return-summary-grid{display:flex;overflow-x:auto}.return-summary-card{flex:0 0 180px}.return-date-row,.return-filter-row{grid-template-columns:1fr}.return-date-row>b,.return-date-row>span{display:none}.return-workbar{display:grid;grid-template-columns:1fr 1fr}.return-workbar .return-range-text{grid-column:1/-1;margin:0}.return-content-grid{display:block}.return-drawer{margin-top:10px}.return-drawer-grid{grid-template-columns:1fr}.return-drawer-grid .full{grid-column:auto}}
+
+/* V6.3.23 관리자 공통 함수 복구 - 레이아웃 변경 없음 */
+
+
+/* V6.3.23 입금관리 화면 정리 */
+.bank-result-card{padding:16px 18px!important}
+.bank-action-grid{margin-bottom:12px}
+.bank-status-row-5{margin:10px 0 12px}
+.bank-match-tools{grid-template-columns:minmax(280px,1fr) auto auto minmax(260px,1.1fr);gap:10px;padding:2px 0 8px}
+.bank-match-tools .hint{font-size:12px;line-height:1.45;color:#667085}
+.bank-result-card .table-wrap{border:1px solid #eef1f5;border-radius:16px;overflow:auto;background:#fff}
+.bank-match-table{min-width:1180px;table-layout:fixed}
+.bank-match-table th{position:sticky;top:0;background:#fff7fa;z-index:2}
+.bank-match-table th:nth-child(1){width:58px}
+.bank-match-table th:nth-child(2){width:150px}
+.bank-match-table th:nth-child(3){width:140px}
+.bank-match-table th:nth-child(4){width:110px}
+.bank-match-table th:nth-child(5){width:210px}
+.bank-match-table th:nth-child(6){width:95px}
+.bank-match-table th:nth-child(7){width:260px}
+.bank-match-table th:nth-child(8){width:220px}
+.bank-match-table th:nth-child(9){width:130px}
+.bank-match-table th:nth-child(10){width:90px}
+.bank-match-table td,.bank-match-table th{padding:12px 10px;vertical-align:top}
+.bank-trade-cell,.bank-order-cell{display:grid;gap:6px}
+.bank-trade-cell b,.bank-order-cell b{font-size:13px}
+.bank-order-cell .order-meta{display:flex;flex-wrap:wrap;gap:6px}
+.bank-order-cell .order-meta span{display:inline-flex;align-items:center;min-height:26px;padding:4px 8px;border-radius:999px;background:#f8fafc;border:1px solid #e8edf3;font-size:12px;color:#475569}
+.bank-reason-cell{min-width:0;line-height:1.55;color:#475569;word-break:keep-all}
+.bank-match-action{gap:8px;min-width:0}.bank-match-action .btn{width:100%}
+.bank-manual-status{min-width:0!important;width:100%}
+.bank-match-table .btn.red.mini{min-width:64px}
+@media(max-width:1200px){.bank-match-tools{grid-template-columns:1fr auto auto}.bank-match-tools .hint{grid-column:1/-1}.bank-match-table{min-width:1080px}}
+@media(max-width:760px){.bank-result-card{padding:14px 12px!important}.bank-match-tools{grid-template-columns:1fr 1fr}.bank-match-tools input{grid-column:1/-1}.bank-match-tools .hint{grid-column:1/-1}.bank-action-grid{grid-template-columns:1fr 1fr}.bank-status-row-5 .status-card{flex:0 0 138px}}
