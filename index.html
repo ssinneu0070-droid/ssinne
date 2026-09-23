@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#fff8fb">
-<title>씬느샵 주문서 V6.3.8</title>
-<link rel="stylesheet" href="styles.css?v=6.3.8">
+<title>씬느샵 주문서 V6.3.15</title>
+<link rel="stylesheet" href="styles.css?v=6.3.15">
 </head>
 <body class="shop-body">
 <div class="shop-shell customer-order-shell">
@@ -76,6 +76,7 @@
       <div class="order-section-card section">
         <div class="order-section-head product-input-head"><div><h2>빠진 상품 직접 추가</h2><p>댓글 주문에 빠진 상품이 있으면 상품번호로 바로 추가할 수 있어요.</p></div><button id="liveCatalogRefresh2" class="btn mini ghost refresh-mini" type="button">↻ 상품정보 새로고침</button></div>
         <div class="product-search-row"><label>상품번호 검색</label><input id="liveManualSearch" class="input" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="예: 105, A105, SS-12"><button id="liveManualSearchBtn" class="btn primary" type="button">⌕ 검색</button></div>
+        <div id="liveManualSearchMessage" class="product-search-message hidden"></div>
         <div id="liveManualBox" class="direct-product-box hidden">
           <div class="field-row"><label>상품명</label><input id="liveManualName" class="input" readonly></div>
           <div class="option-compact-row"><label>칼라<select id="liveManualColor" class="input"></select></label><label>사이즈<select id="liveManualSize" class="input"></select></label><label>수량<div class="qtybox direct-qty"><button id="liveManualMinus" type="button">−</button><b id="liveManualQty">1</b><button id="liveManualPlus" type="button">+</button></div></label></div>
@@ -134,6 +135,7 @@
         <button id="directCatalogRefresh" class="btn mini ghost refresh-mini" type="button">↻ 상품정보 새로고침</button>
       </div>
       <div class="product-search-row"><label>상품번호 검색</label><input id="directSearch" class="input" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="예: 105, A105, SS-12"><button id="directSearchBtn" class="btn primary" type="button">⌕ 검색</button></div>
+      <div id="directSearchMessage" class="product-search-message hidden"></div>
       <div id="directProductBox" class="direct-product-box hidden">
         <div class="field-row"><label>상품명</label><input id="directProductName" class="input" readonly></div>
         <div class="option-compact-row"><label>칼라<select id="directColor" class="input"></select></label><label>사이즈<select id="directSize" class="input"></select></label><label>수량<div class="qtybox direct-qty"><button id="directMinus" type="button">−</button><b id="directQtyPick">1</b><button id="directPlus" type="button">+</button></div></label></div>
@@ -204,6 +206,6 @@
 <div id="busy" class="modal"><div class="modal-card complete"><div class="spinner"></div><h2 id="busyText">처리 중입니다...</h2><div class="sub">창을 닫지 말고 잠시만 기다려주세요. 보통 몇 초 정도 소요됩니다.</div></div></div>
 <div id="toast" class="toast-message hidden"></div>
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script src="config.js?v=6.3.8"></script>
-<script src="app.js?v=6.3.8"></script>
+<script src="config.js?v=6.3.15"></script>
+<script src="app.js?v=6.3.15"></script>
 </body></html>
