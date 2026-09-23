@@ -338,10 +338,10 @@ pre{font-family:inherit}
 @media(max-width:1280px){.return-summary-grid{grid-template-columns:repeat(3,1fr)}.return-content-grid{grid-template-columns:1fr}.return-drawer{position:static;max-height:none}.return-date-row{grid-template-columns:auto 1fr 20px 1fr repeat(3,auto)}.return-date-row .return-date-preset:nth-last-child(-n+2){display:none}}
 @media(max-width:760px){.return-summary-grid{display:flex;overflow-x:auto}.return-summary-card{flex:0 0 180px}.return-date-row,.return-filter-row{grid-template-columns:1fr}.return-date-row>b,.return-date-row>span{display:none}.return-workbar{display:grid;grid-template-columns:1fr 1fr}.return-workbar .return-range-text{grid-column:1/-1;margin:0}.return-content-grid{display:block}.return-drawer{margin-top:10px}.return-drawer-grid{grid-template-columns:1fr}.return-drawer-grid .full{grid-column:auto}}
 
-/* V6.3.23 관리자 공통 함수 복구 - 레이아웃 변경 없음 */
+/* V6.3.24 관리자 공통 함수 복구 - 레이아웃 변경 없음 */
 
 
-/* V6.3.23 입금관리 화면 정리 */
+/* V6.3.24 입금관리 화면 정리 */
 .bank-result-card{padding:16px 18px!important}
 .bank-action-grid{margin-bottom:12px}
 .bank-status-row-5{margin:10px 0 12px}
