@@ -378,13 +378,13 @@ pre{font-family:inherit}
 select.input option:disabled{color:#9ca3af}.customer-item-line .qtybox button:disabled{opacity:.4;cursor:not-allowed}
 
 
-/* V7.1.0 쇼핑몰형 UI / 전체 비율 정리 */
+/* V7.1.1 쇼핑몰형 UI / 전체 비율 및 잘림 수정 */
 html,body{max-width:100%;overflow-x:hidden}
-.customer-order-shell{max-width:1180px!important;padding:10px 22px 42px!important}
-.customer-shop-header{max-width:1180px;margin:0 auto 4px;min-height:72px}
+.customer-order-shell{max-width:1240px!important;padding:10px 22px 42px!important}
+.customer-shop-header{max-width:1240px;margin:0 auto 4px;min-height:72px}
 .order-flow-screen{width:100%}
 .flow-banner{margin-bottom:16px}
-.commerce-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(340px,.75fr);gap:18px;align-items:start;margin-top:14px}
+.commerce-layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(390px,.82fr);gap:20px;align-items:start;margin-top:14px}
 .commerce-main,.commerce-summary{display:grid;gap:14px;min-width:0}
 .commerce-summary{position:sticky;top:86px}
 .commerce-layout .order-section-card{margin-top:0!important}
@@ -429,6 +429,20 @@ html,body{max-width:100%;overflow-x:hidden}
 .saved-badge{max-width:44%}
 #liveLoaded.commerce-layout:not(.hidden){display:grid}
 
+/* V7.1.1 장바구니: 좁은 우측 칸에서도 글자가 세로로 깨지지 않게 2행 구조 */
+.commerce-summary .customer-item-line{grid-template-columns:minmax(0,1fr) auto 38px;gap:8px 10px;align-items:center;padding:12px 10px}
+.commerce-summary .customer-item-line .item-main{grid-column:1/3;min-width:0}
+.commerce-summary .customer-item-line .item-main small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.commerce-summary .customer-item-line .item-main b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.commerce-summary .customer-item-line .item-main span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+.commerce-summary .customer-item-line>.qtybox{grid-column:1;grid-row:2;justify-self:start}
+.commerce-summary .customer-item-line>strong{grid-column:2;grid-row:2;justify-self:end;min-width:84px;text-align:right;white-space:nowrap}
+.commerce-summary .customer-item-line>.item-delete{grid-column:3;grid-row:1/3;align-self:center}
+.commerce-summary .order-section-head{min-width:0}
+.commerce-summary .order-section-head>div{min-width:0}
+.commerce-summary .total-summary-card .order-section-head h2{white-space:nowrap}
+.commerce-summary .free-badge{flex:0 0 auto;font-size:11px;padding:7px 9px}
+
 /* 고객 주문조회도 같은 쇼핑몰 폭/비율 사용 */
 .shop-shell:not(.customer-order-shell){width:min(980px,100%)}
 .order-card{border-radius:16px;padding:17px 18px}
@@ -455,8 +469,10 @@ html,body{max-width:100%;overflow-x:hidden}
 .table th,.table td{padding:9px 10px;font-size:12.5px}
 .table th{white-space:nowrap}
 .table td{word-break:keep-all}
-.return-workbar{display:grid;grid-template-columns:auto auto minmax(190px,230px) auto auto auto minmax(180px,1fr);gap:8px;align-items:center;padding:2px 0}
-.return-workbar .return-range-text{margin:0;text-align:right}
+.return-workbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:2px 0}
+.return-workbar #returnBulkStatus{flex:0 1 220px;min-width:190px;max-width:230px}
+.return-workbar .btn{flex:0 0 auto;white-space:nowrap}
+.return-workbar .return-range-text{margin-left:auto;flex:1 1 220px;text-align:right;white-space:normal}
 .return-filter-card{padding:14px 16px!important}
 .return-date-row{gap:7px}
 .return-filter-row{gap:8px}
@@ -464,20 +480,21 @@ html,body{max-width:100%;overflow-x:hidden}
 .return-summary-card{min-height:78px;padding:12px 13px;border-radius:13px}
 .return-summary-card>span{width:38px;height:38px;font-size:20px}
 .return-summary-card b{font-size:20px}
-.return-content-grid{grid-template-columns:minmax(0,1fr) 350px;gap:14px}
-.return-table{min-width:1420px}
+.return-content-grid{grid-template-columns:minmax(0,1fr);gap:14px}
+.return-content-grid:has(.return-drawer:not(.hidden)){grid-template-columns:minmax(0,1fr) 350px}
+.return-table{min-width:1220px}
 .bank-upload-wide{gap:12px;padding:14px 16px!important}
 .bank-status-row-5{gap:8px!important}
 .bank-result-card{padding:14px 16px!important}
 .bank-match-table{min-width:1160px}
 
 @media(max-width:1180px){
-  .commerce-layout{grid-template-columns:minmax(0,1fr) 360px;gap:14px}
+  .commerce-layout{grid-template-columns:minmax(0,1fr) 390px;gap:16px}
   .customer-info-card .dense-form{grid-template-columns:1fr}
   .customer-info-card .dense-form .address-line{grid-column:auto}
   .return-workbar{display:flex;flex-wrap:wrap}.return-workbar .return-range-text{margin-left:auto}
 }
-@media(max-width:960px){
+@media(max-width:1020px){
   .customer-order-shell{max-width:760px!important;padding:8px 16px 32px!important}
   .commerce-layout{grid-template-columns:1fr}
   .commerce-summary{position:static}
@@ -523,4 +540,135 @@ html,body{max-width:100%;overflow-x:hidden}
   .customer-info-card .dense-form label{grid-template-columns:1fr!important;gap:5px!important}
   .customer-info-card .address-line>div{grid-template-columns:1fr 82px}
   .saved-badge{max-width:52%}
+}
+
+/* =========================================================
+   V7.2.0 — 쇼핑몰형 고객 주문서 + 모바일 관리자 전용 UI
+   ========================================================= */
+
+/* 고객 주문서는 PC에서도 가로 분할하지 않고 한 줄(세로 흐름)로 사용 */
+.customer-order-shell{max-width:960px!important}
+.customer-order-shell .commerce-layout{grid-template-columns:minmax(0,1fr)!important;max-width:900px;margin:10px auto 0!important;gap:12px!important}
+.customer-order-shell .commerce-main,.customer-order-shell .commerce-summary{display:block!important}
+.customer-order-shell .commerce-summary{position:static!important}
+.customer-order-shell .order-section-card,.customer-order-shell .total-summary-card{margin-top:10px!important}
+.customer-order-shell .item-delete{min-width:54px!important;padding:8px 10px!important;font-size:12px!important;font-weight:850!important;border-radius:10px!important}
+.customer-order-shell .customer-item-line{grid-template-columns:minmax(0,1fr) auto auto 58px!important;align-items:center!important}
+.customer-order-shell .customer-item-line .item-main{grid-column:auto!important}
+.customer-order-shell .customer-item-line>.qtybox{grid-column:auto!important;grid-row:auto!important}
+.customer-order-shell .customer-item-line>strong{grid-column:auto!important;grid-row:auto!important;min-width:86px!important}
+.customer-order-shell .customer-item-line>.item-delete{grid-column:auto!important;grid-row:auto!important}
+
+/* 모바일 관리자 공용 카드 */
+.mobile-admin-card-list{display:none}
+.mobile-admin-menu-btn,.mobile-admin-bottom,.mobile-more-sheet{display:none}
+.card-generated-links{border:1px solid #f7cfdd;background:linear-gradient(180deg,#fff,#fff7fa);border-radius:16px;padding:15px}
+.generated-link-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid #f4e4ea}
+.generated-link-row:first-of-type{border-top:0}
+.generated-link-row>div:first-child{min-width:0;display:grid;gap:3px}
+.generated-link-row span{font-size:12px;color:#7d7180}
+.generated-link-actions{display:flex;gap:6px;flex:0 0 auto}
+.snapshot-mobile-tools{display:grid;grid-template-columns:180px minmax(220px,1fr) auto auto;gap:8px}
+.product-history-results{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.product-history-results .mobile-admin-result-card{display:block}
+.live-setting-state{display:flex;justify-content:space-between;align-items:center;padding:11px 13px;background:#fff7fa;border:1px solid #f7dce6;border-radius:12px}
+.live-setting-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.live-setting-actions #settingsLiveStart{grid-column:1/-1}
+.product-mobile-search{margin-bottom:10px}
+
+@media(max-width:980px){
+  .snapshot-mobile-tools{grid-template-columns:1fr 1fr}.snapshot-mobile-tools #snapshotViewQuery{grid-column:1/-1}
+  .product-history-results{grid-template-columns:1fr 1fr}
+}
+
+@media(max-width:760px){
+  body{background:#fffafd;padding-bottom:82px}
+  .layout{display:block!important}
+  .sidebar{display:none!important}
+  .admin-main{padding:0 10px 92px!important;max-width:100vw!important;overflow:visible!important}
+  .admin-header{position:sticky!important;top:0!important;z-index:40!important;min-height:58px!important;padding:8px 4px!important;background:rgba(255,250,253,.97)!important;border-bottom:1px solid #f4e0e8!important}
+  .admin-header h1{font-size:18px!important;letter-spacing:-.03em}.admin-header .sub,.admin-avatar,.admin-user .mobile-hide,#logoutBtn{display:none!important}
+  .mobile-admin-menu-btn{display:grid!important;width:42px;height:42px;place-items:center;border:1px solid #f2d6e1;background:#fff;border-radius:12px;font-size:20px;color:#17213c}
+  .admin-user{margin-left:auto}
+  .admin-panel{padding-top:12px!important}
+  .panel-hero{display:block!important;padding:6px 2px!important;margin-bottom:8px!important}.panel-hero h2{font-size:22px!important}.panel-hero .sub{font-size:12px!important;line-height:1.45}.panel-hero>.pill{display:none}
+  .admin-card{padding:13px!important;border-radius:16px!important;box-shadow:0 5px 18px rgba(104,52,76,.05)!important}
+  .section{margin-top:10px!important}
+  .input{min-height:46px!important;font-size:14px!important}.btn{min-height:44px!important;font-size:13px!important}
+  .toolbar{display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important}.toolbar>.input{width:100%!important;min-width:0!important}.toolbar>.input:first-child{grid-column:1/-1}.toolbar>span:not(.pill){display:none}
+  .panel-hero .toolbar{margin-top:8px}.panel-hero .toolbar .btn{width:100%}
+
+  /* PC용 큰 표 대신 모바일 카드 */
+  #panel-lookup .table-wrap,#bankMatchView .table-wrap,#panel-card .table-wrap,#lotte-download .table-wrap,#panel-products>.admin-card:last-of-type .table-wrap,#panel-gifts .table-wrap{display:none!important}
+  .mobile-admin-card-list{display:grid!important;gap:10px!important}
+  .mobile-admin-result-card{background:#fff;border:1px solid #f1dce4;border-radius:16px;padding:13px;box-shadow:0 4px 14px rgba(103,55,77,.04);min-width:0}
+  .mobile-result-head{display:flex;align-items:flex-start;justify-content:space-between;gap:9px}.mobile-result-head>div,.mobile-result-head label{min-width:0}.mobile-result-head small{display:block;color:#8f8190;font-size:11px;margin-bottom:3px}.mobile-result-head b{display:block;font-size:15px;word-break:keep-all}
+  .mobile-person{display:grid;gap:3px;margin-top:9px;padding-top:9px;border-top:1px solid #f4e9ed}.mobile-person b{font-size:14px}.mobile-person span{font-size:12px;color:#6f7786}
+  .mobile-order-summary{margin-top:9px;padding:9px 10px;border-radius:10px;background:#fff8fa;color:#4e5360;font-size:12px;line-height:1.5;word-break:keep-all}
+  .mobile-amount-row{display:flex;justify-content:space-between;align-items:center;margin-top:9px;padding:8px 0}.mobile-amount-row span{font-size:12px;color:#777}.mobile-amount-row strong{font-size:20px;color:#ef2f70}
+  .mobile-meta-row{display:flex;justify-content:space-between;gap:10px;margin-top:8px;font-size:12px;color:#687083}.mobile-meta-row>*{min-width:0}
+  .mobile-card-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}.mobile-card-actions.two{grid-template-columns:1fr 1fr}.mobile-card-actions .btn,.mobile-card-actions .input{width:100%;min-width:0!important;min-height:40px!important;padding:8px 6px!important;font-size:12px!important}
+  .mobile-check-title{display:flex;align-items:flex-start;gap:9px}.mobile-check-title input{margin-top:4px;width:18px;height:18px;accent-color:#ef477c}.mobile-check-title span{min-width:0}
+  .mobile-empty{padding:24px 12px;text-align:center;border:1px dashed #efceda;border-radius:14px;color:#887783;background:#fffafd}
+  .mobile-product-stock{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.mobile-product-stock>div{padding:10px;border-radius:11px;background:#f8fafc;text-align:center}.mobile-product-stock small{display:block;color:#858b98;margin-bottom:3px}.mobile-product-stock b{font-size:17px}.soldout{color:#ef476f!important}
+
+  /* 주문조회 */
+  #panel-lookup .admin-card>.toolbar{grid-template-columns:1fr 1fr!important}
+  #panel-lookup #lookupQuery{grid-column:1/-1!important}
+  #panel-lookup #lookupSearch{grid-column:1/-1!important}
+  #lookupMobileCards{margin-top:10px}
+  #lookupPager{justify-content:center}
+
+  /* 입금관리 */
+  .bank-upload-wide{display:grid!important;grid-template-columns:1fr!important;padding:13px!important}.bank-file-picker{min-height:56px}.bank-start-btn{width:100%!important}
+  .bank-status-row-5{display:flex!important;overflow-x:auto!important;gap:7px!important;padding-bottom:4px}.bank-status-row-5 .status-card{flex:0 0 132px!important;min-height:55px!important}
+  .bank-action-grid{grid-template-columns:1fr 1fr!important;gap:7px!important}.bank-action-card{min-height:58px!important}
+  .bank-match-tools{grid-template-columns:1fr 1fr!important}.bank-match-tools input{grid-column:1/-1!important}
+  #bankMobileCards{margin-top:9px}
+
+  /* 카드결제 */
+  .card-searchbar{display:grid!important;grid-template-columns:1fr 1fr!important}.card-searchbar .input{grid-column:1/-1!important}.card-status-row{display:flex!important;overflow-x:auto!important;flex-wrap:nowrap!important}.card-status-row .status-card{flex:0 0 118px!important}
+  .card-sendbar{position:sticky;top:59px;z-index:20;background:#fff;padding:9px!important;border:1px solid #f3dce5;border-radius:14px;box-shadow:0 5px 14px rgba(95,52,71,.05)}
+  .card-sendbar label{grid-column:auto!important}.card-sendbar #cardSend{grid-column:1/-1!important;min-height:50px!important}.card-sendbar .provider-select{width:100%!important;min-width:0!important}.card-tax-exclude,.card-shipping-exclude{grid-column:1/-1!important;justify-content:flex-start!important;background:#fff8fa;border-radius:10px;padding:7px 9px!important}
+  #cardGeneratedLinks{padding:12px!important}.generated-link-row{display:grid;grid-template-columns:1fr;gap:8px}.generated-link-actions{display:grid;grid-template-columns:repeat(3,1fr)}.generated-link-actions .btn{width:100%}
+
+  /* 배송비 */
+  .shipping-settings-grid{grid-template-columns:1fr!important}.shipping-policy-grid{grid-template-columns:1fr!important}.shipping-action-stack .btn{min-height:48px!important}
+  #panel-shipping .admin-grid-2{display:block!important}#panel-shipping .vip-benefit-card{margin-top:10px}.vip-table{min-width:760px}
+
+  /* 롯데택배 */
+  .lotte-tabs{display:flex!important;overflow-x:auto!important;flex-wrap:nowrap!important;gap:6px!important}.lotte-tabs .inner-tab{flex:0 0 auto!important;white-space:nowrap!important}
+  .lotte-state-grid{grid-template-columns:1fr!important}.lotte-date-row{grid-template-columns:1fr!important}.lotte-download-grid{grid-template-columns:1fr!important}.lotte-list-actions{grid-template-columns:1fr 1fr!important}.lotte-list-actions .lotte-query{grid-column:1/-1!important}
+  #lotteMobileCards{margin-top:10px}
+
+  /* 상품관리 + 날짜별 상품정보 */
+  .product-basic-grid{grid-template-columns:1fr 1fr!important}.product-editor .toolbar{grid-template-columns:1fr 1fr!important}.option-entry{grid-template-columns:1fr 1fr!important}.option-entry .btn{grid-column:1/-1!important}
+  .snapshot-mobile-tools{grid-template-columns:1fr 1fr!important}.snapshot-mobile-tools #snapshotViewQuery{grid-column:1/-1!important}.snapshot-mobile-tools #snapshotView{grid-column:1/-1!important}.product-history-results{grid-template-columns:1fr!important}.snapshot-save-area .toolbar{grid-template-columns:1fr!important}.snapshot-save-area .toolbar>*{grid-column:1!important}
+  .product-mobile-search{grid-template-columns:1fr auto!important}.product-mobile-search .input{grid-column:auto!important}
+  #productMobileCards{margin-top:10px}
+
+  /* 사은품 */
+  #panel-gifts .form-grid{grid-template-columns:1fr!important}#panel-gifts .toolbar{grid-template-columns:1fr!important}#panel-gifts .toolbar>*{grid-column:1!important}
+
+  /* 설정 */
+  .settings-grid{display:grid!important;grid-template-columns:1fr!important;gap:10px!important}.live-setting-actions{grid-template-columns:1fr 1fr!important}.live-setting-actions #settingsLiveStart{grid-column:1/-1!important}.live-setting-actions #settingsLiveEnd{grid-column:1/-1!important}.settings-grid .admin-card{margin:0!important}
+
+  /* 모바일 하단 메뉴 */
+  .mobile-admin-bottom{display:grid!important;grid-template-columns:repeat(4,1fr);position:fixed;left:0;right:0;bottom:0;z-index:70;background:rgba(255,255,255,.97);border-top:1px solid #eedde4;padding:7px max(8px,env(safe-area-inset-left)) calc(7px + env(safe-area-inset-bottom));box-shadow:0 -8px 25px rgba(74,35,52,.08)}
+  .mobile-admin-bottom button{border:0;background:transparent;color:#7c7781;display:grid;place-items:center;gap:2px;padding:4px 2px;font-size:11px}.mobile-admin-bottom button span{font-size:20px}.mobile-admin-bottom button b{font-size:10px}.mobile-admin-bottom button.active{color:#ec3e75}.mobile-admin-bottom button.active span{transform:translateY(-1px)}
+  .mobile-more-sheet{display:block!important;position:fixed;inset:0;z-index:90}.mobile-more-sheet.hidden{display:none!important}.mobile-more-backdrop{position:absolute;inset:0;border:0;background:rgba(24,16,20,.32)}.mobile-more-card{position:absolute;left:10px;right:10px;bottom:calc(72px + env(safe-area-inset-bottom));background:#fff;border-radius:22px;padding:16px;border:1px solid #f0dce4;box-shadow:0 18px 60px rgba(60,27,42,.22)}
+  .mobile-category-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.mobile-category-grid button{border:1px solid #f0dce4;background:#fff8fa;border-radius:14px;min-height:72px;padding:10px;color:#253047;font-size:22px;display:grid;place-items:center;gap:4px}.mobile-category-grid button b{font-size:13px}.mobile-category-grid button.active{border-color:#ef477c;background:#ffeaf1;color:#d92f66}
+
+  /* 고객 주문서 모바일은 한 상품당 한 줄 카드 */
+  .customer-order-shell .customer-item-line{grid-template-columns:minmax(0,1fr) auto 58px!important;gap:6px!important}
+  .customer-order-shell .customer-item-line .item-main{grid-column:1/3!important}
+  .customer-order-shell .customer-item-line>.qtybox{grid-column:1!important;grid-row:2!important}
+  .customer-order-shell .customer-item-line>strong{grid-column:2!important;grid-row:2!important;min-width:78px!important}
+  .customer-order-shell .customer-item-line>.item-delete{grid-column:3!important;grid-row:1/3!important;align-self:center!important}
+}
+
+@media(max-width:420px){
+  .mobile-card-actions{grid-template-columns:1fr 1fr}.mobile-card-actions .btn:last-child:nth-child(3){grid-column:1/-1}
+  .product-basic-grid{grid-template-columns:1fr!important}.live-setting-actions{grid-template-columns:1fr!important}.live-setting-actions>*{grid-column:1!important}
+  .mobile-category-grid{grid-template-columns:1fr 1fr}
 }
