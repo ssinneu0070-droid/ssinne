@@ -16,13 +16,13 @@ function toast(m){const t=$('#toast');t.textContent=m;t.classList.remove('hidden
 function busy(on,m='처리 중입니다...'){$('#busy').classList.toggle('show',on);$('#busyText').textContent=m}
 function show(id){$$('.screen').forEach(x=>x.classList.add('hidden'));$('#'+id).classList.remove('hidden');const home=id==='homeScreen'||id==='completeScreen';$('#backBtn').classList.toggle('hidden',home);$('#homeMenuBtn').classList.toggle('hidden',!home);scrollTo({top:0,behavior:'smooth'})}
 function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}}
-const CONFIG_CACHE_KEY='ssinne_public_config_v6328';
+const CONFIG_CACHE_KEY='ssinne_public_config_v6331';
 function applyConfig(cfg){state.config=cfg||{};const account=String(state.config.bankAccount||'').trim(),bank=String(state.config.bankName||'').trim(),owner=String(state.config.bankOwner||'').trim();['directBankAccount','liveBankAccount'].forEach(id=>{const el=$('#'+id);if(el)el.textContent=account||'계좌정보 확인중'});['directBankText','liveBankText'].forEach(id=>{const el=$('#'+id);if(el)el.textContent=(bank&&owner)?bank+' - '+owner:'관리자 계좌설정을 확인해주세요'});renderShippingPolicy();updateTotals('direct');updateTotals('live')}
 function loadCachedConfig(){try{const x=JSON.parse(localStorage.getItem(CONFIG_CACHE_KEY)||'null');if(x&&x.config){applyConfig(x.config);return true}}catch(e){}return false}
 function saveCachedConfig(cfg){try{localStorage.setItem(CONFIG_CACHE_KEY,JSON.stringify({ts:Date.now(),config:cfg}))}catch(e){}}
 async function loadConfig(force=false){if(!force&&state.config&&state.config.bankAccount)return state.config;try{const cfg=await api('public_config');saveCachedConfig(cfg);applyConfig(cfg);return cfg}catch(e){console.warn('설정 불러오기 실패',e);if(!state.config.bankAccount)loadCachedConfig();return state.config}}
 function renderShippingPolicy(){const free=!!state.config.freeShippingEvent;$$('.free-badge').forEach(x=>x.textContent=free?'🚚 오늘 무료배송 이벤트 적용중':'🚚 20만원 이상 무료배송 자동계산');$$('[data-ship-target]').forEach(b=>{const isIsland=b.dataset.ship==='island',label=b.querySelector('b');if(!label)return;label.textContent=free?(isIsland?'제주 및 도서산간 (무료)':'기본배송비 (무료)'):(isIsland?'제주 및 도서산간 ('+money(state.config.islandShipping||7000)+')':'기본배송비 ('+money(state.config.shipping||4000)+')')})}
-function catalogCacheKey(){return'ssinne_catalog_v6329'}
+function catalogCacheKey(){return'ssinne_catalog_v6331'}
 function hydrateCatalogCache(maxAge=24*60*60*1000){try{const x=JSON.parse(localStorage.getItem(catalogCacheKey())||'null');if(x&&Array.isArray(x.products)&&x.products.length){state.catalog=x.products;state.catalogTs=Number(x.ts||0);state.catalogFull=true;return Date.now()-state.catalogTs<maxAge}}catch(e){}return false}
 function storeCatalogCache(){if(!state.catalogFull)return;try{localStorage.setItem(catalogCacheKey(),JSON.stringify({ts:Date.now(),products:state.catalog}))}catch(e){}}
 async function fetchCatalog(force=false){if(state.catalogPromise&&!force)return state.catalogPromise;const run=api('catalog',{cacheBust:force?Date.now():0},10000).then(r=>{state.catalog=r.products||[];state.catalogTs=Date.now();state.catalogFull=true;storeCatalogCache();return state.catalog}).finally(()=>{state.catalogPromise=null});state.catalogPromise=run;return run}
@@ -69,12 +69,36 @@ function addLivePicked(){const p=state.livePicked;if(!p)return toast('상품을 
 function renderDirectCart(){$('#directCart').innerHTML=state.cart.map((x,i)=>`<div class="customer-item-line"><div class="item-main"><small>상품번호 ${esc(x.productNo)}</small><b>${esc(x.name)}</b><span>칼라: ${esc(x.color)}　|　사이즈: ${esc(x.size)}　|　수량: ${x.qty}</span></div><strong>${money(x.price*x.qty)}</strong><button class="item-delete" onclick="removeDirect(${i})">⌫</button></div>`).join('')||'<div class="empty-list">상품을 검색해서 담아주세요.</div>'}
 window.removeDirect=i=>{state.cart.splice(i,1);renderDirectCart();updateTotals('direct')};
 function selectPayment(mode,val){$('#'+mode+'Payment').value=val;$$(`[data-pay-target="${mode}"]`).forEach(b=>{b.classList.toggle('active',b.dataset.pay===val);const s=b.querySelector('span');if(s)s.textContent=b.classList.contains('active')?'◉':'○'});updateTotals(mode)}
-function selectShipping(mode,val){$('#'+mode+'ShippingType').value=val;$$(`[data-ship-target="${mode}"]`).forEach(b=>{b.classList.toggle('active',b.dataset.ship===val);const s=b.querySelector('span');if(s)s.textContent=b.classList.contains('active')?'◉':'○'});updateTotals(mode)}
+function selectShipping(mode,val){if(state.shippingQuote)state.shippingQuote[mode]=null;$('#'+mode+'ShippingType').value=val;$$(`[data-ship-target="${mode}"]`).forEach(b=>{b.classList.toggle('active',b.dataset.ship===val);const s=b.querySelector('span');if(s)s.textContent=b.classList.contains('active')?'◉':'○'});updateTotals(mode)}
 function getItems(mode){return mode==='live'?getLiveCart():state.cart}
-function updateTotals(mode){const subtotal=getItems(mode).reduce((s,x)=>s+Number(x.price||0)*Number(x.qty||0),0),vip=state.vip[mode]||{},free=!!state.config.freeShippingEvent||!!vip.freeShipping,threshold=Number(state.config.freeShippingThreshold||200000),basic=Number(state.config.shipping??4000),island=Number(state.config.islandShipping??7000),ship=free||subtotal>=threshold?0:($('#'+mode+'ShippingType').value==='island'?island:basic),base=subtotal+ship,rate=vip.taxExcluded?0:Number(state.config.cardExtraRate??0.10),total=$('#'+mode+'Payment').value==='card'?Math.round(base*(1+rate)):base;$('#'+mode+'Subtotal').textContent=money(subtotal);$('#'+mode+'Shipping').textContent=ship?money(ship):'무료배송';$('#'+mode+'Total').textContent=money(total);const badge=$('#'+mode+'VipBadge');if(badge){badge.classList.toggle('hidden',!vip.isVip);badge.textContent=vip.isVip?'VIP 적용 · '+(vip.freeShipping?'무료배송':'배송비 기본')+' · '+(vip.taxExcluded?'카드 부가세 제외':'카드 부가세 적용'):''}}
+function updateTotals(mode,fromQuote=false){
+  const subtotal=getItems(mode).reduce((s,x)=>s+Number(x.price||0)*Number(x.qty||0),0),vip=state.vip[mode]||{},free=!!state.config.freeShippingEvent||!!vip.freeShipping,threshold=Number(state.config.freeShippingThreshold||200000),basic=Number(state.config.shipping??4000),island=Number(state.config.islandShipping??7000);
+  let ship=free||subtotal>=threshold?0:($('#'+mode+'ShippingType').value==='island'?island:basic);
+  const q=state.shippingQuote&&state.shippingQuote[mode];
+  if(q&&Number.isFinite(Number(q.shippingAdjustment)))ship=Number(q.shippingAdjustment);
+  const base=Math.max(0,subtotal+ship),rate=vip.taxExcluded?0:Number(state.config.cardExtraRate??0.10),total=$('#'+mode+'Payment').value==='card'?Math.round(base*(1+rate)):base;
+  $('#'+mode+'Subtotal').textContent=money(subtotal);
+  $('#'+mode+'Shipping').textContent=ship===0?'추가 배송비 없음':(ship<0?money(ship)+' (누적 무료배송 반영)':money(ship));
+  $('#'+mode+'Total').textContent=money(total);
+  const badge=$('#'+mode+'VipBadge');if(badge){badge.classList.toggle('hidden',!vip.isVip);badge.textContent=vip.isVip?'VIP 적용 · '+(vip.freeShipping?'무료배송':'배송비 기본')+' · '+(vip.taxExcluded?'카드 부가세 제외':'카드 부가세 적용'):''}
+  if(!fromQuote&&subtotal>0)scheduleShippingQuote(mode);
+}
 function vipIdentity(mode){if(mode==='direct')return{nickname:cleanNick($('#directNick').value),receiver:$('#directReceiver').value.trim(),phone:$('#directPhone').value.trim()};return{nickname:cleanNick(state.selectedNickname||$('#liveNick2').value||$('#liveNick').value),receiver:$('#liveReceiver').value.trim(),phone:$('#livePhone2').value.trim()}}
 async function refreshVip(mode){const x=vipIdentity(mode),seq=++state.vipSeq[mode],digits=x.phone.replace(/\D/g,'');if(!x.nickname||!x.receiver||digits.length<10){state.vip[mode]={isVip:false,taxExcluded:false,freeShipping:false};updateTotals(mode);return}try{const r=await api('vip_check',x,7000);if(seq!==state.vipSeq[mode])return;state.vip[mode]={isVip:!!r.isVip,taxExcluded:!!r.taxExcluded,freeShipping:!!r.freeShipping};updateTotals(mode)}catch(e){if(seq!==state.vipSeq[mode])return;state.vip[mode]={isVip:false,taxExcluded:false,freeShipping:false};updateTotals(mode)}}
 const scheduleVipCheck=debounce(mode=>refreshVip(mode),450);
+state.shippingQuote=state.shippingQuote||{direct:null,live:null};
+state.shippingQuoteSeq=state.shippingQuoteSeq||{direct:0,live:0};
+async function refreshShippingQuote(mode){
+  const items=getItems(mode),subtotal=items.reduce((s,x)=>s+Number(x.price||0)*Number(x.qty||0),0),x=vipIdentity(mode),digits=x.phone.replace(/\D/g,'');
+  if(!subtotal||digits.length<10){state.shippingQuote[mode]=null;updateTotals(mode,true);return}
+  const seq=++state.shippingQuoteSeq[mode];
+  try{
+    const r=await api('shipping_quote',{...x,subtotal,shippingType:$('#'+mode+'ShippingType').value},7000);
+    if(seq!==state.shippingQuoteSeq[mode])return;
+    state.shippingQuote[mode]=r;updateTotals(mode,true);
+  }catch(e){if(seq===state.shippingQuoteSeq[mode])state.shippingQuote[mode]=null}
+}
+const scheduleShippingQuote=debounce(mode=>refreshShippingQuote(mode),500);
 function valuesFor(mode){if(mode==='direct')return{orderSource:'직접입력',nickname:sanitizeNickInput($('#directNick')),receiver:$('#directReceiver').value.trim(),phone:$('#directPhone').value.trim(),zip:$('#directZip').value,address:$('#directAddress').value.trim(),detailAddress:$('#directDetail').value.trim(),memo:$('#directMemo').value.trim(),paymentMethod:$('#directPayment').value,shippingType:$('#directShippingType').value,items:state.cart};return{orderSource:'불러오기',nickname:cleanNick(state.selectedNickname||$('#liveNick').value),receiver:$('#liveReceiver').value.trim(),phone:$('#livePhone2').value.trim(),zip:$('#liveZip').value,address:$('#liveAddress').value.trim(),detailAddress:$('#liveDetail').value.trim(),memo:$('#liveMemo').value.trim(),paymentMethod:$('#livePayment').value,shippingType:$('#liveShippingType').value,items:state.reservations}}
 function applyLocalAvailability(items){(items||[]).forEach(it=>{const p=state.catalog.find(x=>String(x.no)===String(it.productNo)&&x.color===it.color&&x.size===it.size);if(p)p.stock=Math.max(0,Number(p.stock||0)-Number(it.qty||0));});storeCatalogCache()}
 async function submitCheckout(mode){const d=valuesFor(mode),btn=$("#"+mode+"Submit");if(!d.nickname||!d.receiver||d.phone.replace(/\D/g,"").length<10||!d.address)return toast("배송지 정보를 모두 입력해주세요.");if(!d.items.length)return toast("주문상품이 없습니다.");const need={};for(const it of d.items){const p=state.catalog.find(x=>String(x.no)===String(it.productNo)&&x.color===it.color&&x.size===it.size);if(!p)return toast(it.productNo+"번 상품정보를 다시 검색해주세요.");const k=[String(p.no),String(p.color),String(p.size)].join('|');need[k]=(need[k]||0)+Number(it.qty||0);if(need[k]>Number(p.stock||0))return toast(it.productNo+"번 "+it.color+" "+it.size+" 같은 옵션 합계 주문가능수량은 "+p.stock+"개입니다.")}saveLocalShipping(mode);if(!state.submitToken)state.submitToken=(crypto?.randomUUID?.()||Date.now()+"-"+Math.random());d.clientRequestId=state.submitToken;if(btn){btn.disabled=true;btn.dataset.oldText=btn.textContent;btn.textContent="주문서 전송 중...";}try{busy(true,"주문서 전송 중입니다. 잠시만 기다려주세요.");let r;try{r=await api("submit_order",d,16000)}catch(e){if(e.code!=="TIMEOUT")throw e;for(let i=0;i<4&&!r;i++){if($("#busyText"))$("#busyText").textContent="주문 저장 여부를 확인하고 있습니다… ("+(i+1)+"/4)";await new Promise(x=>setTimeout(x,1400+i*600));try{const chk=await api("request_status",{clientRequestId:state.submitToken},7000);if(chk&&chk.found)r=chk;}catch(_){}}}if(!r||!r.success){const x=new Error("주문서 제출을 확인하지 못했습니다. 입력내용은 그대로 유지됩니다. 다시 제출 버튼을 눌러주세요.");x.code="NOT_CONFIRMED";throw x;}state.submitToken="";applyLocalAvailability(d.items);renderComplete(r);api("post_submit_sync",{orderNo:r.orderNo},12000).catch(()=>{})}catch(e){toast(e.message||"주문서 제출에 실패했습니다. 다시 시도해주세요.")}finally{busy(false);if(btn){btn.disabled=false;btn.textContent=btn.dataset.oldText||"제출하기";}}}
@@ -92,7 +116,7 @@ async function init(){
  $$('.simple-choice[data-pay-target]').forEach(b=>b.onclick=()=>selectPayment(b.dataset.payTarget,b.dataset.pay));$$('.simple-choice[data-ship-target]').forEach(b=>b.onclick=()=>selectShipping(b.dataset.shipTarget,b.dataset.ship));$('#directSubmit').onclick=()=>submitCheckout('direct');$('#liveSubmit').onclick=()=>submitCheckout('live');$('#completeCopy').onclick=copyOrderNo;
  // V6.3.29: 화면은 즉시 표시하고, 상품정보 시트만 백그라운드에서 1회 미리 읽어 캐시에 저장한다.
  hydrateCatalogCache();
- loadCachedConfig();loadConfig();
+ loadCachedConfig();loadConfig(true).catch(e=>console.warn('최신 설정 확인 실패',e));
  fetchCatalog(false).catch(e=>console.warn('초기 상품정보 미리 불러오기 실패',e));
  // V6.3.25 방송안정화: 설정 확인을 45초 -> 5분으로 줄이고,
  // 주문서 탭이 보일 때만 실행해 불필요한 Apps Script 요청을 최소화합니다.
