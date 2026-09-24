@@ -2,8 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>씬느샵 관리자 V6.3.31</title>
-<link rel="stylesheet" href="styles.css?v=6.3.31">
+<title>씬느샵 관리자 V7.0.0</title>
+<link rel="stylesheet" href="styles.css?v=7.0.0">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -26,7 +26,7 @@
     <button data-panel="gifts" data-icon="🎁">사은품관리</button>
     <button data-panel="settings" data-icon="⚙️">설정</button>
   </nav>
-  <div class="sidebar-footer">오늘도 좋은 하루가 되길 ♡<br><small>V6.3.31</small></div>
+  <div class="sidebar-footer">오늘도 좋은 하루가 되길 ♡<br><small>V7.0.0</small></div>
 </aside>
 <main class="admin-main">
   <div class="admin-header"><div><h1 style="margin:0">씬느샵 관리자</h1><div class="sub">필요한 기능만 빠르고 깔끔하게 관리합니다.</div></div><div class="admin-user"><div class="admin-avatar">♡</div><div class="mobile-hide"><b>관리자님</b><div class="hint">안녕하세요!</div></div><button id="logoutBtn" class="btn ghost">로그아웃</button></div></div>
@@ -62,51 +62,12 @@
   </section>
 
   <section id="panel-bank" class="admin-panel">
-    <div class="panel-hero"><div><h2>입금관리 / 입금확인</h2><div class="sub">거래내역 파일을 올린 뒤 매칭 시작을 눌러 후보를 확인하고, 관리자가 확인한 건만 입금완료 처리합니다.</div></div></div>
-
-    <div class="admin-card bank-upload-wide">
-      <div class="bank-upload-title"><b>거래내역서 업로드</b><span class="pill blue">토스뱅크</span><span class="pill green">하나은행</span><span class="pill violet">케이뱅크</span></div>
-      <label class="bank-file-picker"><input id="bankFile" type="file" accept=".xlsx,.xls"><span>📎 파일 선택</span><b id="bankFileName">파일을 선택해주세요.</b></label>
-      <div class="bank-upload-meta"><b id="bankFileStatus">파일을 선택해주세요.</b><span id="bankFileMeta">파일 선택만으로는 매칭이나 입금완료 처리가 시작되지 않습니다.</span></div>
-      <button id="bankStart" class="btn primary bank-start-btn" disabled>▶ 매칭 시작</button>
-    </div>
-
-    <div class="admin-card section bank-result-card">
-      <div class="bank-action-grid">
-        <button class="bank-action-card active" data-bank-tab="match"><b>매칭결과</b><span>현재 업로드 결과</span></button>
-        <button class="bank-action-card" data-bank-tab="file"><b>업로드 파일 보기</b><span>원본 거래내역 확인</span></button>
-        <button id="bankShowAll" class="bank-action-card" data-bank-tab="history"><b>전체보기</b><span>이전 매칭내역까지</span></button>
-        <button id="bankDeleteSelected" class="bank-action-card danger"><b>선택 삭제</b><span>주문 원본은 유지</span></button>
-      </div>
-
-      <div class="status-row bank-status-row bank-status-row-5">
-        <button class="status-card bank-filter" data-bank-filter="">전체 <b id="bankAllCount">0</b></button>
-        <button class="status-card blue bank-filter" data-bank-filter="매칭완료">매칭완료 <b id="bankMatchedCount">0</b></button>
-        <button class="status-card green bank-filter" data-bank-filter="입금완료">입금완료 <b id="bankPaidCount">0</b></button>
-        <button class="status-card orange bank-filter" data-bank-filter="확인필요">확인필요 <b id="bankReviewCount">0</b></button>
-        <button class="status-card red bank-filter" data-bank-filter="주문미발견">주문미발견 <b id="bankMissingCount">0</b></button>
-      </div>
-
-      <div id="bankMatchView" class="tab-view active">
-        <div class="bank-match-tools section"><input id="bankResultQuery" class="input" placeholder="입금자명 / 닉네임 / 수령인 / 주문번호 검색"><button id="bankResultSearch" class="btn ghost">검색</button><button id="bankResultClear" class="btn ghost">초기화</button><span class="hint">매칭 시작은 후보만 찾습니다. 실제 입금완료는 각 행의 ‘매칭하기’를 눌러야 반영됩니다.</span></div>
-        <div class="table-wrap section"><table class="table bank-match-table"><thead><tr><th><input id="bankHeaderCheck" type="checkbox"> 선택</th><th>거래정보</th><th>입금자명</th><th>입금금액</th><th>주문정보</th><th>결과</th><th>이유</th><th>매칭하기</th><th>수정</th><th>삭제</th></tr></thead><tbody id="bankResults"><tr><td colspan="10">거래내역 파일을 선택한 뒤 매칭 시작을 눌러주세요.</td></tr></tbody></table></div>
-        <div class="pager-wrap"><div id="bankRangeText" class="hint">전체 0건 · 한 페이지에 50건씩 표시합니다.</div><div id="bankPager" class="pager"></div></div>
-      </div>
-
-      <div id="bankFileView" class="tab-view">
-        <div class="bank-file-searchbar">
-          <input id="bankFileQuery" class="input" placeholder="닉네임 / 입금자명 / 수령인 검색">
-          <button id="bankFileSearch" class="btn primary">🔎 검색</button>
-          <button id="bankFileClear" class="btn ghost">전체보기</button>
-          <label class="bank-file-group-toggle"><input id="bankFileGroup" type="checkbox" checked> <b>같은 고객끼리 묶어보기</b></label>
-          <button id="bankOriginalDownload" class="btn ghost">원본 파일 다시 받기</button>
-        </div>
-        <div id="bankFileSummary" class="bank-file-summary section">업로드 파일을 선택하면 닉네임·이름별 검색과 묶어보기를 사용할 수 있습니다.</div>
-        <div class="table-wrap section"><table class="table bank-preview-table"><thead id="bankPreviewHead"></thead><tbody id="bankPreviewBody"></tbody></table></div>
-        <div class="pager-wrap"><div id="bankFileRangeText" class="hint">원본 0건 · 한 페이지에 50건씩 표시합니다.</div><div id="bankFilePager" class="pager"></div></div>
-      </div>
-
-      <div id="bankHistoryView" class="tab-view"><div class="table-wrap section"><table class="table"><thead><tr><th><input id="bankHistoryHeaderCheck" type="checkbox"> 선택</th><th>처리일시 / 거래일시</th><th>은행 / 파일</th><th>입금자 / 입금액</th><th>주문자 / 수령인</th><th>주문금액 / 주문번호</th><th>결과 / 이유</th></tr></thead><tbody id="bankHistoryResults"></tbody></table></div><div class="pager-wrap"><div id="bankHistoryRangeText" class="hint">전체내역 0건 · 한 페이지에 50건씩 표시합니다.</div><div id="bankHistoryPager" class="pager"></div></div></div>
+    <div class="panel-hero"><div><h2>입금관리 / 입금확인</h2><div class="sub">거래내역 파일을 올리면 원본을 확인하고 같은 화면에서 바로 매칭합니다.</div></div></div>
+    <div class="admin-grid-2 bank-overview-grid"><div class="admin-card"><h3>거래내역서 업로드</h3><div class="toolbar"><span class="pill blue">토스뱅크</span><span class="pill green">하나은행</span></div><div class="upload-zone section"><input id="bankFile" type="file" accept=".xlsx,.xls" class="input"><div id="bankFileStatus" class="hint section">파일을 선택해주세요.</div><div id="bankFileMeta" class="hint"></div><button id="bankStart" class="btn primary section" disabled>▶ 매칭 시작</button></div></div><div class="admin-card bank-summary-card"><h3>매칭 결과</h3><div class="status-row bank-status-row"><button class="status-card bank-filter" data-bank-filter="">전체 <b id="bankAllCount">0</b></button><button class="status-card green bank-filter" data-bank-filter="입금완료">입금완료 <b id="bankPaidCount">0</b></button><button class="status-card orange bank-filter" data-bank-filter="주문미발견">주문미발견 <b id="bankMissingCount">0</b></button><button class="status-card red bank-filter" data-bank-filter="금액불일치">금액불일치 <b id="bankMismatchCount">0</b></button></div><div class="hint section">매칭 결과는 한 페이지에 50건씩 표시합니다. 50건을 넘으면 아래 페이지 번호로 이동합니다.</div></div></div>
+    <div class="admin-card section"><div class="inner-tabs"><button class="inner-tab active" data-bank-tab="match">매칭결과</button><button class="inner-tab" data-bank-tab="file">업로드 파일 보기</button></div>
+      <div id="bankMatchView" class="tab-view active"><div class="toolbar"><button id="bankShowAll" class="btn ghost">전체보기</button><button id="bankDeleteSelected" class="btn red">선택 삭제</button></div><div class="table-wrap section"><table class="table"><thead><tr><th><input id="bankHeaderCheck" type="checkbox"> 선택</th><th>입금자명</th><th>입금금액</th><th>주문자/수령인</th><th>주문금액</th><th>결과 / 이유</th><th>수정</th><th>삭제</th></tr></thead><tbody id="bankResults"></tbody></table></div><div class="pager-wrap"><div id="bankRangeText" class="hint">전체 0건 · 한 페이지에 50건씩 표시합니다.</div><div id="bankPager" class="pager"></div></div></div>
+      <div id="bankFileView" class="tab-view"><div class="toolbar"><button id="bankOriginalDownload" class="btn ghost">원본 파일 다시 받기</button></div><div class="table-wrap section"><table class="table"><thead id="bankPreviewHead"></thead><tbody id="bankPreviewBody"></tbody></table></div></div>
+      <div class="toolbar section"><button id="bankRetry" class="btn ghost">초기화</button></div>
     </div>
   </section>
 
@@ -115,7 +76,7 @@
     <div class="admin-card">
       <div class="toolbar card-searchbar"><input id="cardQuery" class="input" placeholder="주문번호 / 닉네임 / 수령인 / 연락처 검색"><button id="cardSearch" class="btn primary">🔎 검색</button><button id="cardShowAll" class="btn softpink">▣ 전체 모아보기</button></div>
       <div class="status-row section card-status-row"><button class="status-card card-send-filter" data-card-send-filter="">전체(<b id="cAll">0</b>)</button><button class="status-card orange card-send-filter" data-card-send-filter="미발송">미발송(<b id="cUnsent">0</b>)</button><button class="status-card green card-send-filter" data-card-send-filter="발송완료">발송완료(<b id="cSent">0</b>)</button><button class="status-card red card-send-filter" data-card-send-filter="재발송필요">재발송필요(<b id="cRelink">0</b>)</button></div>
-      <div class="toolbar section card-sendbar"><label>결제사</label><select id="cardProvider" class="input provider-select"><option value="payapp">페이앱</option><option value="toss">토스페이먼츠</option></select><span id="cardSelectedCount" class="pill blue">선택 0명</span><button id="cardSelectAll" class="btn ghost">전체선택</button><label class="card-tax-exclude"><input id="cardTaxExclude" type="checkbox"> <b>부가세 제외</b><span>선택 고객은 부가세 없이 결제</span></label><label class="card-shipping-exclude"><input id="cardShippingExclude" type="checkbox"> <b>배송비 제외</b><span>선택 고객은 배송비 없이 결제</span></label><button id="cardSend" class="btn primary">➤ 선택 고객 카드결제 링크 보내기</button></div>
+      <div class="toolbar section card-sendbar"><label>결제사</label><select id="cardProvider" class="input provider-select"><option value="payapp">페이앱</option><option value="toss">토스페이먼츠</option></select><span id="cardSelectedCount" class="pill blue">선택 0명</span><button id="cardSelectAll" class="btn ghost">전체선택</button><label class="card-tax-exclude"><input id="cardTaxExclude" type="checkbox"> <b>부가세 제외</b><span>선택 고객은 주문금액 그대로 결제</span></label><button id="cardSend" class="btn primary">➤ 선택 고객 카드결제 링크 보내기</button></div>
       <div class="table-wrap section"><table class="table"><thead><tr><th><input id="cardHeaderCheck" type="checkbox" aria-label="전체선택"></th><th>주문번호</th><th>닉네임</th><th>수령인</th><th>연락처</th><th>고객주문 합계</th><th>기본 카드금액(+10%)</th><th>발송상태</th><th>결제상태 / 변경</th></tr></thead><tbody id="cardTbody"><tr><td colspan="9">검색 또는 전체 모아보기를 눌러 카드결제 고객을 불러오세요.</td></tr></tbody></table></div>
     </div>
   </section>
@@ -217,61 +178,7 @@
 
     <div id="lotte-combine" class="lotte-view admin-card section"><div class="section-title"><h3>합배송 조회</h3><span class="pill">수령인 + 연락처 + 주소 일치</span></div><div class="toolbar"><input id="combineFrom" type="date" class="input"><span>~</span><input id="combineTo" type="date" class="input"><label class="check-label"><input id="combineEligibleOnly" type="checkbox" checked> 합배송 가능한 고객만</label><button id="combineSearch" class="btn primary">조회</button><button id="combineCustomerPopup" class="btn ghost">고객 목록 보기</button></div><div id="combineCount" class="hint section"></div><div class="table-wrap"><table class="table"><thead><tr><th><input id="combineHeaderCheck" type="checkbox"></th><th>닉네임</th><th>수령인</th><th>주문건수</th><th>총 내품</th><th>결제확인</th><th>주문서 내용</th></tr></thead><tbody id="combineTbody"><tr><td colspan="7">조회 버튼을 누르면 합배송 후보를 불러옵니다.</td></tr></tbody></table></div><div class="toolbar section"><button id="combineDownload" class="btn primary">선택 합배송 송장 다운로드</button></div></div>
 
-    <div id="lotte-return" class="lotte-view section return-dashboard">
-      <div class="return-headline"><div><h3>반품 · 교환 관리</h3><div class="sub">반품/교환 접수부터 회수, 입고확인, 교환출고, 처리완료까지 한 화면에서 관리합니다.</div></div><span class="pill pink">반품교환관리 시트 연동</span></div>
-
-      <div class="return-summary-grid">
-        <button class="return-summary-card all active" data-return-summary="all"><span>↻</span><div><small>전체 접수</small><b id="returnCountAll">0건</b></div></button>
-        <button class="return-summary-card ret" data-return-summary="return"><span>▣</span><div><small>반품 접수</small><b id="returnCountReturn">0건</b></div></button>
-        <button class="return-summary-card exchange" data-return-summary="exchange"><span>⇄</span><div><small>교환 접수</small><b id="returnCountExchange">0건</b></div></button>
-        <button class="return-summary-card shipping" data-return-summary="shipping"><span>▤</span><div><small>교환 출고중</small><b id="returnCountShipping">0건</b></div></button>
-        <button class="return-summary-card done" data-return-summary="done"><span>✓</span><div><small>처리 완료</small><b id="returnCountDone">0건</b></div></button>
-      </div>
-
-      <div class="admin-card return-filter-card">
-        <div class="return-date-row"><b>기간 선택</b><input id="returnFrom" type="date" class="input"><span>~</span><input id="returnTo" type="date" class="input"><button class="btn ghost return-date-preset" data-days="0">오늘</button><button class="btn ghost return-date-preset" data-days="7">최근 7일</button><button class="btn ghost return-date-preset" data-days="30">최근 30일</button><button class="btn softpink return-date-preset" data-days="month">이번달</button><button class="btn ghost return-date-preset" data-days="all">전체</button></div>
-        <div class="return-filter-row"><select id="returnStatus" class="input"><option>전체</option><option>접수</option><option>회수중</option><option>입고확인</option><option>교환출고</option><option>처리완료</option><option>보류</option></select><select id="returnType" class="input"><option>전체</option><option>반품</option><option>교환</option></select><input id="returnQuery" class="input" placeholder="주문번호 / 닉네임 / 수령인 / 연락처 검색"><button id="returnSearch" class="btn primary">⌕ 조회하기</button><button id="returnReset" class="btn ghost">초기화</button></div>
-      </div>
-
-      <div class="return-workbar">
-        <button id="returnCreate" class="btn primary">＋ 반품 · 교환 접수</button>
-        <button id="returnDeleteSelected" class="btn ghost">⌫ 선택 삭제</button>
-        <select id="returnBulkStatus" class="input"><option value="">선택 처리상태 변경</option><option>접수</option><option>회수중</option><option>입고확인</option><option>교환출고</option><option>처리완료</option><option>보류</option></select>
-        <button id="returnBulkApply" class="btn ghost">상태 적용</button>
-        <button id="returnExcel" class="btn ghost">↓ 엑셀 다운로드</button>
-        <button id="returnPickupDownload" class="btn blue">선택 반품 회수 송장</button>
-        <button id="returnExchangeDownload" class="btn violet">선택 교환 출고 송장</button>
-        <span id="returnRangeText" class="hint return-range-text">조회 전 · 50개씩 표시합니다.</span>
-      </div>
-
-      <div class="return-content-grid">
-        <div class="admin-card return-list-card"><div class="table-wrap"><table class="table return-table"><thead><tr><th><input id="returnHeaderCheck" type="checkbox"></th><th>접수일</th><th>주문번호</th><th>유형</th><th>닉네임 / 수령인</th><th>연락처</th><th>상품정보</th><th>사유</th><th>현재상태</th><th>회수송장</th><th>교환출고송장</th><th>관리</th></tr></thead><tbody id="returnTbody"><tr><td colspan="12">조회하기를 눌러 반품·교환 내역을 불러오세요.</td></tr></tbody></table></div><div id="returnPager" class="pager return-pager"></div></div>
-
-        <aside id="returnDrawer" class="admin-card return-drawer hidden">
-          <div class="section-title"><h3 id="returnDrawerTitle">반품 · 교환 상세보기</h3><button id="returnDrawerClose" class="btn ghost mini">닫기</button></div>
-          <input id="returnEditRow" type="hidden"><input id="returnEditReceipt" type="hidden">
-          <div class="return-drawer-grid">
-            <label>원주문번호<div class="return-order-lookup"><input id="returnEditOrderNo" class="input" placeholder="예: 260924-0012"><button id="returnOrderLookup" class="btn ghost mini">불러오기</button></div></label>
-            <label>접수일<input id="returnEditCreated" class="input" readonly></label>
-            <label>유형<select id="returnEditType" class="input"><option>반품</option><option>교환</option></select></label>
-            <label>현재상태<select id="returnEditStatus" class="input"><option>접수</option><option>회수중</option><option>입고확인</option><option>교환출고</option><option>처리완료</option><option>보류</option></select></label>
-            <label>닉네임<input id="returnEditNickname" class="input" readonly></label>
-            <label>수령인<input id="returnEditReceiver" class="input" readonly></label>
-            <label>연락처<input id="returnEditPhone" class="input" readonly></label>
-            <label class="full">주소<input id="returnEditAddress" class="input" readonly></label>
-            <label class="full">상품정보<textarea id="returnEditItems" class="input" rows="3" readonly></textarea></label>
-            <label class="full">사유<input id="returnEditReason" class="input" placeholder="예: 사이즈 교환"></label>
-            <label>회수송장번호<input id="returnEditPickup" class="input"></label>
-            <label>반품 입고일<input id="returnEditReceived" type="date" class="input"></label>
-            <label class="full">검수결과<input id="returnEditInspection" class="input" placeholder="예: 이상없음"></label>
-            <label>교환출고송장번호<input id="returnEditExchange" class="input"></label>
-            <label>환불상태<input id="returnEditRefund" class="input" placeholder="예: 환불완료"></label>
-            <label class="full">메모<textarea id="returnEditMemo" class="input" rows="3"></textarea></label>
-          </div>
-          <button id="returnSave" class="btn primary w100 section">✓ 저장하기</button>
-        </aside>
-      </div>
-    </div>
+    <div id="lotte-return" class="lotte-view admin-card section"><div class="section-title"><h3>반품·교환 관리</h3><span class="pill">반품교환관리 시트 연동</span></div><div class="toolbar"><input id="returnQuery" class="input" placeholder="원주문번호 / 닉네임 / 수령인 검색"><select id="returnStatus" class="input"><option>전체</option><option>접수</option><option>회수중</option><option>반품입고확인</option><option>검수완료</option><option>교환출고</option><option>환불완료</option><option>완료</option></select><button id="returnSearch" class="btn primary">조회</button></div><div class="return-create section"><input id="returnOrderNo" class="input" placeholder="전체주문이력 원주문번호"><select id="returnType" class="input"><option>반품</option><option>교환</option></select><input id="returnReason" class="input" placeholder="사유"><button id="returnCreate" class="btn softpink">＋ 접수 등록</button></div><div class="table-wrap section"><table class="table"><thead><tr><th><input id="returnHeaderCheck" type="checkbox"></th><th>접수번호</th><th>원주문</th><th>고객</th><th>유형</th><th>상품</th><th>상태</th><th>회수송장</th><th>교환출고송장</th><th>처리</th></tr></thead><tbody id="returnTbody"><tr><td colspan="10">조회 버튼을 누르면 반품·교환 내역을 불러옵니다.</td></tr></tbody></table></div><div class="toolbar section"><button id="returnPickupDownload" class="btn blue">선택 반품 회수 송장</button><button id="returnExchangeDownload" class="btn violet">선택 교환 출고 송장</button></div></div>
 
     <div id="lotte-pending" class="lotte-view admin-card section"><div class="section-title"><h3>미출고 관리</h3><span class="pill red">송장번호 없는 주문</span></div><div class="toolbar"><input id="pendingQuery" class="input" placeholder="주문번호 / 닉네임 / 수령인 / 사유 검색"><input id="pendingFrom" type="date" class="input"><input id="pendingTo" type="date" class="input"><select id="pendingStatus" class="input"><option>전체</option><option>입금완료</option><option>카드결제</option><option>카드결제대기</option><option>미입금</option></select><button id="pendingSearch" class="btn primary">조회</button><button id="pendingRefresh" class="btn ghost">초기화</button><button id="pendingLotte" class="btn violet">선택 롯데송장 엑셀</button></div><div class="table-wrap section"><table class="table"><thead><tr><th><input id="pendingHeaderCheck" type="checkbox"></th><th>주문번호</th><th>닉네임</th><th>수령인</th><th>연락처</th><th>구매내역</th><th>결제상태</th><th>미출고사유</th><th>예상출고일</th><th>수정</th></tr></thead><tbody id="pendingTbody"><tr><td colspan="10">조회 버튼을 누르면 미출고 주문을 불러옵니다.</td></tr></tbody></table></div><div id="pendingCards" class="pending-mobile-list section"></div></div>
   </section>
@@ -283,7 +190,7 @@
     <div class="admin-card section"><div class="section-title"><h3>등록된 상품정보</h3><span class="pill">주문가능수량 = 현재재고 - 주문서작성수량</span></div><div class="table-wrap"><table class="table"><thead><tr><th><input id="productHeaderCheck" type="checkbox" aria-label="전체선택"></th><th>상품번호</th><th>상품명</th><th>칼라</th><th>사이즈</th><th>판매가</th><th>입금가</th><th>현재재고</th><th>재고상태</th><th>댓글예약수량</th><th>주문서작성수량</th><th>주문가능수량</th><th>수정</th></tr></thead><tbody id="productTbody"><tr><td colspan="13">상품정보 불러오기를 눌러주세요.</td></tr></tbody></table></div></div>
   </section>
 
-  <section id="panel-gifts" class="admin-panel"><div class="panel-hero"><div><h2>사은품관리</h2><div class="sub">조건을 저장한 뒤 3PL에 적용합니다. 닉네임 방식은 유튜브 닉네임만 일치하면 적용되며 @·공백은 무시합니다.</div></div></div><div class="admin-card"><div class="form-grid"><div class="field"><label>적용방식</label><select id="gType" class="input"><option>상품번호</option><option>금액</option><option>수량</option><option>닉네임</option></select></div><div class="field"><label>조건</label><input id="gCondition" class="input" placeholder="닉네임 예) 더블비-z5j / 금액 예) 50000 이상"><div class="hint">닉네임은 수령인·연락처 없이 3PL출고의 닉네임만으로 매칭합니다.</div></div><div class="field full"><label>사은품</label><input id="gGift" class="input" placeholder="예) 방도"></div></div><div class="toolbar section"><button id="giftLoad" class="btn ghost">사은품 목록 불러오기</button><button id="giftSave" class="btn primary">사은품 조건 저장</button><button id="giftApply" class="btn softpink">🎁 3PL에 사은품 적용</button></div><div class="table-wrap section"><table class="table"><thead><tr><th>적용방식</th><th>조건</th><th>사은품</th><th></th></tr></thead><tbody id="giftTbody"><tr><td colspan="4">사은품 목록 불러오기를 눌러주세요.</td></tr></tbody></table></div></div></section>
+  <section id="panel-gifts" class="admin-panel"><div class="panel-hero"><div><h2>사은품관리</h2><div class="sub">조건을 저장한 뒤 필요할 때 3PL에 사은품을 적용합니다. 고객주문 금액에는 영향을 주지 않습니다.</div></div></div><div class="admin-card"><div class="form-grid"><div class="field"><label>적용방식</label><select id="gType" class="input"><option>상품번호</option><option>금액</option><option>수량</option><option>닉네임</option></select></div><div class="field"><label>조건</label><input id="gCondition" class="input" placeholder="예) 50000 이상"></div><div class="field full"><label>사은품</label><input id="gGift" class="input" placeholder="예) 방도"></div></div><div class="toolbar section"><button id="giftLoad" class="btn ghost">사은품 목록 불러오기</button><button id="giftSave" class="btn primary">사은품 조건 저장</button><button id="giftApply" class="btn softpink">🎁 3PL에 사은품 적용</button></div><div class="table-wrap section"><table class="table"><thead><tr><th>적용방식</th><th>조건</th><th>사은품</th><th></th></tr></thead><tbody id="giftTbody"><tr><td colspan="4">사은품 목록 불러오기를 눌러주세요.</td></tr></tbody></table></div></div></section>
 
   <section id="panel-settings" class="admin-panel"><div class="panel-hero"><div><h2>설정</h2><div class="sub">필요한 연결값을 종류별 카드로 깔끔하게 관리합니다.</div></div><button id="settingsLoad" class="btn ghost">설정 불러오기</button></div>
     <div class="settings-grid">
@@ -292,7 +199,7 @@
       <div class="admin-card"><h3>카드결제 설정 <span id="payStatus" class="pill"></span></h3><label>기본 결제사</label><select id="sCardProvider" class="input"><option value="payapp">페이앱</option><option value="toss">토스페이먼츠</option></select><label class="section">페이앱 userid</label><input id="sPayUser" class="input"><div class="form-grid section"><div class="field"><label>linkkey</label><input id="sPayKey" class="input" type="password"></div><div class="field"><label>linkval</label><input id="sPayVal" class="input" type="password"></div></div><label class="section">토스 카드결제 링크</label><input id="sTossUrl" class="input" placeholder="토스 결제링크 또는 연동 URL"><label class="section">고정 카드결제 링크(예비)</label><input id="sCardUrl" class="input"></div>
       <div class="admin-card"><h3>고객 연결 링크</h3><label>씬느샵 밴드 URL</label><input id="sBand" class="input"><label class="section">채널톡 URL</label><input id="sChannel" class="input"></div>
       <div class="admin-card"><h3>관리자 보안</h3><label>관리자 새 비밀번호</label><input id="sPassword" class="input" type="password" placeholder="변경할 때만 입력"><p class="hint">일정시간 자동 로그아웃 기능은 사용하지 않습니다.</p></div>
-      <div class="admin-card"><h3>연결 정보</h3><label>Apps Script /exec 주소</label><input id="sWebApp" class="input" readonly><p class="hint">web/config.js에도 같은 /exec 주소를 입력하세요.</p><p>버전 <b id="sVersion">V6.3.31</b></p></div>
+      <div class="admin-card"><h3>연결 정보</h3><label>Apps Script /exec 주소</label><input id="sWebApp" class="input" readonly><p class="hint">web/config.js에도 같은 /exec 주소를 입력하세요.</p><p>버전 <b id="sVersion">V7.0.0</b></p></div>
     </div><div class="toolbar section"><button id="settingsSave" class="btn primary">✓ 설정 저장</button></div>
   </section>
 </main></div>
@@ -301,9 +208,10 @@
 
 
 <div id="liveLinkModal" class="modal"><div class="modal-card"><div class="section-title"><h2>라이브 링크 입력 / 저장</h2><button id="liveLinkClose" class="btn ghost">닫기</button></div><input id="liveVideoQuick" class="input section" placeholder="YouTube 라이브 URL 또는 영상 ID"><button id="liveVideoSave" class="btn primary w100 section">저장</button></div></div>
+<div id="startModal" class="modal"><div class="modal-card"><div class="section-title"><h2>라이브 시작 방식</h2><button id="startClose" class="btn ghost">닫기</button></div><button class="btn primary w100 section startMode" data-mode="new">오늘 상품정보 비우고 시작</button><button class="btn softpink w100 section startMode" data-mode="keep">현재상품 유지 시작</button></div></div>
 <div id="csModal" class="modal"><div class="modal-card"><div class="section-title"><h2>CS 등록 / 수정</h2><button id="csModalClose" class="btn ghost">닫기</button></div><input id="csRow" type="hidden"><div class="form-grid"><div class="field"><label>접수일</label><input id="csDate" type="date" class="input"></div><div class="field"><label>채널톡ID</label><input id="csChannelId" class="input"></div><div class="field"><label>닉네임</label><input id="csNickname" class="input"></div><div class="field"><label>고객명</label><input id="csCustomer" class="input"></div><div class="field full"><label>내용</label><textarea id="csContent" class="input" rows="4"></textarea></div><div class="field"><label>유형</label><select id="csType" class="input"><option>입금완료</option><option>주문서작성</option><option>주문확인</option><option>송장확인</option><option>배송문의</option><option>불량문의</option><option>사이즈문의</option><option>교환</option><option>환불</option><option>추가주문문의</option><option>기타</option></select></div><div class="field"><label>상태</label><select id="csEditStatus" class="input"><option>접수</option><option>진행</option><option>완료</option><option>보류</option></select></div><div class="field"><label>주문번호</label><input id="csOrderNo" class="input"></div><div class="field"><label>결제구분</label><input id="csPayment" class="input" placeholder="예: 카드결제"></div><div class="field full"><label>메모</label><input id="csMemo" class="input"></div></div><button id="csSave" class="btn primary w100 section">저장</button></div></div>
 <div id="combineCustomerModal" class="modal"><div class="modal-card"><div class="section-title"><h2>합배송 고객 목록</h2><button id="combineCustomerClose" class="btn ghost">닫기</button></div><div id="combineCustomerList" class="section"></div></div></div>
 <div id="vipModal" class="modal"><div class="modal-card"><div class="section-title"><div><h2>VIP 고객 등록 / 수정</h2><div class="hint">연락처까지 저장하면 더 안전하게 자동 적용됩니다.</div></div><button id="vipModalClose" class="btn ghost">닫기</button></div><input id="vipRow" type="hidden"><div class="form-grid section"><div class="field"><label>닉네임</label><input id="vipNickname" class="input"></div><div class="field"><label>수령인 이름</label><input id="vipReceiver" class="input"></div><div class="field"><label>연락처</label><input id="vipPhone" class="input" placeholder="010-0000-0000"></div><div class="field"><label>상태</label><select id="vipActive" class="input"><option value="1">사용</option><option value="0">중지</option></select></div><div class="field"><label>카드 부가세</label><select id="vipTax" class="input"><option value="1">제외</option><option value="0">적용</option></select></div><div class="field"><label>배송비</label><select id="vipShipping" class="input"><option value="1">무료</option><option value="0">기본 정책</option></select></div><div class="field full"><label>메모</label><input id="vipMemo" class="input"></div></div><button id="vipSave" class="btn primary w100 section">VIP 고객 저장</button></div></div>
 <div id="busy" class="modal"><div class="modal-card complete"><div class="spinner"></div><h2 id="busyText">처리 중입니다...</h2></div></div><div id="toast" class="card pad hidden" style="position:fixed;right:18px;bottom:18px;z-index:130;max-width:420px"></div>
-<script src="config.js?v=6.3.31"></script><script src="admin.js?v=6.3.31"></script>
+<script src="config.js?v=7.0.0"></script><script src="admin.js?v=7.0.0"></script>
 </body></html>
