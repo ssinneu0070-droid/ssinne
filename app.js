@@ -26,24 +26,13 @@ function productSearchMessage(prefix,msg='',type='info'){const id=prefix==='dire
 function replaceCatalogProduct(no,products){const k=String(no);state.catalog=state.catalog.filter(p=>String(p.no)!==k).concat(products||[]);state.catalogTs=Date.now();if(state.catalogFull)storeCatalogCache()}
 function mergeCatalogProducts(products){const g={};(products||[]).forEach(p=>(g[String(p.no)]||(g[String(p.no)]=[])).push(p));Object.keys(g).forEach(no=>replaceCatalogProduct(no,g[no]))}
 async function fetchExactProduct(no){
-  // V6.3.26: 단일 상품 조회는 짧게 실패시키지 않고 자동 재시도한다.
-  // Apps Script가 순간적으로 바쁜 경우에도 고객이 검색 버튼을 다시 누를 필요가 없게 한다.
-  let lastErr=null;
-  for(let attempt=0;attempt<3;attempt++){
-    try{
-      const timeout=attempt===0?9000:(attempt===1?14000:20000);
-      const r=await api('catalog_product',{no,cacheBust:Date.now()},timeout);
-      const products=Array.isArray(r.products)?r.products:[];
-      replaceCatalogProduct(no,products);
-      return products;
-    }catch(e){
-      lastErr=e;
-      if(e.code!=='TIMEOUT'&&e.code!=='NETWORK')throw e;
-      if(attempt<2)await new Promise(resolve=>setTimeout(resolve,500+attempt*700));
-    }
-  }
-  throw lastErr||new Error('상품정보를 불러오지 못했습니다.');
+  // V6.3.27: 없는 상품만 서버에서 한 번, 짧게 조회한다. 자동 재시도 없음.
+  const r=await api('catalog_product',{no,cacheBust:Date.now()},4500);
+  const products=Array.isArray(r.products)?r.products:[];
+  replaceCatalogProduct(no,products);
+  return products;
 }
+
 async function refreshCatalog(mode){if(state.catalogRefreshing)return;state.catalogRefreshing=true;['directCatalogRefresh','liveCatalogRefresh','liveCatalogRefresh2'].forEach(id=>{if($('#'+id))$('#'+id).disabled=true});try{busy(true,'최신 상품정보를 불러오는 중입니다...');await fetchCatalog(true);toast('상품정보를 새로고침했습니다.');if(mode==='direct'&&$('#directSearch').value)searchDirectProduct();if(mode==='live'&&$('#liveManualSearch').value)searchLiveManualProduct()}catch(e){toast(e.message)}finally{busy(false);state.catalogRefreshing=false;['directCatalogRefresh','liveCatalogRefresh','liveCatalogRefresh2'].forEach(id=>{if($('#'+id))$('#'+id).disabled=false})}}
 function sanitizeNickInput(el){const v=cleanNick(el.value);if(el.value!==v)el.value=v;return v}
 async function searchLiveNick(){const q=sanitizeNickInput($('#liveNick')),box=$('#nickSuggestions');box.innerHTML='';state.selectedNickname='';if(!q)return;try{const r=await api('nickname_suggestions',{nickname:q});state.liveSuggestions=r.suggestions||[];const exact=state.liveSuggestions.filter(n=>n.toLowerCase()===q.toLowerCase());if(exact.length===1)state.selectedNickname=exact[0];state.liveSuggestions.forEach(n=>{const b=document.createElement('button');b.type='button';b.className='suggestion';b.textContent=n;b.onclick=()=>{state.selectedNickname=n;$('#liveNick').value=n;box.innerHTML=''};box.appendChild(b)})}catch(e){}}
@@ -57,38 +46,33 @@ function fillProductPicker(prefix,no){const opts=optionsForNo(no);if(!opts.lengt
 function refreshPickerSizes(prefix,no,preserveSize=''){const colorId=prefix==='direct'?'directColor':'liveManualColor',sizeId=prefix==='direct'?'directSize':'liveManualSize',color=$('#'+colorId).value,sizeEl=$('#'+sizeId),opts=state.catalog.filter(p=>String(p.no)===String(no)&&p.color===color),sizes=[...new Set(opts.map(x=>x.size))],stats=sizes.map(size=>({size,available:opts.some(x=>x.size===size&&Number(x.stock||0)>0)})),hasAvailable=stats.some(x=>x.available),keep=preserveSize||sizeEl.value;sizeEl.innerHTML=stats.map(x=>`<option value="${esc(x.size)}"${hasAvailable&&!x.available?' disabled':''}>${esc(x.size)}${x.available?'':' (품절)'}</option>`).join('');const keepStat=stats.find(x=>x.size===keep&&(!hasAvailable||x.available)),first=stats.find(x=>x.available)||stats[0];if(keepStat)sizeEl.value=keepStat.size;else if(first)sizeEl.value=first.size;updatePickerSelection(prefix,no)}
 function updatePickerSelection(prefix,no){const colorId=prefix==='direct'?'directColor':'liveManualColor',sizeId=prefix==='direct'?'directSize':'liveManualSize',p=state.catalog.find(x=>String(x.no)===String(no)&&x.color===$('#'+colorId).value&&x.size===$('#'+sizeId).value)||null,sold=!p||Number(p.stock||0)<=0;if(prefix==='direct'){state.pickedProduct=p;state.pickQty=Math.min(state.pickQty||1,Math.max(1,Number(p?.stock||1)));if($('#directQtyPick'))$('#directQtyPick').textContent=state.pickQty;if($('#directAdd'))$('#directAdd').disabled=sold}else{state.livePicked=p;state.livePickQty=Math.min(state.livePickQty||1,Math.max(1,Number(p?.stock||1)));if($('#liveManualQty'))$('#liveManualQty').textContent=state.livePickQty;if($('#liveManualAdd'))$('#liveManualAdd').disabled=sold}if(p&&Number(p.stock||0)<=0)productSearchMessage(prefix,'선택한 칼라·사이즈는 품절입니다.','soldout');else if(p)productSearchMessage(prefix,'','info')}
 async function searchExactProduct(prefix,no){
-  // V6.3.25: 이미 받아둔 상품은 즉시 표시하고 서버 확인은 뒤에서 진행한다.
-  // 라이브 중 상품정보를 계속 입력해도 고객 검색창이 서버 응답을 기다리며 멈추지 않게 한다.
+  // V6.3.27: 캐시에 있으면 서버를 기다리지 않고 즉시 표시한다.
   const cached=optionsForNo(no);
   if(cached.length){
     const ok=fillProductPicker(prefix,no);
-    if(ok){
-      productSearchMessage(prefix,'','info');
-      // 최신 재고/옵션은 백그라운드에서 조용히 갱신한다.
-      fetchExactProduct(no).then(products=>{
-        if(products&&products.length){
-          const current=prefix==='direct'?productCode($('#directSearch')?.value):productCode($('#liveManualSearch')?.value);
-          if(current===no)fillProductPicker(prefix,no);
-        }
-      }).catch(()=>{});
-      return true;
-    }
+    if(ok){productSearchMessage(prefix,'','info');return true;}
   }
-  productSearchMessage(prefix,'최신 상품정보를 확인하고 있습니다... 잠시만 기다려주세요.','info');
+
+  // 방금 등록한 새 상품처럼 캐시에 없는 번호만 서버에 짧게 1회 조회한다.
+  productSearchMessage(prefix,'새로 등록된 상품인지 빠르게 확인하고 있습니다...','info');
   try{
     const products=await fetchExactProduct(no);
     if(!products.length){
       if(prefix==='direct'){state.pickedProduct=null;$('#directProductBox').classList.add('hidden')}
       else{state.livePicked=null;$('#liveManualBox').classList.add('hidden')}
-      productSearchMessage(prefix,'상품정보가 없습니다.','error');return false;
+      productSearchMessage(prefix,'상품정보가 없습니다. 방금 등록한 상품이면 위의 상품정보 새로고침을 눌러주세요.','error');
+      return false;
     }
     const ok=fillProductPicker(prefix,no);
     if(!ok){productSearchMessage(prefix,'상품정보가 없습니다.','error');return false}
-    productSearchMessage(prefix,'','info');return true;
+    productSearchMessage(prefix,'','info');
+    return true;
   }catch(e){
-    productSearchMessage(prefix,'서버가 많이 바쁩니다. 위의 상품정보 새로고침을 한 번 눌러주세요.','warn');return false;
+    productSearchMessage(prefix,'서버 확인이 늦어졌습니다. 상품정보 새로고침을 한 번 눌러주세요.','warn');
+    return false;
   }
 }
+
 async function searchDirectProduct(){const no=productCode($('#directSearch').value);$('#directSearch').value=no;if(!no){productSearchMessage('direct','상품번호를 입력해주세요.','error');return}const ok=await searchExactProduct('direct',no);if(!ok)return;$('#directProductBox').classList.remove('hidden');state.pickQty=1;$('#directQtyPick').textContent='1';updatePickerSelection('direct',no)}
 async function searchLiveManualProduct(){const no=productCode($('#liveManualSearch').value);$('#liveManualSearch').value=no;if(!no){productSearchMessage('liveManual','상품번호를 입력해주세요.','error');return}const ok=await searchExactProduct('liveManual',no);if(!ok)return;$('#liveManualBox').classList.remove('hidden');state.livePickQty=1;$('#liveManualQty').textContent='1';updatePickerSelection('liveManual',no)}
 function addPickedProduct(){const p=state.pickedProduct;if(!p)return toast('상품을 먼저 검색해주세요.');if(Number(p.stock||0)<=0)return toast('현재 주문가능수량이 없습니다.');if(state.pickQty>Number(p.stock||0))return toast('주문가능수량은 '+p.stock+'개입니다.');const already=state.cart.filter(x=>String(x.productNo)===String(p.no)&&x.color===p.color&&x.size===p.size).reduce((sum,x)=>sum+Number(x.qty||0),0);if(already+state.pickQty>Number(p.stock||0))return toast('장바구니에 담긴 같은 옵션 포함 주문가능수량은 '+p.stock+'개입니다.');state.cart.push({productNo:p.no,name:p.name,color:p.color,size:p.size,qty:state.pickQty,price:p.price});renderDirectCart();updateTotals('direct');toast('상품을 추가했습니다.')}
@@ -116,6 +100,6 @@ async function init(){
  $('#directColor').onchange=()=>refreshPickerSizes('direct',$('#directSearch').value);$('#directSize').onchange=()=>updatePickerSelection('direct',$('#directSearch').value);$('#directMinus').onclick=()=>{state.pickQty=Math.max(1,state.pickQty-1);$('#directQtyPick').textContent=state.pickQty};$('#directPlus').onclick=()=>{const m=Math.max(1,Number(state.pickedProduct?.stock||1));state.pickQty=Math.min(m,state.pickQty+1);$('#directQtyPick').textContent=state.pickQty};$('#directAdd').onclick=addPickedProduct;
  $('#liveManualSearch').addEventListener('input',e=>e.target.value=productCode(e.target.value));$('#liveManualSearchBtn').onclick=()=>searchLiveManualProduct();$('#liveManualSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchLiveManualProduct()}});$('#liveManualColor').onchange=()=>refreshPickerSizes('liveManual',$('#liveManualSearch').value);$('#liveManualSize').onchange=()=>updatePickerSelection('liveManual',$('#liveManualSearch').value);$('#liveManualMinus').onclick=()=>{state.livePickQty=Math.max(1,state.livePickQty-1);$('#liveManualQty').textContent=state.livePickQty};$('#liveManualPlus').onclick=()=>{const m=Math.max(1,Number(state.livePicked?.stock||1));state.livePickQty=Math.min(m,state.livePickQty+1);$('#liveManualQty').textContent=state.livePickQty};$('#liveManualAdd').onclick=addLivePicked;
  ['directNick','directReceiver','directPhone'].forEach(id=>$('#'+id)?.addEventListener('input',()=>{state.vip.direct={isVip:false,taxExcluded:false,freeShipping:false};updateTotals('direct');scheduleVipCheck('direct')}));['liveReceiver','livePhone2'].forEach(id=>$('#'+id)?.addEventListener('input',()=>{state.vip.live={isVip:false,taxExcluded:false,freeShipping:false};updateTotals('live');scheduleVipCheck('live')}));
- $$('.simple-choice[data-pay-target]').forEach(b=>b.onclick=()=>selectPayment(b.dataset.payTarget,b.dataset.pay));$$('.simple-choice[data-ship-target]').forEach(b=>b.onclick=()=>selectShipping(b.dataset.shipTarget,b.dataset.ship));$('#directSubmit').onclick=()=>submitCheckout('direct');$('#liveSubmit').onclick=()=>submitCheckout('live');$('#completeCopy').onclick=copyOrderNo;const hadCatalogCache=hydrateCatalogCache();loadConfig();if(!hadCatalogCache){fetchCatalog(false).catch(()=>{})}else{setTimeout(()=>fetchCatalog(false).catch(()=>{}),1500)}setInterval(()=>loadConfig(),45000)
+ $$('.simple-choice[data-pay-target]').forEach(b=>b.onclick=()=>selectPayment(b.dataset.payTarget,b.dataset.pay));$$('.simple-choice[data-ship-target]').forEach(b=>b.onclick=()=>selectShipping(b.dataset.shipTarget,b.dataset.ship));$('#directSubmit').onclick=()=>submitCheckout('direct');$('#liveSubmit').onclick=()=>submitCheckout('live');$('#completeCopy').onclick=copyOrderNo;const hadCatalogCache=hydrateCatalogCache();loadConfig();if(!hadCatalogCache){fetchCatalog(false).catch(()=>{})}else{setTimeout(()=>fetchCatalog(false).catch(()=>{}),1500)}setInterval(()=>{if(!state.catalogRefreshing)fetchCatalog(true).catch(()=>{})},30000);setInterval(()=>loadConfig(),45000)
 }
 document.addEventListener('DOMContentLoaded',init);
