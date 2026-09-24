@@ -16,7 +16,21 @@ function toast(m){const t=$('#toast');t.textContent=m;t.classList.remove('hidden
 function busy(on,m='처리 중입니다...'){$('#busy').classList.toggle('show',on);$('#busyText').textContent=m}
 function show(id){$$('.screen').forEach(x=>x.classList.add('hidden'));$('#'+id).classList.remove('hidden');const home=id==='homeScreen'||id==='completeScreen';$('#backBtn').classList.toggle('hidden',home);$('#homeMenuBtn').classList.toggle('hidden',!home);scrollTo({top:0,behavior:'smooth'})}
 function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}}
-async function loadConfig(){try{state.config=await api('public_config');['directBankAccount','liveBankAccount'].forEach(id=>$('#'+id).textContent=state.config.bankAccount||'1002-5790-8378');['directBankText','liveBankText'].forEach(id=>$('#'+id).textContent=(state.config.bankName||'토스뱅크')+' - '+(state.config.bankOwner||'신성은'));renderShippingPolicy();updateTotals('direct');updateTotals('live')}catch(e){}}
+async function loadConfig(){
+  try{
+    const cfg=await api('public_config',{cacheBust:Date.now()},8000);
+    state.config=cfg||{};
+    const acct=String(state.config.bankAccount||'').trim(),bank=String(state.config.bankName||'').trim(),owner=String(state.config.bankOwner||'').trim();
+    ['directBankAccount','liveBankAccount'].forEach(id=>{const el=$('#'+id);if(el)el.textContent=acct||'계좌정보를 확인해주세요.'});
+    ['directBankText','liveBankText'].forEach(id=>{const el=$('#'+id);if(el)el.textContent=[bank,owner].filter(Boolean).join(' - ')||'관리자 계좌 설정을 확인해주세요.'});
+    renderShippingPolicy();updateTotals('direct');updateTotals('live');
+    return true;
+  }catch(e){
+    ['directBankAccount','liveBankAccount'].forEach(id=>{const el=$('#'+id);if(el)el.textContent='계좌정보 불러오기 실패'});
+    ['directBankText','liveBankText'].forEach(id=>{const el=$('#'+id);if(el)el.textContent='새로고침 후 다시 확인해주세요.'});
+    return false;
+  }
+}
 function renderShippingPolicy(){const free=!!state.config.freeShippingEvent;$$('.free-badge').forEach(x=>x.textContent=free?'🚚 오늘 무료배송 이벤트 적용중':'🚚 20만원 이상 무료배송 자동계산');$$('[data-ship-target]').forEach(b=>{const isIsland=b.dataset.ship==='island',label=b.querySelector('b');if(!label)return;label.textContent=free?(isIsland?'제주 및 도서산간 (무료)':'기본배송비 (무료)'):(isIsland?'제주 및 도서산간 ('+money(state.config.islandShipping||7000)+')':'기본배송비 ('+money(state.config.shipping||4000)+')')})}
 function catalogCacheKey(){return'ssinne_catalog_v6315'}
 function hydrateCatalogCache(maxAge=120000){try{const x=JSON.parse(localStorage.getItem(catalogCacheKey())||'null');if(x&&Array.isArray(x.products)&&Date.now()-Number(x.ts||0)<maxAge){state.catalog=x.products;state.catalogTs=x.ts||0;state.catalogFull=true;return true}}catch(e){}return false}
@@ -33,7 +47,15 @@ async function fetchExactProduct(no){
   return products;
 }
 
-async function refreshCatalog(mode){if(state.catalogRefreshing)return;state.catalogRefreshing=true;['directCatalogRefresh','liveCatalogRefresh','liveCatalogRefresh2'].forEach(id=>{if($('#'+id))$('#'+id).disabled=true});try{busy(true,'최신 상품정보를 불러오는 중입니다...');await fetchCatalog(true);toast('상품정보를 새로고침했습니다.');if(mode==='direct'&&$('#directSearch').value)searchDirectProduct();if(mode==='live'&&$('#liveManualSearch').value)searchLiveManualProduct()}catch(e){toast(e.message)}finally{busy(false);state.catalogRefreshing=false;['directCatalogRefresh','liveCatalogRefresh','liveCatalogRefresh2'].forEach(id=>{if($('#'+id))$('#'+id).disabled=false})}}
+async function refreshCatalog(mode){
+  if(state.catalogRefreshing)return;
+  const input=mode==='live'?$('#liveManualSearch'):$('#directSearch'),no=productCode(input&&input.value);
+  if(!no)return toast('먼저 상품번호를 입력해주세요.');
+  state.catalogRefreshing=true;['directCatalogRefresh','liveCatalogRefresh','liveCatalogRefresh2'].forEach(id=>{if($('#'+id))$('#'+id).disabled=true});
+  try{busy(true,no+'번 상품정보를 확인하고 있습니다...');replaceCatalogProduct(no,[]);await fetchExactProduct(no);if(mode==='live')await searchLiveManualProduct();else await searchDirectProduct();toast(no+'번 상품정보를 새로고침했습니다.');}
+  catch(e){toast(e.message||'상품정보를 불러오지 못했습니다.');}
+  finally{busy(false);state.catalogRefreshing=false;['directCatalogRefresh','liveCatalogRefresh','liveCatalogRefresh2'].forEach(id=>{if($('#'+id))$('#'+id).disabled=false})}
+}
 function sanitizeNickInput(el){const v=cleanNick(el.value);if(el.value!==v)el.value=v;return v}
 async function searchLiveNick(){const q=sanitizeNickInput($('#liveNick')),box=$('#nickSuggestions');box.innerHTML='';state.selectedNickname='';if(!q)return;try{const r=await api('nickname_suggestions',{nickname:q});state.liveSuggestions=r.suggestions||[];const exact=state.liveSuggestions.filter(n=>n.toLowerCase()===q.toLowerCase());if(exact.length===1)state.selectedNickname=exact[0];state.liveSuggestions.forEach(n=>{const b=document.createElement('button');b.type='button';b.className='suggestion';b.textContent=n;b.onclick=()=>{state.selectedNickname=n;$('#liveNick').value=n;box.innerHTML=''};box.appendChild(b)})}catch(e){}}
 async function loadLiveOrder(){const nickname=state.selectedNickname||sanitizeNickInput($('#liveNick'));if(!nickname)return toast('닉네임을 입력해주세요.');try{busy(true,'댓글 주문을 불러오는 중입니다...');const r=await api('live_lookup',{nickname},9000);mergeCatalogProducts(r.products||[]);state.selectedNickname=nickname;state.reservations=(r.reservations||[]).map(x=>({...x}));$('#liveLoaded').classList.remove('hidden');$('#liveNick2').value=nickname;const local=getLocalShipping();if(local){$('#liveReceiver').value=local.receiver||'';$('#livePhone2').value=local.phone||'';$('#liveAddress').value=local.address||'';$('#liveDetail').value=local.detail||'';$('#liveZip').value=local.zip||'';$('#liveMemo').value=local.memo||''}renderLiveItems();updateTotals('live');refreshVip('live')}catch(e){toast(e.message)}finally{busy(false)}}
@@ -46,31 +68,16 @@ function fillProductPicker(prefix,no){const opts=optionsForNo(no);if(!opts.lengt
 function refreshPickerSizes(prefix,no,preserveSize=''){const colorId=prefix==='direct'?'directColor':'liveManualColor',sizeId=prefix==='direct'?'directSize':'liveManualSize',color=$('#'+colorId).value,sizeEl=$('#'+sizeId),opts=state.catalog.filter(p=>String(p.no)===String(no)&&p.color===color),sizes=[...new Set(opts.map(x=>x.size))],stats=sizes.map(size=>({size,available:opts.some(x=>x.size===size&&Number(x.stock||0)>0)})),hasAvailable=stats.some(x=>x.available),keep=preserveSize||sizeEl.value;sizeEl.innerHTML=stats.map(x=>`<option value="${esc(x.size)}"${hasAvailable&&!x.available?' disabled':''}>${esc(x.size)}${x.available?'':' (품절)'}</option>`).join('');const keepStat=stats.find(x=>x.size===keep&&(!hasAvailable||x.available)),first=stats.find(x=>x.available)||stats[0];if(keepStat)sizeEl.value=keepStat.size;else if(first)sizeEl.value=first.size;updatePickerSelection(prefix,no)}
 function updatePickerSelection(prefix,no){const colorId=prefix==='direct'?'directColor':'liveManualColor',sizeId=prefix==='direct'?'directSize':'liveManualSize',p=state.catalog.find(x=>String(x.no)===String(no)&&x.color===$('#'+colorId).value&&x.size===$('#'+sizeId).value)||null,sold=!p||Number(p.stock||0)<=0;if(prefix==='direct'){state.pickedProduct=p;state.pickQty=Math.min(state.pickQty||1,Math.max(1,Number(p?.stock||1)));if($('#directQtyPick'))$('#directQtyPick').textContent=state.pickQty;if($('#directAdd'))$('#directAdd').disabled=sold}else{state.livePicked=p;state.livePickQty=Math.min(state.livePickQty||1,Math.max(1,Number(p?.stock||1)));if($('#liveManualQty'))$('#liveManualQty').textContent=state.livePickQty;if($('#liveManualAdd'))$('#liveManualAdd').disabled=sold}if(p&&Number(p.stock||0)<=0)productSearchMessage(prefix,'선택한 칼라·사이즈는 품절입니다.','soldout');else if(p)productSearchMessage(prefix,'','info')}
 async function searchExactProduct(prefix,no){
-  // V6.3.27: 캐시에 있으면 서버를 기다리지 않고 즉시 표시한다.
-  const cached=optionsForNo(no);
-  if(cached.length){
-    const ok=fillProductPicker(prefix,no);
-    if(ok){productSearchMessage(prefix,'','info');return true;}
-  }
-
-  // 방금 등록한 새 상품처럼 캐시에 없는 번호만 서버에 짧게 1회 조회한다.
-  productSearchMessage(prefix,'새로 등록된 상품인지 빠르게 확인하고 있습니다...','info');
+  productSearchMessage(prefix,no+'번 상품정보를 확인하고 있습니다...','info');
   try{
     const products=await fetchExactProduct(no);
     if(!products.length){
-      if(prefix==='direct'){state.pickedProduct=null;$('#directProductBox').classList.add('hidden')}
-      else{state.livePicked=null;$('#liveManualBox').classList.add('hidden')}
-      productSearchMessage(prefix,'상품정보가 없습니다. 방금 등록한 상품이면 위의 상품정보 새로고침을 눌러주세요.','error');
-      return false;
+      if(prefix==='direct'){state.pickedProduct=null;$('#directProductBox').classList.add('hidden')}else{state.livePicked=null;$('#liveManualBox').classList.add('hidden')}
+      productSearchMessage(prefix,'해당 상품번호를 찾을 수 없습니다.','error');return false;
     }
-    const ok=fillProductPicker(prefix,no);
-    if(!ok){productSearchMessage(prefix,'상품정보가 없습니다.','error');return false}
-    productSearchMessage(prefix,'','info');
-    return true;
-  }catch(e){
-    productSearchMessage(prefix,'서버 확인이 늦어졌습니다. 상품정보 새로고침을 한 번 눌러주세요.','warn');
-    return false;
-  }
+    const ok=fillProductPicker(prefix,no);if(!ok){productSearchMessage(prefix,'상품정보가 없습니다.','error');return false}
+    productSearchMessage(prefix,'','info');return true;
+  }catch(e){productSearchMessage(prefix,'서버 연결이 지연되고 있습니다. 잠시 후 검색을 다시 눌러주세요.','warn');return false;}
 }
 
 async function searchDirectProduct(){const no=productCode($('#directSearch').value);$('#directSearch').value=no;if(!no){productSearchMessage('direct','상품번호를 입력해주세요.','error');return}const ok=await searchExactProduct('direct',no);if(!ok)return;$('#directProductBox').classList.remove('hidden');state.pickQty=1;$('#directQtyPick').textContent='1';updatePickerSelection('direct',no)}
@@ -100,6 +107,6 @@ async function init(){
  $('#directColor').onchange=()=>refreshPickerSizes('direct',$('#directSearch').value);$('#directSize').onchange=()=>updatePickerSelection('direct',$('#directSearch').value);$('#directMinus').onclick=()=>{state.pickQty=Math.max(1,state.pickQty-1);$('#directQtyPick').textContent=state.pickQty};$('#directPlus').onclick=()=>{const m=Math.max(1,Number(state.pickedProduct?.stock||1));state.pickQty=Math.min(m,state.pickQty+1);$('#directQtyPick').textContent=state.pickQty};$('#directAdd').onclick=addPickedProduct;
  $('#liveManualSearch').addEventListener('input',e=>e.target.value=productCode(e.target.value));$('#liveManualSearchBtn').onclick=()=>searchLiveManualProduct();$('#liveManualSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchLiveManualProduct()}});$('#liveManualColor').onchange=()=>refreshPickerSizes('liveManual',$('#liveManualSearch').value);$('#liveManualSize').onchange=()=>updatePickerSelection('liveManual',$('#liveManualSearch').value);$('#liveManualMinus').onclick=()=>{state.livePickQty=Math.max(1,state.livePickQty-1);$('#liveManualQty').textContent=state.livePickQty};$('#liveManualPlus').onclick=()=>{const m=Math.max(1,Number(state.livePicked?.stock||1));state.livePickQty=Math.min(m,state.livePickQty+1);$('#liveManualQty').textContent=state.livePickQty};$('#liveManualAdd').onclick=addLivePicked;
  ['directNick','directReceiver','directPhone'].forEach(id=>$('#'+id)?.addEventListener('input',()=>{state.vip.direct={isVip:false,taxExcluded:false,freeShipping:false};updateTotals('direct');scheduleVipCheck('direct')}));['liveReceiver','livePhone2'].forEach(id=>$('#'+id)?.addEventListener('input',()=>{state.vip.live={isVip:false,taxExcluded:false,freeShipping:false};updateTotals('live');scheduleVipCheck('live')}));
- $$('.simple-choice[data-pay-target]').forEach(b=>b.onclick=()=>selectPayment(b.dataset.payTarget,b.dataset.pay));$$('.simple-choice[data-ship-target]').forEach(b=>b.onclick=()=>selectShipping(b.dataset.shipTarget,b.dataset.ship));$('#directSubmit').onclick=()=>submitCheckout('direct');$('#liveSubmit').onclick=()=>submitCheckout('live');$('#completeCopy').onclick=copyOrderNo;const hadCatalogCache=hydrateCatalogCache();loadConfig();if(!hadCatalogCache){fetchCatalog(false).catch(()=>{})}else{setTimeout(()=>fetchCatalog(false).catch(()=>{}),1500)}setInterval(()=>{if(!state.catalogRefreshing)fetchCatalog(true).catch(()=>{})},30000);setInterval(()=>loadConfig(),45000)
+ $$('.simple-choice[data-pay-target]').forEach(b=>b.onclick=()=>selectPayment(b.dataset.payTarget,b.dataset.pay));$$('.simple-choice[data-ship-target]').forEach(b=>b.onclick=()=>selectShipping(b.dataset.shipTarget,b.dataset.ship));$('#directSubmit').onclick=()=>submitCheckout('direct');$('#liveSubmit').onclick=()=>submitCheckout('live');$('#completeCopy').onclick=copyOrderNo;loadConfig();setInterval(()=>loadConfig(),30000)
 }
 document.addEventListener('DOMContentLoaded',init);
