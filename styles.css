@@ -731,3 +731,27 @@ html,body{max-width:100%;overflow-x:hidden}
  .home-comment-example{font-size:13px;padding:9px}
  .home-guide-steps{font-size:12px;line-height:1.6}
 }
+
+/* V7.2.27: 안내 시안에 맞춘 첫 화면, 브랜드 장식 배너 제거 */
+#homeScreen .home-order-guides{margin-top:4px;gap:12px}
+#homeScreen .home-order-guide{border-radius:22px;border:1px solid #f4d4df;background:#fffafa;padding:18px 20px;box-shadow:0 3px 12px rgba(199,73,113,.045)}
+#homeScreen .home-order-guide-featured{background:linear-gradient(120deg,#fff1f6,#fff9fc);border-color:#f3c4d6}
+#homeScreen .home-order-guide h2{color:#c93670;font-size:19px;gap:9px;margin-bottom:10px}
+#homeScreen .home-order-guide:not(.home-order-guide-featured) h2{color:#28304a}
+#homeScreen .home-guide-num{background:#e23e79;width:34px;height:34px;font-size:18px}
+#homeScreen .home-order-guide h2 em{background:#ffe1ec;color:#be2e67;padding:4px 10px}
+#homeScreen .home-comment-example{border:1px solid #f2cadb;background:white;border-radius:12px;padding:13px 14px;margin:12px 0;font-size:15px}
+#homeScreen .home-comment-example strong{display:block;color:#b92b63;font-size:19px;margin-top:5px;letter-spacing:.2px}
+#homeScreen .home-guide-steps{background:#fff;border:1px solid #f4d4df;border-radius:12px;padding:12px;color:#be326c}
+#homeScreen .home-choice-stack{margin-top:16px}
+@media(max-width:600px){
+ #homeScreen .home-order-guides{gap:9px}
+ #homeScreen .home-order-guide{padding:15px 13px;border-radius:16px}
+ #homeScreen .home-order-guide h2{font-size:16px;line-height:1.5}
+ #homeScreen .home-guide-num{width:30px;height:30px;font-size:16px}
+ #homeScreen .home-order-guide h2 em{font-size:12px}
+ #homeScreen .home-order-guide p{font-size:14px;line-height:1.65}
+ #homeScreen .home-comment-example{font-size:13px;padding:11px}
+ #homeScreen .home-comment-example strong{font-size:17px}
+ #homeScreen .home-guide-steps{font-size:13px;line-height:1.6}
+}
