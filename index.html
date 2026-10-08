@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#fff8fb">
-<title>씬느샵 주문서 V7.2.22</title>
-<link rel="stylesheet" href="styles.css?v=7.2.22">
+<title>씬느샵 주문서 V7.2.25</title>
+<link rel="stylesheet" href="styles.css?v=7.2.24">
 </head>
 <body class="shop-body">
 <div class="shop-shell customer-order-shell">
@@ -18,13 +18,31 @@
 
   <!-- 주문서 선택 -->
   <section id="homeScreen" class="screen">
-    <div class="home-visual cardless">
-      <div class="home-note note-left">예쁜 일상이<br>특별해지는 곳<br>씬느샵 ♡</div>
-      <div class="home-note note-right">좋은 옷,<br>좋은 하루 ♡</div>
-      <div class="home-decor bag-decor">🛍</div>
-      <div class="home-decor flower-decor">🌷</div>
+    <div class="home-visual home-visual-guide">
       <div class="home-brand-big">씬느샵 <span>♥</span><small>LIVE SHOPPING</small></div>
-      <p>라이브 방송에서 미리 예약하신 상품을 불러오시거나,<br>직접 주문서를 작성하실 수 있어요.</p>
+      <p class="home-guide-subtitle">주문 전 꼭 확인해 주세요 ♡</p>
+    </div>
+    <div class="home-order-guides" aria-label="씬느샵 주문 이용 안내">
+      <article class="home-order-guide home-order-guide-featured">
+        <h2><span class="home-guide-num">1</span> 라이브 주문 불러오기 활용 방법 <em>주문이 더 쉬워집니다!</em></h2>
+        <p>유튜브 라이브 댓글에 <strong>상품번호 + 칼라 + 사이즈 + 저요</strong>를 <strong>한 줄로</strong> 남겨주세요.</p>
+        <div class="home-comment-example">💬 댓글 예시 <strong>123 블랙 FREE 저요</strong></div>
+        <p class="home-guide-small">주문표현: 저요 · ㅈㅇ · 주문이요 · 주문요 · 주문 · ㅈㅁ</p>
+        <div class="home-guide-steps">닉네임 검색 → 주문상품 불러오기 → 상품 확인 → 주문서 제출</div>
+      </article>
+      <article class="home-order-guide">
+        <h2><span class="home-guide-num">2</span> 주문 후 입금 안내</h2>
+        <p>주문서를 제출한 뒤 <strong>최종 결제금액</strong>을 확인해 주세요. <strong>무통장입금</strong>을 선택하셨다면 안내된 금액으로 입금해 주세요.</p>
+      </article>
+      <article class="home-order-guide">
+        <h2><span class="home-guide-num">3</span> 배송 안내</h2>
+        <p>입금 확인 후 배송까지 <strong>약 3~5일</strong> 소요될 수 있습니다. 상품 수급 상황에 따라 지연될 수 있어요.</p>
+      </article>
+      <article class="home-order-guide">
+        <h2><span class="home-guide-num">4</span> 교환 · 반품 안내</h2>
+        <p>창고방송 상품 특성상 교환·반품이 제한되는 경우가 있습니다. 실밥이나 미세 스크래치는 정도에 따라 불량에 해당하지 않을 수 있습니다.</p>
+        <p class="home-guide-small">※ 단순 변심에 대한 법정 청약철회 권리와 실제 불량·오배송 등 법령상 권리는 보장됩니다.</p>
+      </article>
     </div>
 
     <div class="home-choice-stack">
@@ -56,26 +74,38 @@
       <div><h1>라이브 주문 불러오기</h1><p>라이브 방송에서 예약한 상품을 불러와 주문서를 이어서 작성할 수 있어요.</p></div>
     </div>
 
+    <div class="live-comment-guide" aria-label="라이브 댓글 주문 작성 방법">
+      <div class="live-comment-guide-title">💬 라이브 댓글 주문 방법</div>
+      <p>유튜브 방송 댓글에 <strong>상품번호 + 칼라 + 사이즈 + 주문표현</strong>을 <strong>한 줄로</strong> 남겨주세요.</p>
+      <div class="live-comment-guide-examples">
+        <span>예시 ① <strong>123 블랙 FREE 저요</strong></span>
+        <span>예시 ② <strong>205 아이보리 L ㅈㅇ</strong></span>
+        <span>예시 ③ <strong>307 핑크 M 주문이요</strong></span>
+      </div>
+      <p class="live-comment-guide-keywords">주문표현: <strong>저요 · ㅈㅇ · 주문이요 · 주문요 · 주문 · ㅈㅁ</strong></p>
+      <p class="live-comment-guide-notice">※ 상품번호만 쓰거나 내용을 여러 줄로 나누면 주문이 인식되지 않을 수 있어요. 댓글을 남긴 뒤 아래에서 유튜브 닉네임으로 주문을 불러와 주세요.</p>
+    </div>
+
     <div class="order-section-card">
       <div class="order-section-head">
-        <div><h2>예약 정보 확인</h2><p>라이브 주문에 사용한 닉네임만 입력해주세요.</p></div>
+        <div><h2>1. 유튜브 닉네임 입력</h2><p>방송에서 댓글을 작성할 때 사용한 이름을 입력해주세요. @는 빼셔도 됩니다.</p></div>
         <button id="liveCatalogRefresh" class="btn mini ghost refresh-mini" type="button">↻ 상품정보 새로고침</button>
       </div>
       <div class="two-col-fields one-col-mobile">
-        <label><span>닉네임</span><input id="liveNick" class="input" placeholder="씬느샵-s0t" autocomplete="off"><div id="nickSuggestions" class="suggestions"></div></label>
+        <label><span>유튜브 닉네임</span><input id="liveNick" class="input" placeholder="예: 방송 댓글에 표시되는 이름" autocomplete="off" enterkeyhint="search"><div id="nickSuggestions" class="suggestions"></div><small id="liveNickHint" class="live-nick-hint">유튜브 댓글에 표시되는 닉네임을 입력해주세요.</small></label>
       </div>
-      <button id="liveLoad" class="btn primary w100 order-main-button" type="button">✓ 주문 불러오기</button>
+      <button id="liveLoad" class="btn primary w100 order-main-button" type="button">🔎 내 주문상품 불러오기</button><div id="liveLookupResult" class="live-lookup-result hidden" role="status" aria-live="polite"></div><button id="liveDirectFallback" class="btn ghost w100 live-direct-fallback" type="button">댓글 주문이 없나요? 상품번호로 직접 주문하기 →</button>
     </div>
 
     <div id="liveLoaded" class="hidden commerce-layout live-commerce-layout">
       <div class="commerce-main">
         <div class="order-section-card cart-summary-card live-cart-main">
-          <div class="order-section-head"><div><h2>불러온 상품</h2><p>상품번호·옵션·수량을 확인하고 필요한 상품만 수정해주세요.</p></div><span id="liveCartCount" class="pill">총 0개</span></div>
+          <div class="order-section-head"><div><h2>2. 불러온 상품 확인</h2><p>상품번호·칼라·사이즈·수량을 확인하세요. 빠진 상품은 아래에서 추가할 수 있어요.</p></div><span id="liveCartCount" class="pill">총 0개</span></div>
           <div id="liveItems" class="text-item-list"></div>
         </div>
 
         <div class="order-section-card product-pick-card">
-          <div class="order-section-head product-input-head"><div><h2>빠진 상품 추가</h2><p>댓글 주문에 빠진 상품은 상품번호로 바로 추가할 수 있어요.</p></div><button id="liveCatalogRefresh2" class="btn mini ghost refresh-mini" type="button">↻ 상품정보 새로고침</button></div>
+          <div class="order-section-head product-input-head"><div><h2>빠진 상품 추가하기 (선택)</h2><p>댓글 주문에 빠진 상품은 상품번호로 바로 추가할 수 있어요.</p></div><button id="liveCatalogRefresh2" class="btn mini ghost refresh-mini" type="button">↻ 상품정보 새로고침</button></div>
           <div class="product-search-row"><label>상품번호</label><input id="liveManualSearch" class="input" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="예: 105, A105, SS-12"><button id="liveManualSearchBtn" class="btn primary" type="button">⌕ 검색</button></div>
           <div id="liveManualSearchMessage" class="product-search-message hidden"></div>
           <div id="liveManualBox" class="direct-product-box hidden">
@@ -216,6 +246,6 @@
 <div id="busy" class="modal" role="status" aria-live="polite"><div class="modal-card complete order-wait"><div class="order-wait-icon">🛍️</div><div class="spinner"></div><h2 id="busyText">처리 중입니다...</h2><div id="submitProgress" class="submit-progress hidden"><div>✓ 주문정보 확인</div><div>◌ 상품·재고 확인 및 주문 저장 중</div><div class="submit-progress-tip">저장 결과가 확인되면 자동으로 완료 화면이 열립니다.<br>창을 닫거나 다시 누르지 말아주세요.</div></div><div class="sub">네트워크 상태에 따라 시간이 더 걸릴 수 있습니다.</div></div></div>
 <div id="toast" class="toast-message hidden"></div>
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script src="config.js?v=7.2.22"></script>
-<script src="app.js?v=7.2.22"></script>
+<script src="config.js?v=7.2.24"></script>
+<script src="app.js?v=7.2.24"></script>
 </body></html>

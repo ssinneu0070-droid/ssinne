@@ -682,3 +682,52 @@ html,body{max-width:100%;overflow-x:hidden}
 .order-wait h2{font-size:20px;line-height:1.5}
 .submit-progress{margin:20px 0;text-align:left;background:#faf6fb;border-radius:15px;padding:17px;color:#55445b;font-size:15px;line-height:2.1}
 .submit-progress-tip{margin-top:10px;font-size:13px;line-height:1.65;color:#736879}
+
+/* V7.2.23: 쉬운 라이브 주문 불러오기 안내 */
+.live-nick-hint{display:block;margin-top:9px;font-size:14px;line-height:1.55;color:#6d6177;font-weight:500}
+.live-lookup-result{padding:14px 16px;margin-top:12px;border-radius:12px;font-size:15px;line-height:1.65;font-weight:650;overflow-wrap:anywhere}
+.live-result-success{background:#f0f9f4;color:#22694b;border:1px solid #ccebd9}
+.live-result-error{background:#fff5f5;color:#a33c46;border:1px solid #f2cbd0}
+.live-direct-fallback{margin-top:10px;min-height:48px;font-size:15px}
+#liveLoad:disabled{opacity:.65;cursor:wait}
+@media(max-width:640px){#liveNick{min-height:54px;font-size:18px}#liveLoad{min-height:56px;font-size:17px}.suggestions button{min-height:45px;font-size:16px}}
+
+/* V7.2.24: 라이브 댓글 주문 안내 (기존 주문서 디자인 유지) */
+.live-comment-guide{margin:0 0 16px;padding:18px 20px;border:1px solid #e8dcfa;border-radius:16px;background:#faf7ff;color:#332c42;line-height:1.65}
+.live-comment-guide-title{font-size:18px;font-weight:800;margin-bottom:8px}
+.live-comment-guide p{margin:6px 0;font-size:15px}
+.live-comment-guide-examples{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.live-comment-guide-examples span{display:inline-block;padding:8px 12px;border-radius:10px;background:#fff;border:1px solid #e8e1ef;font-size:15px}
+.live-comment-guide-keywords{font-weight:500}
+.live-comment-guide .live-comment-guide-notice{color:#6c5f77;font-size:14px;margin-top:10px}
+@media(max-width:600px){.live-comment-guide{padding:15px 14px;margin-bottom:12px}.live-comment-guide-title{font-size:17px}.live-comment-guide-examples{display:grid;grid-template-columns:1fr}.live-comment-guide-examples span{font-size:16px}.live-comment-guide p{font-size:15px}}
+
+/* V7.2.25 — 홈 화면 주문 안내. 기존 주문 버튼 및 동작은 그대로 유지 */
+.home-visual.home-visual-guide{min-height:155px;padding:28px 20px 22px;gap:8px;background:linear-gradient(135deg,#fff7fa,#ffe8f0);box-shadow:none}
+.home-visual-guide .home-brand-big{font-size:40px}
+.home-visual-guide .home-brand-big small{font-size:11px;margin-top:7px}
+.home-visual .home-guide-subtitle{font-size:16px;margin:10px 0 0;font-weight:750;color:#5d5962}
+.home-order-guides{display:grid;gap:10px;margin-top:14px}
+.home-order-guide{background:#fff;border:1px solid #f4dce5;border-radius:17px;padding:17px 19px;color:#4a4b57;line-height:1.6}
+.home-order-guide-featured{background:linear-gradient(135deg,#fff5f9,#fff);border-color:#f3c8d8}
+.home-order-guide h2{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:19px;line-height:1.4;color:#c93970;margin:0 0 9px;font-weight:850}
+.home-guide-num{display:inline-grid;place-items:center;flex:none;background:#df4e80;color:white;border-radius:50%;width:29px;height:29px;font-size:16px}
+.home-order-guide h2 em{font-style:normal;background:#ffe2ed;color:#bd3066;border-radius:20px;padding:3px 9px;font-size:13px}
+.home-order-guide p{margin:0;font-size:15px}
+.home-comment-example{margin:10px 0;padding:10px 12px;background:white;border:1px solid #f2d7e1;border-radius:10px;font-size:15px}
+.home-comment-example strong{display:inline-block;margin-left:7px;color:#c93670}
+.home-order-guide .home-guide-small{font-size:12px;color:#74717b;margin-top:7px}
+.home-guide-steps{margin-top:10px;padding:9px 11px;background:#ffeaf2;border-radius:9px;color:#b93768;font-size:13px;font-weight:750}
+@media(max-width:600px){
+ .home-visual.home-visual-guide{min-height:120px;padding:20px 12px 17px}
+ .home-visual-guide .home-brand-big{font-size:34px}
+ .home-visual .home-guide-subtitle{font-size:14px;margin:5px 0 0}
+ .home-order-guides{gap:8px;margin-top:10px}
+ .home-order-guide{padding:13px 12px;border-radius:13px}
+ .home-order-guide h2{font-size:16px;gap:6px}
+ .home-guide-num{width:25px;height:25px;font-size:14px}
+ .home-order-guide h2 em{font-size:11px}
+ .home-order-guide p{font-size:13px}
+ .home-comment-example{font-size:13px;padding:9px}
+ .home-guide-steps{font-size:12px;line-height:1.6}
+}

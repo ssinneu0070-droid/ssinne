@@ -1,6 +1,6 @@
 const API_URL=(window.SSINNE_CONFIG||{}).API_URL||'';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const state={configLoadedAt:0,productRequests:{},productCacheAt:{},searchSeq:{direct:0,liveManual:0},submitInProgress:false,cart:[],reservations:[],pending:[],selectedNickname:'',config:{},products:{},pickedProduct:null,pickQty:1,livePicked:null,livePickQty:1,submitToken:'',lastOrderNo:'',ctx:{direct:null,live:null},ctxSeq:{direct:0,live:0},pendingPickIndex:-1};
+const state={configLoadedAt:0,productRequests:{},productCacheAt:{},searchSeq:{direct:0,liveManual:0},submitInProgress:false,cart:[],reservations:[],pending:[],selectedNickname:'',config:{},products:{},pickedProduct:null,pickQty:1,livePicked:null,livePickQty:1,submitToken:'',lastOrderNo:'',ctx:{direct:null,live:null},ctxSeq:{direct:0,live:0},pendingPickIndex:-1,liveNickSeq:0,liveLoadSeq:0};
 const money=n=>Number(n||0).toLocaleString('ko-KR')+'원';
 const esc=s=>String(s==null?'':s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const cleanNick=s=>String(s||'').replace(/@/g,'').trim();
@@ -40,8 +40,57 @@ async function lookupProduct(no,force=false){
  try{return await job}finally{if(state.productRequests[no]===job)delete state.productRequests[no]}
 }
 function sanitizeNickInput(el){const v=cleanNick(el.value);if(el.value!==v)el.value=v;return v}
-async function searchLiveNick(){const q=sanitizeNickInput($('#liveNick')),box=$('#nickSuggestions');box.innerHTML='';state.selectedNickname='';if(q.length<2)return;try{const r=await api('nickname_suggestions',{nickname:q},6000),list=r.suggestions||[],exact=list.filter(n=>n.toLowerCase()===q.toLowerCase());if(exact.length===1)state.selectedNickname=exact[0];list.forEach(n=>{const b=document.createElement('button');b.type='button';b.className='suggestion';b.textContent=n;b.onclick=()=>{state.selectedNickname=n;$('#liveNick').value=n;box.innerHTML=''};box.appendChild(b)})}catch(e){}}
-async function loadLiveOrder(){const nickname=state.selectedNickname||sanitizeNickInput($('#liveNick'));if(!nickname)return toast('닉네임을 입력해주세요.');try{busy(true,'주문댓글을 불러오는 중입니다...');const r=await api('live_lookup',{nickname},8000);state.selectedNickname=nickname;state.reservations=(r.reservations||[]).map(x=>({...x}));state.pending=(r.pending||[]).map(x=>({...x}));[...state.reservations,...state.pending].forEach(x=>{if(x.options)cacheOptions(x.productNo,x.options);else if(x.productNo&&x.name){const a=optionsForNo(x.productNo);if(!a.length&&x.color&&x.size)cacheOptions(x.productNo,[{no:x.productNo,name:x.name,color:x.color,size:x.size,price:x.price,stock:x.stock}])}});$('#liveLoaded').classList.remove('hidden');$('#liveNick2').value=nickname;const local=getLocalShipping();if(local){$('#liveReceiver').value=local.receiver||'';$('#livePhone2').value=local.phone||'';$('#liveAddress').value=local.address||'';$('#liveDetail').value=local.detail||'';$('#liveZip').value=local.zip||'';$('#liveMemo').value=local.memo||''}renderLiveItems();scheduleContext('live')}catch(e){toast(e.message)}finally{busy(false)}}
+async function searchLiveNick(){
+ const q=sanitizeNickInput($('#liveNick')),box=$('#nickSuggestions'),seq=++state.liveNickSeq;
+ box.innerHTML='';state.selectedNickname='';
+ if(q.length<2){setLiveHint('유튜브 댓글에 표시되는 닉네임을 입력해주세요.');return;}
+ setLiveHint('닉네임을 찾고 있어요…');
+ try{
+  const r=await api('nickname_suggestions',{nickname:q},10000);
+  if(seq!==state.liveNickSeq||sanitizeNickInput($('#liveNick'))!==q)return;
+  const list=(r.suggestions||[]).slice(0,10),exact=list.find(n=>n.toLocaleLowerCase()===q.toLocaleLowerCase());
+  if(exact)state.selectedNickname=exact;
+  list.forEach(n=>{const b=document.createElement('button');b.type='button';b.className='suggestion';b.textContent=n;b.onclick=()=>{state.liveNickSeq++;state.selectedNickname=n;$('#liveNick').value=n;box.innerHTML='';setLiveHint('닉네임을 선택했어요. 아래 버튼을 눌러 주문상품을 불러오세요.');};box.appendChild(b)});
+  setLiveHint(list.length?'아래에 내 닉네임이 보이면 눌러주세요. 없으면 입력한 닉네임으로 바로 불러올 수 있어요.':'추천 닉네임이 없어도 괜찮아요. 입력한 닉네임으로 주문상품을 찾아보세요.');
+ }catch(e){if(seq===state.liveNickSeq)setLiveHint('닉네임 추천이 지연되고 있어요. 아래 주문상품 불러오기 버튼을 눌러주세요.');}
+}
+function setLiveHint(message){const el=$('#liveNickHint');if(el)el.textContent=message;}
+function setLiveResult(message,type='info'){
+ const el=$('#liveLookupResult');if(!el)return;
+ el.textContent=message;el.classList.remove('hidden','live-result-error','live-result-success');
+ el.classList.add(type==='error'?'live-result-error':'live-result-success');
+}
+async function loadLiveOrder(){
+ const typed=sanitizeNickInput($('#liveNick'));
+ const nickname=(state.selectedNickname&&state.selectedNickname.toLocaleLowerCase()===typed.toLocaleLowerCase()?state.selectedNickname:typed);
+ if(!nickname){$('#liveNick').focus();return setLiveResult('먼저 유튜브 닉네임을 입력해주세요.','error');}
+ if(state.liveLoading)return;
+ state.liveLoading=true;const seq=++state.liveLoadSeq,btn=$('#liveLoad');btn.disabled=true;
+ $('#liveLoaded').classList.add('hidden');setLiveResult('주문하신 상품을 찾고 있어요. 잠시만 기다려주세요.');
+ try{
+  let r;
+  for(let attempt=0;attempt<2;attempt++){
+   try{r=await api('live_lookup',{nickname},attempt?18000:14000);break}
+   catch(e){if(attempt||!['TIMEOUT','NETWORK'].includes(e.code))throw e;}
+  }
+  if(seq!==state.liveLoadSeq)return;
+  const reservations=(r.reservations||[]).map(x=>({...x})),pending=(r.pending||[]).map(x=>({...x}));
+  if(!reservations.length&&!pending.length){
+   state.reservations=[];state.pending=[];state.selectedNickname='';
+   setLiveResult('불러올 주문상품이 없습니다. 유튜브 댓글의 닉네임과 같은지 확인해주세요. 주문 댓글이 아직 수집되지 않았을 수도 있어요. 아래에서 다시 검색하거나 직접 주문서를 작성할 수 있습니다.','error');
+   return;
+  }
+  state.selectedNickname=nickname;state.reservations=reservations;state.pending=pending;
+  [...reservations,...pending].forEach(x=>{if(x.options)cacheOptions(x.productNo,x.options);else if(x.productNo&&x.name){const a=optionsForNo(x.productNo);if(!a.length&&x.color&&x.size)cacheOptions(x.productNo,[{no:x.productNo,name:x.name,color:x.color,size:x.size,price:x.price,stock:x.stock}])}});
+  $('#liveLoaded').classList.remove('hidden');$('#liveNick2').value=nickname;
+  const local=getLocalShipping();if(local){$('#liveReceiver').value=local.receiver||'';$('#livePhone2').value=local.phone||'';$('#liveAddress').value=local.address||'';$('#liveDetail').value=local.detail||'';$('#liveZip').value=local.zip||'';$('#liveMemo').value=local.memo||''}
+  renderLiveItems();scheduleContext('live');
+  const count=reservations.reduce((n,x)=>n+Number(x.qty||1),0);
+  setLiveResult('주문상품 '+count+'개를 찾았어요! 아래에서 상품을 확인하고 배송정보를 입력해주세요.'+(pending.length?' 옵션 선택이 필요한 상품도 '+pending.length+'건 있어요.':''));
+  $('#liveLoaded').scrollIntoView({behavior:'smooth',block:'start'});
+ }catch(e){setLiveResult('주문상품을 불러오지 못했어요. 닉네임을 확인한 뒤 다시 눌러주세요. '+(e.code==='TIMEOUT'||e.code==='NETWORK'?'연결이 지연되고 있습니다.':e.message),'error')}
+ finally{state.liveLoading=false;btn.disabled=false;}
+}
 function itemInfo(it){return optionsForNo(it.productNo).find(p=>p.color===it.color&&p.size===it.size)||it}
 function getLiveCart(){return state.reservations.map(r=>{const p=itemInfo(r);return{...r,name:p.name||r.name||'',price:Number(p.price||r.price||0),stock:Number(p.stock??r.stock??0)}})}
 function renderLiveItems(){const exact=state.reservations.map((x,i)=>{const p=itemInfo(x);return`<div class="customer-item-line"><div class="item-main"><small>상품번호 ${esc(x.productNo)}</small><b>${esc(p.name||x.productNo+'번 상품')}</b><span>칼라: ${esc(x.color)}　|　사이즈: ${esc(x.size)}</span></div><div class="qtybox"><button type="button" onclick="liveCartQty(${i},-1)">−</button><b>${x.qty}</b><button type="button" onclick="liveCartQty(${i},1)">+</button></div><strong>${money(Number(p.price||0)*x.qty)}</strong><button class="item-delete" type="button" onclick="removeLive(${i})">삭제</button></div>`}).join('');const pending=state.pending.map((x,i)=>`<div class="customer-item-line pending-option"><div class="item-main"><small>댓글 주문 · 상품번호 ${esc(x.productNo)}</small><b>옵션 선택이 필요합니다</b><span>${esc(x.color?('칼라 '+x.color+' / '):'')}${esc(x.text||'')}</span></div><button class="btn secondary" type="button" onclick="choosePending(${i})">옵션 선택</button></div>`).join('');$('#liveItems').innerHTML=(exact+pending)||'<div class="empty-list">불러온 주문댓글이 없습니다. 아래에서 상품을 직접 추가할 수 있어요.</div>';const c=$('#liveCartCount');if(c)c.textContent='총 '+state.reservations.reduce((n,x)=>n+Number(x.qty||0),0)+'개'}
@@ -118,7 +167,7 @@ function restoreLocalShipping(){const v=getLocalShipping();if(!v)return;$('#dire
 async function refreshCurrentProduct(mode){const no=mode==='direct'?$('#directSearch').value:$('#liveManualSearch').value;if(!no)return toast('먼저 상품번호를 입력해주세요.');if(mode==='direct')return searchDirectProduct(true);return searchLiveManualProduct(true)}
 async function init(){
  $('#goLive').onclick=()=>{show('liveScreen');loadConfig(false)};$('#goDirect').onclick=()=>{show('directScreen');loadConfig(false);restoreLocalShipping()};$('#backBtn').onclick=()=>show('homeScreen');
- $('#liveNick').addEventListener('input',debounce(searchLiveNick,500));$('#liveNick').addEventListener('paste',()=>setTimeout(()=>sanitizeNickInput($('#liveNick')),0));$('#liveLoad').onclick=loadLiveOrder;$('#directNick').addEventListener('input',e=>sanitizeNickInput(e.target));$('#directNick').addEventListener('paste',()=>setTimeout(()=>sanitizeNickInput($('#directNick')),0));
+ $('#liveNick').addEventListener('input',debounce(searchLiveNick,450));$('#liveNick').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();loadLiveOrder()}});$('#liveNick').addEventListener('paste',()=>setTimeout(()=>sanitizeNickInput($('#liveNick')),0));$('#liveLoad').onclick=loadLiveOrder;const liveDirect=$('#liveDirectFallback');if(liveDirect)liveDirect.onclick=()=>$('#goDirect').click();$('#directNick').addEventListener('input',e=>sanitizeNickInput(e.target));$('#directNick').addEventListener('paste',()=>setTimeout(()=>sanitizeNickInput($('#directNick')),0));
  $('#directSearch').addEventListener('input',e=>e.target.value=productCode(e.target.value));$('#directSearchBtn').onclick=()=>searchDirectProduct(false);$('#directSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchDirectProduct(false)}});$('#directCatalogRefresh').onclick=()=>refreshCurrentProduct('direct');$('#liveCatalogRefresh').onclick=()=>refreshCurrentProduct('live');$('#liveCatalogRefresh2').onclick=()=>refreshCurrentProduct('live');
  $('#directColor').onchange=()=>refreshPickerSizes('direct',$('#directSearch').value);$('#directSize').onchange=()=>updatePickerSelection('direct',$('#directSearch').value);$('#directMinus').onclick=()=>{state.pickQty=Math.max(1,state.pickQty-1);$('#directQtyPick').textContent=state.pickQty};$('#directPlus').onclick=()=>{const m=Math.max(1,Number(state.pickedProduct?.stock||1));state.pickQty=Math.min(m,state.pickQty+1);$('#directQtyPick').textContent=state.pickQty};$('#directAdd').onclick=addPickedProduct;
  $('#liveManualSearch').addEventListener('input',e=>e.target.value=productCode(e.target.value));$('#liveManualSearchBtn').onclick=()=>searchLiveManualProduct(false);$('#liveManualSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchLiveManualProduct(false)}});$('#liveManualColor').onchange=()=>refreshPickerSizes('liveManual',$('#liveManualSearch').value);$('#liveManualSize').onchange=()=>updatePickerSelection('liveManual',$('#liveManualSearch').value);$('#liveManualMinus').onclick=()=>{state.livePickQty=Math.max(1,state.livePickQty-1);$('#liveManualQty').textContent=state.livePickQty};$('#liveManualPlus').onclick=()=>{const m=Math.max(1,Number(state.livePicked?.stock||1));state.livePickQty=Math.min(m,state.livePickQty+1);$('#liveManualQty').textContent=state.livePickQty};$('#liveManualAdd').onclick=addLivePicked;
