@@ -675,3 +675,10 @@ html,body{max-width:100%;overflow-x:hidden}
 
 /* V7.2.16 입금관리 화면비율 최적화 */
 @media(min-width:1201px){#panel-bank .bank-result-card{padding:12px 14px!important}#panel-bank .bank-action-grid{gap:7px;margin-bottom:8px}#panel-bank .bank-action-card{min-height:54px;padding:7px}#panel-bank .bank-status-row-5{gap:7px!important;margin:7px 0 9px}#panel-bank .bank-status-row-5 .status-card{padding:9px 10px;font-size:13px}#panel-bank .bank-match-tools{grid-template-columns:minmax(220px,1fr) auto auto auto auto minmax(190px,.8fr);gap:6px;padding:0 0 7px}#panel-bank .bank-match-tools .btn,#panel-bank .bank-match-tools .input{min-height:38px;padding:8px 9px}#panel-bank .bank-match-table{min-width:0!important;width:100%;font-size:12px;table-layout:fixed}#panel-bank .bank-match-table th,#panel-bank .bank-match-table td{padding:8px 6px}#panel-bank .bank-match-table th:nth-child(1){width:4%}#panel-bank .bank-match-table th:nth-child(2){width:11%}#panel-bank .bank-match-table th:nth-child(3){width:10%}#panel-bank .bank-match-table th:nth-child(4){width:8%}#panel-bank .bank-match-table th:nth-child(5){width:15%}#panel-bank .bank-match-table th:nth-child(6){width:8%}#panel-bank .bank-match-table th:nth-child(7){width:19%}#panel-bank .bank-match-table th:nth-child(8){width:9%}#panel-bank .bank-match-table th:nth-child(9){width:9%}#panel-bank .bank-match-table th:nth-child(10){width:7%}#panel-bank .bank-reason-cell,#panel-bank .bank-match-action{min-width:0!important}#panel-bank .bank-manual-status{min-width:0!important;width:100%}#panel-bank .table-wrap{overflow-x:hidden!important}}
+
+/* V7.2.22: 기존 주문서 스타일을 유지한 제출 중 안내 */
+.order-wait{max-width:390px;text-align:center;padding:32px 22px!important}
+.order-wait-icon{font-size:43px;margin-bottom:8px}
+.order-wait h2{font-size:20px;line-height:1.5}
+.submit-progress{margin:20px 0;text-align:left;background:#faf6fb;border-radius:15px;padding:17px;color:#55445b;font-size:15px;line-height:2.1}
+.submit-progress-tip{margin-top:10px;font-size:13px;line-height:1.65;color:#736879}
