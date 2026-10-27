@@ -15,7 +15,7 @@ function fallbackCopy(v,done){const t=document.createElement('textarea');t.value
 window.copyBank=async()=>{await loadConfig(false);copyText(state.config.bankAccount||$('#directBankAccount')?.textContent||$('#liveBankAccount')?.textContent,'최신 계좌번호를 복사했습니다.');};
 function copyOrderNo(){copyText(state.lastOrderNo||$('#completeNo')?.textContent,'주문번호를 복사했습니다.')}
 window.closePostcode=function(mode){const panel=$('#'+mode+'PostcodePanel'),embed=$('#'+mode+'PostcodeEmbed');if(panel)panel.classList.add('hidden');if(embed)embed.innerHTML=''};
-window.openPostcode=function(mode){const panel=$('#'+mode+'PostcodePanel'),embed=$('#'+mode+'PostcodeEmbed'),address=$('#'+mode+'Address'),zip=$('#'+mode+'Zip'),detail=$('#'+mode+'Detail');if(!panel||!embed||!address||!zip)return toast('주소 입력 영역을 찾지 못했습니다.');if(!window.daum||!daum.Postcode)return toast('주소검색 서비스를 불러오지 못했습니다.');['direct','live'].filter(x=>x!==mode).forEach(closePostcode);panel.classList.remove('hidden');embed.innerHTML='';embed.style.height='470px';new daum.Postcode({oncomplete:d=>{zip.value=d.zonecode||'';address.value=(d.userSelectedType==='J'?d.jibunAddress:d.roadAddress)||d.roadAddress||d.jibunAddress||'';closePostcode(mode);saveLocalShipping(mode);setTimeout(()=>detail&&detail.focus(),80)},onresize:size=>{embed.style.height=Math.max(430,Math.min(620,Number(size&&size.height)||470))+'px'},width:'100%',height:'100%'}).embed(embed);setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'center'}),60)};
+window.openPostcode=function(mode){const panel=$('#'+mode+'PostcodePanel'),embed=$('#'+mode+'PostcodeEmbed'),address=$('#'+mode+'Address'),zip=$('#'+mode+'Zip'),detail=$('#'+mode+'Detail');if(!panel||!embed||!address||!zip)return toast('주소 입력 영역을 찾지 못했습니다.');if(!window.daum||!daum.Postcode)return toast('주소검색 서비스를 불러오지 못했습니다.');['direct','live'].filter(x=>x!==mode).forEach(closePostcode);panel.classList.remove('hidden');embed.innerHTML='';embed.style.height='470px';new daum.Postcode({oncomplete:d=>{const previousAddress=address.value;zip.value=d.zonecode||'';address.value=(d.userSelectedType==='J'?d.jibunAddress:d.roadAddress)||d.roadAddress||d.jibunAddress||'';if(previousAddress!==address.value&&detail)detail.value='';closePostcode(mode);setTimeout(()=>detail&&detail.focus(),80)},onresize:size=>{embed.style.height=Math.max(430,Math.min(620,Number(size&&size.height)||470))+'px'},width:'100%',height:'100%'}).embed(embed);setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'center'}),60)};
 async function loadConfig(showError=false){try{if(!showError&&state.configLoadedAt&&Date.now()-state.configLoadedAt<60000&&Object.keys(state.config||{}).length)return state.config;const r=await api('public_config',{},7000);state.config=r;state.configLoadedAt=Date.now();['directBankAccount','liveBankAccount'].forEach(id=>$('#'+id).textContent=r.bankAccount||'계좌정보 확인중');['directBankText','liveBankText'].forEach(id=>$('#'+id).textContent=[r.bankName,r.bankOwner].filter(Boolean).join(' - ')||'관리자 설정에서 입금계좌를 입력해주세요');renderShippingPolicy();updateTotals('direct');updateTotals('live');return r}catch(e){if(showError)toast(e.message);return state.config}}
 function renderShippingPolicy(){const free=!!state.config.freeShippingEvent;$$('.free-badge').forEach(x=>x.textContent=free?'🚚 오늘 무료배송 이벤트 적용중':'🚚 20만원 이상 무료배송 자동계산');$$('[data-ship-target]').forEach(b=>{const isIsland=b.dataset.ship==='island',label=b.querySelector('b');if(label)label.textContent=free?(isIsland?'제주 및 도서산간 (무료)':'기본배송비 (무료)'):(isIsland?'제주 및 도서산간 ('+money(state.config.islandShipping||7000)+')':'기본배송비 ('+money(state.config.shipping||4000)+')')})}
 // 상품조회만 짧게 재사용합니다. 제출 시 실제 가격·재고는 서버에서 다시 검증합니다.
@@ -135,6 +135,7 @@ async function submitCheckout(mode){
  if(state.submitInProgress)return;
  const d=valuesFor(mode),btn=$('#'+mode+'Submit');
  if(!d.nickname||!d.receiver||d.phone.replace(/\D/g,'').length<10||!d.address)return toast('배송지 정보를 모두 입력해주세요.');
+ if(!confirmChangedShipping(mode,d))return;
  if(mode==='live'&&state.pending.length)return toast('옵션 선택이 필요한 댓글 주문을 먼저 확인해주세요.');
  if(!d.items.length)return toast('주문상품이 없습니다.');
  state.submitInProgress=true;
@@ -156,17 +157,43 @@ async function submitCheckout(mode){
    }
   }
   if(!r||!r.success)throw new Error('서버 응답이 지연되어 저장 여부를 확인하지 못했습니다. 다시 제출하기 전에 주문조회에서 확인하거나 잠시 후 같은 버튼을 눌러주세요.');
-  state.submitToken='';renderComplete(r);
+  state.submitToken='';saveLocalShipping(mode);renderComplete(r);
  }catch(e){toast(e.message||'주문서 제출에 실패했습니다.');if(e.message&&e.message.includes('저장 여부를 확인하지 못했습니다'))alert(e.message)}
  finally{state.submitInProgress=false;busy(false);if(btn){btn.disabled=false;btn.textContent=btn.dataset.oldText||'제출하기'}}
 }
 function renderComplete(r){state.lastOrderNo=r.orderNo||'';show('completeScreen');$('#completeNo').textContent=r.orderNo||'';$('#completeCount').textContent=r.totalQty||((r.items||[]).length);const info=[['▣','주문일시',r.orderDate],['●','주문자 닉네임',r.nickname],['●','수령인',r.receiver],['☎','연락처',r.phone],['⌖','배송지',r.address],['▤','배송메시지',r.memo||'-'],['💳','결제수단',r.paymentMethod||'-'],['₩','결제금액',money(r.total||0)]];$('#completeInfo').innerHTML=info.map(x=>`<div class="complete-info-row"><span class="info-icon">${x[0]}</span><b>${x[1]}</b><em>${esc(x[2])}</em></div>`).join('');$('#completeItems').innerHTML=(r.items||[]).map(x=>`<div class="complete-item-line"><span>${esc(x)}</span></div>`).join('');$('#completeTotal').textContent=money(r.total);$('#bandBtn').href=r.bandUrl||state.config.bandUrl;}
-function saveLocalShipping(mode='direct'){const p=mode==='live'?'live':'direct',v={nickname:p==='live'?cleanNick($('#liveNick2').value):sanitizeNickInput($('#directNick')),receiver:$('#'+p+'Receiver').value||'',phone:$('#'+p+'Phone'+(p==='live'?'2':'')).value||'',address:$('#'+p+'Address').value||'',detail:$('#'+p+'Detail').value||'',zip:$('#'+p+'Zip').value||'',memo:$('#'+p+'Memo').value||''};try{const prior=getLocalShipping();if(prior&&prior.phone&&prior.phone.replace(/\D/g,'')===String(v.phone).replace(/\D/g,'')&&prior.address){['address','detail','zip','receiver','memo'].forEach(k=>{if(!String(v[k]||'').trim())v[k]=prior[k]||'';});}if(v.address&&v.phone)localStorage.setItem('ssinne_shipping',JSON.stringify(v));}catch(e){}}
+// Shipping address is persisted only for the current device/browser. Never silently reuse a prior detail address.
+function saveLocalShipping(mode='direct'){
+ const p=mode==='live'?'live':'direct';
+ const v={nickname:p==='live'?cleanNick(state.selectedNickname||$('#liveNick2').value||$('#liveNick').value):sanitizeNickInput($('#directNick')),
+ receiver:$('#'+p+'Receiver').value.trim(),phone:$('#'+p+'Phone'+(p==='live'?'2':'')).value.trim(),
+ address:$('#'+p+'Address').value.trim(),detail:$('#'+p+'Detail').value.trim(),zip:$('#'+p+'Zip').value.trim(),memo:$('#'+p+'Memo').value.trim()};
+ try{if(v.address&&v.phone.replace(/\D/g,'').length>=10)localStorage.setItem('ssinne_shipping',JSON.stringify(v))}catch(e){}
+}
 function getLocalShipping(){try{return JSON.parse(localStorage.getItem('ssinne_shipping')||'null')}catch(e){return null}}
-function restoreLocalShipping(){const v=getLocalShipping();if(!v)return;$('#directNick').value=cleanNick(v.nickname);$('#directReceiver').value=v.receiver||'';$('#directPhone').value=v.phone||'';$('#directAddress').value=v.address||'';$('#directDetail').value=v.detail||'';$('#directZip').value=v.zip||'';$('#directMemo').value=v.memo||'';scheduleContext('direct')}
+function restoreShippingFields(mode){
+ const v=getLocalShipping();if(!v)return;
+ const p=mode==='live'?'live':'direct';
+ if(mode==='direct')$('#directNick').value=cleanNick(v.nickname||'');
+ // Do not overwrite a newly selected customer's existing values.
+ const fields={Receiver:v.receiver,Phone:v.phone,Address:v.address,Detail:v.detail,Zip:v.zip,Memo:v.memo};
+ for(const [field,value] of Object.entries(fields)){
+  const id=p+(field==='Phone'&&p==='live'?'Phone2':field),el=$('#'+id);
+  if(el&&!el.value.trim())el.value=value||'';
+ }
+ scheduleContext(mode);
+}
+function restoreLocalShipping(){restoreShippingFields('direct')}
+function confirmChangedShipping(mode,d){
+ const old=getLocalShipping();if(!old||!old.address)return true;
+ const digits=x=>String(x||'').replace(/\D/g,'');
+ if(digits(old.phone)!==digits(d.phone))return true;
+ const changed=['address','detail','zip'].some(k=>String(old[k]||'').trim()!==String(k==='detail'?d.detailAddress:d[k]||'').trim());
+ return !changed||window.confirm('이전에 저장한 배송지와 주소 또는 상세주소가 다릅니다.\n\n기존: '+old.address+' '+(old.detail||'')+'\n현재: '+d.address+' '+(d.detailAddress||'')+'\n\n변경한 배송지로 주문하시겠습니까?');
+}
 async function refreshCurrentProduct(mode){const no=mode==='direct'?$('#directSearch').value:$('#liveManualSearch').value;if(!no)return toast('먼저 상품번호를 입력해주세요.');if(mode==='direct')return searchDirectProduct(true);return searchLiveManualProduct(true)}
 async function init(){
- $('#goLive').onclick=()=>{show('liveScreen');loadConfig(false)};$('#goDirect').onclick=()=>{show('directScreen');loadConfig(false);restoreLocalShipping()};$('#backBtn').onclick=()=>show('homeScreen');
+ $('#goLive').onclick=()=>{show('liveScreen');loadConfig(false);restoreShippingFields('live')};$('#goDirect').onclick=()=>{show('directScreen');loadConfig(false);restoreLocalShipping()};$('#backBtn').onclick=()=>show('homeScreen');
  $('#liveNick').addEventListener('input',debounce(searchLiveNick,450));$('#liveNick').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();loadLiveOrder()}});$('#liveNick').addEventListener('paste',()=>setTimeout(()=>sanitizeNickInput($('#liveNick')),0));$('#liveLoad').onclick=loadLiveOrder;const liveDirect=$('#liveDirectFallback');if(liveDirect)liveDirect.onclick=()=>$('#goDirect').click();$('#directNick').addEventListener('input',e=>sanitizeNickInput(e.target));$('#directNick').addEventListener('paste',()=>setTimeout(()=>sanitizeNickInput($('#directNick')),0));
  $('#directSearch').addEventListener('input',e=>e.target.value=productCode(e.target.value));$('#directSearchBtn').onclick=()=>searchDirectProduct(false);$('#directSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchDirectProduct(false)}});$('#directCatalogRefresh').onclick=()=>refreshCurrentProduct('direct');$('#liveCatalogRefresh').onclick=()=>refreshCurrentProduct('live');$('#liveCatalogRefresh2').onclick=()=>refreshCurrentProduct('live');
  $('#directColor').onchange=()=>refreshPickerSizes('direct',$('#directSearch').value);$('#directSize').onchange=()=>updatePickerSelection('direct',$('#directSearch').value);$('#directMinus').onclick=()=>{state.pickQty=Math.max(1,state.pickQty-1);$('#directQtyPick').textContent=state.pickQty};$('#directPlus').onclick=()=>{const m=Math.max(1,Number(state.pickedProduct?.stock||1));state.pickQty=Math.min(m,state.pickQty+1);$('#directQtyPick').textContent=state.pickQty};$('#directAdd').onclick=addPickedProduct;

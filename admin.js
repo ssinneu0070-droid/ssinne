@@ -308,6 +308,26 @@ async function lotteDownloadMode(mode,selectedOnly=false){
   if(!validateLotteDates())return;const orderNos=selectedOnly?[...lotteSelected]:[];if(selectedOnly&&!orderNos.length)return toast('다운로드할 주문을 체크해주세요.');
   try{const label=selectedOnly?'선택한 주문':lotteModeLabel(mode);busy(true,label+'을 롯데택배 ALPS 양식으로 정리하고 있습니다...');const r=await api('admin_lotte_history_export',{from:$('#lotteFrom').value,to:$('#lotteTo').value,statusMode:mode,orderNos,excludeTracked:false,excludeCombined:false},60000);if(!r.rows?.length)return toast('다운로드할 주문이 없습니다.');writeXlsx(r);toast(label+' '+r.orderCount+'건을 롯데택배 파일로 다운로드했습니다.')}catch(e){toast(e.message)}finally{busy(false)}
 }
+async function postOfficeDownload(mode='입금완료',selectedOnly=false){
+ if(!validateLotteDates())return;
+ const orderNos=selectedOnly?[...lotteSelected]:[];
+ if(selectedOnly&&!orderNos.length)return toast('우체국 택배로 다운로드할 주문을 먼저 체크해주세요.');
+ try{
+  const label=selectedOnly?'선택한 주문':lotteModeLabel(mode);
+  busy(true,label+'을 우체국 합배송 양식으로 정리하고 있습니다...');
+  const r=await api('admin_post_office_export',{from:$('#lotteFrom').value,to:$('#lotteTo').value,statusMode:mode,orderNos,selectedOnly},60000);
+  if(!r.rows?.length)return toast('조건에 맞는 우체국 택배 주문이 없습니다.');
+  if(typeof XLSX==='undefined')throw new Error('엑셀 라이브러리를 불러오지 못했습니다.');
+  const ws=XLSX.utils.aoa_to_sheet([r.headers,...r.rows]);
+  ws['!cols']=[{wch:20},{wch:18},{wch:16},{wch:54},{wch:20},{wch:35},{wch:12},{wch:16},{wch:28},{wch:24},{wch:13},{wch:22}];
+  for(let row=2;row<=r.rows.length+1;row++)for(const col of ['E','G']){const c=ws[col+row];if(c){c.t='s';c.v=String(c.v??'');c.z='@'}}
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'우체국택배');
+  const map=XLSX.utils.aoa_to_sheet([['대표주문번호','포함 주문번호','수령인','연락처','주소','우편번호','총수량'],...(r.shipmentMap||[])]);
+  XLSX.utils.book_append_sheet(wb,map,'합배송_주문번호대조');
+  XLSX.writeFile(wb,r.filename);toast(label+' · 우체국 '+r.shipmentCount+'개 합배송 / 상품 '+r.rows.length+'행 다운로드 완료');
+ }catch(e){toast(e.message)}finally{busy(false)}
+}
+
 function renderTrackingRows(){
   const cls=x=>x.result==='매칭완료'?'green':x.result==='중복'?'blue':x.result==='확인필요'?'orange':x.result==='미매칭'?'red':'blue';
   $('#trackingTbody').innerHTML=trackingRows.map(x=>`<tr><td>${esc(x.orderNo||'-')}</td><td>${esc(x.receiver||'-')}</td><td>${esc(x.phone||'-')}</td><td><b>${esc(x.tracking)}</b></td><td>${esc(x.matchMethod||'-')}</td><td><span class="pill ${cls(x)}">${esc(x.result||'준비')}</span></td><td><div class="tracking-detail">${esc(x.detail||'')}</div>${x.matchedOrderNos?.length?`<div class="hint">연결 주문: ${esc(x.matchedOrderNos.join(', '))}</div>`:''}</td></tr>`).join('')||'<tr><td colspan="7">업로드한 송장 파일이 없습니다.</td></tr>'
@@ -354,7 +374,7 @@ function bind(){
  on('lotteReset','click',()=>{const today=localDateText();$('#lotteFrom').value=today;$('#lotteTo').value=today;$('#lotteQuery').value='';$('#lotteStatus').value='전체';resetLotteResultView('조회 조건을 초기화했습니다. 조회하기를 눌러주세요.');$$('[data-lotte-status]').forEach(x=>x.classList.toggle('active',x.dataset.lotteStatus==='전체'))});
  $$('[data-lotte-status]').forEach(b=>b.onclick=()=>{const hadLoaded=lotteLoaded;setLotteStatusMode(b.dataset.lotteStatus,false);if(hadLoaded)loadLotteOrders({page:1});else{$('#lotteTbody').innerHTML=`<tr><td colspan="11"><b>${esc(b.querySelector('b')?.textContent||'주문상태')}을 선택했습니다.</b><div class="hint">날짜를 확인한 뒤 조회하기를 눌러주세요.</div></td></tr>`}});
  on('lotteHeaderCheck','change',e=>{$$('.lotteCheck').forEach(x=>{x.checked=e.target.checked;e.target.checked?lotteSelected.add(x.value):lotteSelected.delete(x.value)});updateLotteHeaderCheck();updateLotteRangeText()});
- on('lottePaidDownload','click',()=>lotteDownloadMode('입금완료',false));on('lotteAllDateDownload','click',()=>lotteDownloadMode('전체',false));on('lotteWaitingDownload','click',()=>lotteDownloadMode('미입금카드대기',false));on('lotteSelectedDownload','click',()=>lotteDownloadMode('전체',true));
+ on('postOfficeDownload','click',()=>postOfficeDownload('입금완료',false));on('postOfficeAllDownload','click',()=>postOfficeDownload('전체',false));on('postOfficeWaitingDownload','click',()=>postOfficeDownload('미입금카드대기',false));on('postOfficeSelectedDownload','click',()=>postOfficeDownload('전체',true));on('lottePaidDownload','click',()=>lotteDownloadMode('입금완료',false));on('lotteAllDateDownload','click',()=>lotteDownloadMode('전체',false));on('lotteWaitingDownload','click',()=>lotteDownloadMode('미입금카드대기',false));on('lotteSelectedDownload','click',()=>lotteDownloadMode('전체',true));
  on('trackingFile','change',e=>trackingRead(e.target.files[0]));on('trackingApply','click',trackingApply);on('combineSearch','click',combineSearch);on('combineHeaderCheck','change',e=>{$$('.combineCheck').forEach(x=>x.checked=e.target.checked)});on('combineDownload','click',combineDownload);on('combineCustomerPopup','click',showCombineCustomers);on('combineCustomerClose','click',()=>$('#combineCustomerModal').classList.remove('show'));
  on('returnSearch','click',loadReturns);on('returnReset','click',()=>{setReturnPreset('month');$('#returnStatus').value='전체';$('#returnType').value='전체';$('#returnQuery').value='';returnActiveSummary='all';$$('[data-return-summary]').forEach(b=>b.classList.toggle('active',b.dataset.returnSummary==='all'));returnCache=[];returnSelected.clear();['returnCountAll','returnCountReturn','returnCountExchange','returnCountShipping','returnCountDone'].forEach(id=>$('#'+id).textContent='0건');renderReturns()});on('returnCreate','click',()=>openReturnDrawer(0));on('returnDrawerClose','click',closeReturnDrawer);on('returnOrderLookup','click',lookupReturnOrder);on('returnSave','click',saveReturnDrawer);on('returnHeaderCheck','change',e=>{$$('.returnCheck').forEach(x=>{x.checked=e.target.checked;e.target.checked?returnSelected.add(x.value):returnSelected.delete(x.value)})});on('returnTbody','change',e=>{if(e.target.classList.contains('returnCheck'))e.target.checked?returnSelected.add(e.target.value):returnSelected.delete(e.target.value)});on('returnBulkApply','click',returnBulkStatus);on('returnDeleteSelected','click',deleteReturns);on('returnExcel','click',returnExcel);on('returnPickupDownload','click',()=>returnLotte('pickup'));on('returnExchangeDownload','click',()=>returnLotte('exchange'));$$('.return-date-preset').forEach(b=>b.onclick=()=>setReturnPreset(b.dataset.days));$$('[data-return-summary]').forEach(b=>b.onclick=()=>returnSummaryClick(b.dataset.returnSummary));
  on('pendingSearch','click',loadPending);on('pendingRefresh','click',()=>{['pendingQuery','pendingFrom','pendingTo'].forEach(id=>$('#'+id).value='');$('#pendingStatus').value='전체';pendingCache=[];$('#pendingTbody').innerHTML='<tr><td colspan="10">조건을 초기화했습니다. 조회 버튼을 눌러주세요.</td></tr>';$('#pendingCards').innerHTML=''});on('pendingLotte','click',pendingLotte);on('pendingHeaderCheck','change',e=>{$$('.pendingCheck').forEach(x=>x.checked=e.target.checked)});
