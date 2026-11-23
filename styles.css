@@ -763,3 +763,45 @@ html,body{max-width:100%;overflow-x:hidden}
 .complete-review-notice p b{color:#a91f52}
 .complete-review-btn{display:flex!important;align-items:center;justify-content:center;width:100%;margin-top:14px;min-height:54px;font-size:17px!important;font-weight:850}
 @media(max-width:480px){.complete-review-notice{padding:16px 13px}.complete-review-notice>strong{font-size:19px}.complete-review-notice p{font-size:15px}}
+
+/* V7.2.52 — PC monitor layout only. Existing colors, actions and mobile rules remain. */
+@media (min-width: 1100px) {
+  #adminApp.layout {grid-template-columns: 208px minmax(0,1fr);}
+  #adminApp .sidebar {padding: 22px 13px 18px;}
+  #adminApp .sidebar .brand {padding-bottom: 14px;}
+  #adminApp .nav {gap: 3px;}
+  #adminApp .admin-main {padding: 0 clamp(16px,1.5vw,32px) 30px; width:100%; min-width:0;}
+  #adminApp .admin-header {min-height:68px;padding:10px 4px;}
+  #adminApp .admin-header h1 {font-size:clamp(19px,1.35vw,24px);}
+  #adminApp .admin-panel {min-width:0;}
+  #adminApp .panel-hero {margin-bottom:12px;}
+  #adminApp .panel-hero h2 {font-size:clamp(21px,1.5vw,28px);}
+  #adminApp .admin-card {padding:clamp(13px,1.15vw,20px);min-width:0;}
+  #adminApp .toolbar {gap:8px;align-items:center;}
+  #adminApp .toolbar > .input {flex:1 1 150px;min-width:0;max-width:100%;}
+  #adminApp .toolbar > input[type=date] {flex:0 1 155px;min-width:125px;}
+  #adminApp .toolbar > select.input {flex:0 1 145px;min-width:110px;}
+  #adminApp .toolbar .btn {white-space:nowrap;}
+  #adminApp .btn {padding:10px 13px;border-radius:10px;}
+  #adminApp .input {min-height:38px;}
+  #adminApp .kpis {gap:8px;margin:12px 0;}
+  #adminApp .order-kpis {display:grid;grid-template-columns:repeat(6,minmax(0,1fr));}
+  #adminApp .order-kpis .kpi {min-width:0;padding:10px 9px;text-align:center;white-space:normal;}
+  #adminApp .order-kpis .kpi strong {display:block;margin:4px 0 0;font-size:17px;}
+  #adminApp .table-wrap {max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;}
+  #adminApp .table {width:100%;min-width:1050px;}
+  #adminApp .table th,#adminApp .table td {padding:9px 10px;font-size:12.5px;vertical-align:middle;}
+  #adminApp .table th {white-space:nowrap;}
+  #adminApp .table td {overflow-wrap:anywhere;}
+  #adminApp .table td .btn {padding:6px 9px;}
+  #adminApp .pager-wrap {gap:10px;flex-wrap:wrap;}
+}
+@media (min-width:1100px) and (max-width:1399px) {
+  #adminApp.layout {grid-template-columns:185px minmax(0,1fr);}
+  #adminApp .order-kpis {grid-template-columns:repeat(3,minmax(0,1fr));}
+  #adminApp .toolbar > input[type=date] {flex:1 1 140px;}
+}
+@media (min-width:1800px) {
+  #adminApp .table th,#adminApp .table td {font-size:13px;padding:10px 12px;}
+  #adminApp .order-kpis .kpi strong {font-size:19px;}
+}
