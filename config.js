@@ -1,3 +1,3 @@
 window.SSINNE_CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbwMwkB5N8yfqx3pLBEcuiWrR6o7T7WrcVse0zz2QfToAKpZuTpPJhUP1KsPe5VM43wd/exec'
+  API_URL: 'https://script.google.com/macros/s/AKfycbwBHmzinOqVEpzeSvVia0q3GPXuoqZRYK5orGusSS_BlnDRCjyZ_ElpP7DgMmtevr7h/exec'
 };
